@@ -8,7 +8,7 @@ fhirdata:
 
   # This is where you set where the Data is sent to.
   sinkFhirServerUrl: "http://openhim-core:5001/SHR/fhir"
-  sinkUserName: "root@openhim.org"
+  sinkUserName: "shr-pipeline"
   sinkPassword: "instant101"
   sinkDbConfigPath:
 
@@ -16,8 +16,8 @@ fhirdata:
   generateParquetFiles: false
 
   # Incremental pipeline schedule — "0 0 * * * *" = every hour
-  incrementalSchedule: "0 0 * * * *"
-  purgeSchedule: "0 30 * * * *"
+  incrementalSchedule: "0 */5 * * * *"
+  purgeSchedule: "0 */10 * * * *"
   numOfDwhSnapshotsToRetain: 2
 
   resourceList: "Patient,Encounter,Observation,Condition,AllergyIntolerance,MedicationRequest,Practitioner,Group"

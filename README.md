@@ -435,6 +435,12 @@ The Elasticsearch analytics service requires this directory to exist as a bind m
 ```
 This provisions SSL certificates, runs all importers (OpenHIM channels/clients, HAPI FHIR database, etc.), and starts all services. **Use `init` only once per clean environment.**
 
+#### Step 10b — Apply HAPI FHIR configuration overrides
+```bash
+./packages/fhir-datastore-hapi-fhir/post-deploy.sh
+```
+The instant tooling's `docker stack deploy` does not apply env vars with dots (e.g. `hapi.fhir.*`) from `docker-compose.yml`. This script sets `enforce_referential_integrity_on_write=false` and `auto_create_placeholder_reference_targets=true` on the HAPI FHIR service, which are required for the data pipeline to push resources without strict reference ordering. **Run this after every `package up` or `project init` that includes `fhir-datastore-hapi-fhir`.**
+
 #### Step 11 — Verify deployment
 ```bash
 docker service ls
@@ -453,6 +459,7 @@ docker service logs <service_name>
 | Git LFS not installed before clone | `.omod` files are 132 bytes; OpenMRS returns HTTP 404 on home page | `git lfs pull`, then rebuild: `./build-custom-images.sh` and force-update the service |
 | `hapi` database not created | HAPI FHIR crashes with `FATAL: database "hapi" does not exist` | `docker exec <postgres-container> psql -U postgres -c "CREATE DATABASE hapi;"` then `docker service update --force hapi-fhir_hapi-fhir` |
 | OpenHIM importer uses wrong password | Channels/clients/mediators not imported (401 errors in logs) | Default password is `instant101` — already corrected in this repo |
+| HAPI FHIR rejects pipeline data | `HAPI-1094: Resource ... not found, specified in path` — pipeline pushes resources by type, references may not exist yet | Run `./packages/fhir-datastore-hapi-fhir/post-deploy.sh` after deploy (see Step 10b) |
 | nginx ports missing after `up` | Subdomains unreachable after restart | See the manual restore command in [Stopping and Cleaning Up](#stopping-and-cleaning-up) |
 
 ---

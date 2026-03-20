@@ -6,6 +6,8 @@ services:
     environment:
       - JAVA_OPTS=-Xms2g -Xmx2g
       - FLINK_CONF_DIR=/app/config
+      - fhirdata.fhirServerUrl=http://isanteplus:8080/openmrs/ws/fhir2/R4
+      - fhirdata.dwhRootPrefix=/dwh/pipeline_DWH
     configs:
       - source: application_yaml
         target: /app/config/application.yaml
@@ -16,6 +18,81 @@ services:
     ports:
       - target: 8080
         published: 8095
+        protocol: tcp
+        mode: host
+    networks:
+      - openhim
+      - shr
+      - isanteplus
+      - hapi-fhir
+
+  streaming-pipeline-2:
+    image: us-docker.pkg.dev/cloud-build-fhir/fhir-analytics/main:latest
+    environment:
+      - JAVA_OPTS=-Xms2g -Xmx2g
+      - FLINK_CONF_DIR=/app/config
+      - fhirdata.fhirServerUrl=http://isanteplus2:8080/openmrs/ws/fhir2/R4
+      - fhirdata.dwhRootPrefix=/dwh/pipeline_DWH2
+    configs:
+      - source: application_yaml
+        target: /app/config/application.yaml
+      - source: flink_conf_yaml
+        target: /app/config/flink-conf.yaml
+    volumes:
+      - pipeline-dwh-2:/dwh
+    ports:
+      - target: 8080
+        published: 8096
+        protocol: tcp
+        mode: host
+    networks:
+      - openhim
+      - shr
+      - isanteplus
+      - hapi-fhir
+
+  streaming-pipeline-3:
+    image: us-docker.pkg.dev/cloud-build-fhir/fhir-analytics/main:latest
+    environment:
+      - JAVA_OPTS=-Xms2g -Xmx2g
+      - FLINK_CONF_DIR=/app/config
+      - fhirdata.fhirServerUrl=http://isanteplus3:8080/openmrs/ws/fhir2/R4
+      - fhirdata.dwhRootPrefix=/dwh/pipeline_DWH3
+    configs:
+      - source: application_yaml
+        target: /app/config/application.yaml
+      - source: flink_conf_yaml
+        target: /app/config/flink-conf.yaml
+    volumes:
+      - pipeline-dwh-3:/dwh
+    ports:
+      - target: 8080
+        published: 8097
+        protocol: tcp
+        mode: host
+    networks:
+      - openhim
+      - shr
+      - isanteplus
+      - hapi-fhir
+
+  streaming-pipeline-4:
+    image: us-docker.pkg.dev/cloud-build-fhir/fhir-analytics/main:latest
+    environment:
+      - JAVA_OPTS=-Xms2g -Xmx2g
+      - FLINK_CONF_DIR=/app/config
+      - fhirdata.fhirServerUrl=http://isanteplus4:8080/openmrs/ws/fhir2/R4
+      - fhirdata.dwhRootPrefix=/dwh/pipeline_DWH4
+    configs:
+      - source: application_yaml
+        target: /app/config/application.yaml
+      - source: flink_conf_yaml
+        target: /app/config/flink-conf.yaml
+    volumes:
+      - pipeline-dwh-4:/dwh
+    ports:
+      - target: 8080
+        published: 8098
         protocol: tcp
         mode: host
     networks:
@@ -38,6 +115,9 @@ configs:
 
 volumes:
   pipeline-dwh:
+  pipeline-dwh-2:
+  pipeline-dwh-3:
+  pipeline-dwh-4:
 
 networks:
   openhim:
