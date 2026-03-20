@@ -1,38 +1,44 @@
-version: '3.9'
+version: "3.9"
 
 services:
-    ## SHR Resource Stream
-  streaming-pipeline: 
-    image: ghcr.io/i-tech-uw/openmrs-fhir-analytics/streaming-binlog:latest
-    
+  streaming-pipeline:
+    image: us-docker.pkg.dev/cloud-build-fhir/fhir-analytics/main:latest
     environment:
-      - OPENMRS_URL=${OPENMRS_URL}
-      - OPENMRS_USERNAME=${OPENMRS_USERNAME}
-      - OPENMRS_PASSWORD=${OPENMRS_PASSWORD}
-      - SINK_URL=${SINK_URL}
-      - SINK_USERNAME=${SINK_USERNAME}
-      - SINK_PASSWORD=${SINK_PASSWORD}
-      - JDBC_FETCH_SIZE=${JDBC_FETCH_SIZE}
-      - JDBC_MAX_POOL_SIZE=${JDBC_MAX_POOL_SIZE}
-      - JDBC_INITIAL_POOL_SIZE=${JDBC_INITIAL_POOL_SIZE}
-      - JDBC_DRIVER_CLASS=${JDBC_DRIVER_CLASS}
-      # the 2 variable below should be same as volume mappings above
-      - PARQUET_PATH=${PARQUET_PATH}
-      - FHIR_DEBEZIUM_CONFIG_PATH=${FHIR_DEBEZIUM_CONFIG_PATH}
+      - JAVA_OPTS=-Xms2g -Xmx2g
+      - FLINK_CONF_DIR=/app/config
     configs:
-      - target: /deployments/config.json
-        source: config.json
-      
+      - source: application_yaml
+        target: /app/config/application.yaml
+      - source: flink_conf_yaml
+        target: /app/config/flink-conf.yaml
+    volumes:
+      - pipeline-dwh:/dwh
+    ports:
+      - target: 8080
+        published: 8095
+        protocol: tcp
+        mode: host
     networks:
-     - openhim
-     - shr
+      - openhim
+      - shr
+      - isanteplus
+      - hapi-fhir
 
 configs:
-  config.json:
-    file: ./config/config.json
-    name: datapipeline_config.json
+  application_yaml:
+    file: ./config/application.yaml
+    name: pipeline_application_yaml
     labels:
-      name: datapipeline_config.json
+      name: pipeline_application_yaml
+  flink_conf_yaml:
+    file: ./config/flink-conf.yaml
+    name: pipeline_flink_conf_yaml
+    labels:
+      name: pipeline_flink_conf_yaml
+
+volumes:
+  pipeline-dwh:
+
 networks:
   openhim:
     name: openhim_public
@@ -40,7 +46,12 @@ networks:
   shr:
     name: shr
     external: true
-
-
-
-
+  mysql:
+    name: mysql_public
+    external: true
+  isanteplus:
+    name: isanteplus_public
+    external: true
+  hapi-fhir:
+    name: hapi-fhir_public
+    external: true

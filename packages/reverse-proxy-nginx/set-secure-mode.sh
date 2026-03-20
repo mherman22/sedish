@@ -84,23 +84,20 @@ function generate_real_certificates() {
     if [[ "${STAGING}" == "true" ]]; then
         staging_args="--staging"
     fi
-    log info "docker run --rm \
-          -p 8083:80 \
-          -p 8443:443 \
-          --name certbot \
-          --network cert-renewal-network \
-          -v data-certbot-conf:/etc/letsencrypt/archive/${DOMAIN_NAME} \
-          certbot/certbot:v1.23.0 certonly -n \
-          --standalone \
-          ${staging_args} \
-          -m ${RENEWAL_EMAIL} \
-          ${DOMAIN_ARGS[*]} \
-          --agree-tos"
+
+    # Safety net: if anything fails after nginx is scaled down, restore it before exiting
+    # so the deployment isn't left with nginx at 0 replicas and no traffic served.
+    trap "docker service scale ${STACK}_${SERVICE_NAMES}=1 2>/dev/null || true" EXIT
+
+    # Nginx holds port 80 at this point — scale it down so certbot can bind port 80
+    # for the HTTP-01 ACME challenge. update_nginx_real_certificates will bring it back.
+    try "docker service scale ${STACK}_${SERVICE_NAMES}=0" \
+        throw \
+        "Failed to scale down nginx before certificate generation"
+
     try "docker run --rm \
-          -p 8083:80 \
-          -p 8443:443 \
+          --network host \
           --name certbot \
-          --network cert-renewal-network \
           -v data-certbot-conf:/etc/letsencrypt/archive/${DOMAIN_NAME} \
           certbot/certbot:v1.23.0 certonly -n \
           --standalone \
@@ -124,6 +121,10 @@ function generate_real_certificates() {
     readonly NEWER_TIMESTAMP
 
     create_secrets_from_certificates "${NEWER_TIMESTAMP}"
+
+    # Certificates obtained — clear the safety net; update_nginx_real_certificates
+    # will restore nginx via --replicas 1.
+    trap - EXIT
 }
 
 function update_nginx_real_certificates() {
@@ -134,6 +135,7 @@ function update_nginx_real_certificates() {
 
     log info "Updating $SERVICE_NAMES service: adding secrets for generated certificates..."
     try "docker service update \
+          --replicas 1 \
           --secret-rm ${curr_full_chain_name} \
           --secret-rm ${curr_priv_key_name} \
           --secret-add source=${NEWER_TIMESTAMP}-fullchain.pem,target=/run/secrets/fullchain.pem \
@@ -179,7 +181,7 @@ set_secure_mode() {
     #Generate real certificate
     generate_real_certificates
 
-    #Update nginx to use the dummy certificates
+    #Update nginx to use the real certificates
     update_nginx_real_certificates
 }
 

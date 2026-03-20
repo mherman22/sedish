@@ -67,5 +67,8 @@ while IFS= read -r line; do
 done <<< "$envs"
 
 # Build the Docker image
-# docker build -t isanteplus-mysql:5.7.44 ./projects/isanteplus-db
+docker build -t isanteplus-mysql:5.7.44 ./projects/isanteplus-db
+
+# Build custom Elasticsearch image with phonetic + string-similarity-scoring plugins
+docker build -t docker.elastic.co/elasticsearch/elasticsearch:local ./packages/analytics-datastore-elastic-search
 

@@ -63,11 +63,11 @@
       "roles": [
         "emr"
       ],
-      "clientID": "isanteplus.sedish-haiti.org",
-      "name": "isanteplus.sedish-haiti.org",
+      "clientID": "isanteplus",
+      "name": "isanteplus",
       "passwordAlgorithm": "sha512",
-      "passwordSalt": "228b11da37d15ac9971e8ec7bee28752",
-      "passwordHash": "1c8f12ebe71f7394f12c7aacc69cbe8c1ba041351e28a67364b079eb523f00368a97941b30fa960c12943bfd044d9253d79a0464b225679f8da01dc90addb54a"
+      "passwordSalt": "a20514810f3a16068b04a39ae21f93c0",
+      "passwordHash": "5e57dc8fa047b7822b7248c7a1be3770aebf5041a779eaabd334906dc9d7017f995927a5d5fbd99b27325f98426b3a50830e8d4abec118276fa4b232fdd28127"
     },
     {
       "clientID": "lnsp",
@@ -129,9 +129,21 @@
       "matchContentJson": null,
       "matchContentValue": null,
       "properties": [],
-      "txViewAcl": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "txViewFullAcl": [],
-      "txRerunAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "alerts": [],
       "status": "enabled",
       "rewriteUrls": false,
@@ -184,9 +196,21 @@
       ],
       "matchContentTypes": [],
       "properties": [],
-      "txViewAcl": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "txViewFullAcl": [],
-      "txRerunAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "alerts": [],
       "status": "enabled",
       "rewriteUrls": false,
@@ -238,9 +262,21 @@
       ],
       "matchContentTypes": [],
       "properties": [],
-      "txViewAcl": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "txViewFullAcl": [],
-      "txRerunAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "alerts": [],
       "status": "enabled",
       "rewriteUrls": false,
@@ -299,9 +335,21 @@
       ],
       "matchContentTypes": [],
       "properties": [],
-      "txViewAcl": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "txViewFullAcl": [],
-      "txRerunAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "alerts": [],
       "status": "enabled",
       "rewriteUrls": false,
@@ -352,9 +400,21 @@
       ],
       "matchContentTypes": [],
       "properties": [],
-      "txViewAcl": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "txViewFullAcl": [],
-      "txRerunAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "alerts": [],
       "status": "enabled",
       "rewriteUrls": false,
@@ -415,9 +475,21 @@
       "matchContentJson": null,
       "matchContentValue": null,
       "properties": [],
-      "txViewAcl": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "txViewFullAcl": [],
-      "txRerunAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "alerts": [],
       "status": "enabled",
       "rewriteUrls": false,
@@ -484,9 +556,21 @@
       "matchContentJson": null,
       "matchContentValue": null,
       "properties": [],
-      "txViewAcl": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "txViewFullAcl": [],
-      "txRerunAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "status": "enabled",
       "rewriteUrls": false,
       "addAutoRewriteRules": true,

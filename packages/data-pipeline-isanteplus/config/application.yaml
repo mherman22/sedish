@@ -1,0 +1,38 @@
+fhirdata:
+  fhirFetchMode: "FHIR_SEARCH"
+
+  # This is where you set where the Data is fetched from.
+  fhirServerUrl: "http://isanteplus:8080/openmrs/ws/fhir2/R4"
+  fhirServerUserName: "admin"
+  fhirServerPassword: "Admin123"
+
+  # This is where you set where the Data is sent to.
+  sinkFhirServerUrl: "http://openhim-core:5001/SHR/fhir"
+  sinkUserName: "root@openhim.org"
+  sinkPassword: "instant101"
+  sinkDbConfigPath:
+
+  dwhRootPrefix: "/dwh/pipeline_DWH"
+  generateParquetFiles: false
+
+  # Incremental pipeline schedule — "0 0 * * * *" = every hour
+  incrementalSchedule: "0 0 * * * *"
+  purgeSchedule: "0 30 * * * *"
+  numOfDwhSnapshotsToRetain: 2
+
+  resourceList: "Patient,Encounter,Observation,Condition,AllergyIntolerance,MedicationRequest,Practitioner,Group"
+
+  fhirVersion: "R4"
+  numThreads: 1
+  autoGenerateFlinkConfiguration: true
+  rowGroupSizeForParquetFiles: 33554432  # 32mb
+  recursiveDepth: 1
+  structureDefinitionsPath: "classpath:/r4-us-core-definitions"
+  createHiveResourceTables: false
+  createParquetViews: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,pipeline-metrics

@@ -5,7 +5,6 @@ services:
     image: itechuw/shared-health-record:v0.13.0
     networks:
       - openhim
-      - kafka
       - shr
       - hapi-fhir
     configs:
@@ -40,9 +39,6 @@ networks:
     external: true
   shr:
     name: shr
-    external: true
-  kafka:
-    name: kafka_public
     external: true
   hapi-fhir:
     name: hapi-fhir_public

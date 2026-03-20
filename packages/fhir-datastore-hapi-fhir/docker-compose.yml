@@ -22,6 +22,7 @@ services:
       - hapi.fhir.auto_create_placeholder_reference_targets=true
       - hapi.fhir.bulk_export_enabled=true
       - hapi.fhir.enable_repository_validating_interceptor=true
+      - hapi.fhir.enforce_referential_integrity_on_write=false
       - JAVA_TOOL_OPTIONS=${HF_JAVA_OPTS}
       - CATALINA_OPTS=${HF_JAVA_OPTS}
     deploy:

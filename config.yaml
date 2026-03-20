@@ -12,7 +12,6 @@ packages:
   - identity-access-manager-keycloak
   - client-registry-opencr
   - analytics-datastore-elastic-search
-  - message-bus-kafka
   - shared-health-record-fhir
   # Sedish Haiti packages
   - emr-isanteplus
@@ -32,7 +31,6 @@ profiles:
       - identity-access-manager-keycloak
       - client-registry-opencr
       - analytics-datastore-elastic-search
-      - message-bus-kafka
       - shared-health-record-fhir
       - dashboard-visualiser-kibana
       # Sedish Haiti packages
@@ -56,7 +54,6 @@ profiles:
       - identity-access-manager-keycloak
       - client-registry-opencr
       - analytics-datastore-elastic-search
-      - message-bus-kafka
       - shared-health-record-fhir
       - dashboard-visualiser-kibana
       # Sedish Haiti packages

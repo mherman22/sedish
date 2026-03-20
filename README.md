@@ -102,8 +102,16 @@ This project deploys a multi-component Health Information Exchange (HIE) on a cl
    sudo apt install -y git
    ```
 
-2. **Install Docker:**  
-   Follow [Docker’s installation guide](https://docs.docker.com/engine/install/ubuntu/) for your Linux distribution. 
+2. **Install Git LFS:**
+   Several large binary files (`.omod` OpenMRS modules, `.sql` database dumps) are stored in Git LFS. Without this step, those files will be 132-byte pointer stubs and the Docker image build will produce broken containers.
+   ```bash
+   curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+   sudo apt-get install -y git-lfs
+   git lfs install
+   ```
+
+3. **Install Docker:**
+   Follow [Docker’s installation guide](https://docs.docker.com/engine/install/ubuntu/) for your Linux distribution.
 
 ### Initializing Docker Swarm
 
@@ -217,9 +225,15 @@ LNSP_DATABASE_EXISTS=true
 
 1. Run `./get-cli.sh linux` to download the Instant OpenHIE CLI for Linux.
 
-2. Run `./build-custom-images.sh` to build the necessary project components.
+2. **Fetch Git LFS files** (required before building images):
+   ```bash
+   git lfs pull
+   ```
+   This downloads the actual `.omod` module files and `.sql` database dumps that are tracked by Git LFS. If you skip this step, the Docker image will contain 132-byte LFS pointer stubs instead of the real files, causing OpenMRS modules to silently fail to load at runtime.
 
-3. Run `./build-images.sh` to build the Docker images for the HIE deployment.
+3. Run `./build-custom-images.sh` to build the necessary Docker images.
+
+4. Run `./build-images.sh` to build the management Docker image for the HIE deployment.
 
 
 ### 4. Configure the Project
@@ -228,7 +242,10 @@ LNSP_DATABASE_EXISTS=true
 
 ### 5. Deploy the Project
 
-1. Run `./instant project up --env-file .env` to deploy the project.
+1. Run `./instant project init --env-file .env` to do the **first-time** full deployment.
+   `init` runs certificate provisioning, importers, and initial configuration. Use this only once per clean environment.
+
+   > For subsequent starts after a `down`, use `./instant project up --env-file .env` instead (see [Stopping and Cleaning Up](#stopping-and-cleaning-up)).
 
 ### 6. Manage individual packages
 
@@ -347,36 +364,96 @@ Each package listed in the configuration file corresponds to a containerized mod
 
 ## Summary of Deployment Steps
 
-1. **Clone the Repository:**  
-   ```bash
-   git clone https://github.com/your-org/sedish-haiti.git
-   cd sedish-haiti
-   ```
+### First-Time / Fresh Deploy (New Server)
 
-2. **Set Up the Environment:**  
-   Ensure your `.env` file is correctly configured (see sample above).
+#### Step 1 — Provision and prepare the server
+```bash
+sudo apt update && sudo apt upgrade -y
+```
+Minimum recommended specs: **8 GB RAM**, sufficient disk for Docker images and volumes.
 
-3. **Initialize Docker Swarm (if not already):**  
-   ```bash
-   docker swarm init
-   ```
+#### Step 2 — Install Git, Git LFS, and Docker
+```bash
+# Git
+sudo apt install -y git
 
-4. **Deploy the Instant Project:**  
-   Use the instant OpenHIE CLI command to start the project:
-   ```bash
-   ./instant project up --env-file .env
-   ```
-   This command will:
-   - Pull the required Docker images.
-   - Create Docker services for each package.
-   - Mount logs to the specified logPath (e.g., `/tmp/logs`).
+# Git LFS — CRITICAL: without this, .omod and .sql files will be 132-byte pointer stubs
+curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+sudo apt-get install -y git-lfs
+git lfs install
+```
+Install Docker by following the [official Docker CE guide](https://docs.docker.com/engine/install/ubuntu/).
 
-5. **Verify Deployment:**  
-   Check service status with:
-   ```bash
-   docker service ls
-   ```
-   And review logs (e.g., via `docker logs <service_name>`) to ensure each component is running correctly.
+#### Step 3 — Initialize Docker Swarm
+```bash
+docker swarm init
+```
+
+#### Step 4 — Clone the repository
+```bash
+git clone https://github.com/I-TECH-UW/sedish-haiti.org.git
+cd sedish-haiti.org
+```
+
+#### Step 5 — Pull Git LFS files (must happen after clone)
+```bash
+git lfs pull
+```
+Verify the `.omod` files are real — they should be megabytes, **not** 132 bytes:
+```bash
+ls -lh packages/emr-isanteplus/config/custom_modules/
+```
+If any file shows `132` bytes it is still a pointer stub — re-run `git lfs pull`.
+
+#### Step 6 — Configure `.env`
+```bash
+cp .env.hie .env
+# Edit .env: set DOMAIN_NAME, SUBDOMAINS, RENEWAL_EMAIL, and any site-specific values
+```
+See the sample `.env` in the [Project Structure](#2-explore-project-structure) section above.
+
+#### Step 7 — Download the Instant OpenHIE CLI
+```bash
+./get-cli.sh linux
+```
+
+#### Step 8 — Create required host directories
+```bash
+sudo mkdir -p /backups/elasticsearch
+```
+The Elasticsearch analytics service requires this directory to exist as a bind mount for snapshots.
+
+#### Step 9 — Build Docker images
+```bash
+./build-custom-images.sh   # builds isanteplus-mysql, analytics elasticsearch, and other custom images
+./build-image.sh           # builds the management/deployment image
+```
+
+#### Step 10 — Deploy (first time only)
+```bash
+./instant project init --env-file .env
+```
+This provisions SSL certificates, runs all importers (OpenHIM channels/clients, HAPI FHIR database, etc.), and starts all services. **Use `init` only once per clean environment.**
+
+#### Step 11 — Verify deployment
+```bash
+docker service ls
+```
+All services should show `1/1` (or their expected replica count). Check logs for any failures:
+```bash
+docker service logs <service_name>
+```
+
+---
+
+### Known Gotchas on a Fresh Server
+
+| Issue | Symptom | Fix |
+|---|---|---|
+| Git LFS not installed before clone | `.omod` files are 132 bytes; OpenMRS returns HTTP 404 on home page | `git lfs pull`, then rebuild: `./build-custom-images.sh` and force-update the service |
+| `hapi` database not created | HAPI FHIR crashes with `FATAL: database "hapi" does not exist` | `docker exec <postgres-container> psql -U postgres -c "CREATE DATABASE hapi;"` then `docker service update --force hapi-fhir_hapi-fhir` |
+| OpenHIM importer uses wrong password | Channels/clients/mediators not imported (401 errors in logs) | Default password is `instant101` — already corrected in this repo |
+| nginx ports missing after `up` | Subdomains unreachable after restart | See the manual restore command in [Stopping and Cleaning Up](#stopping-and-cleaning-up) |
 
 ---
 
@@ -467,6 +544,105 @@ This project supports two methods for managing SSL/TLS certificates for HTTPS, p
   - Test data flows between components (e.g., send test FHIR messages through OpenHIM and verify reception in HAPI FHIR).
   
 ---
+
+## Stopping and Cleaning Up
+
+### Deployment Lifecycle
+
+| Command | When to use | Volumes preserved? |
+|---|---|---|
+| `./instant project init --env-file .env` | First-time deploy on a clean environment | N/A |
+| `./instant project down --env-file .env` | Stop all services, keep data | Yes |
+| `./instant project up --env-file .env` | Restart after a `down` | Yes |
+| `./instant package down -n <name> --env-file .env` | Stop one package only | Yes |
+| `./instant package up -n <name> --env-file .env` | Restart one package after a `down` | Yes |
+| `sudo bash purge-local.sh` | Full wipe — destroy everything | **No** |
+
+---
+
+### Scenario A — Change a single package and redeploy it
+
+Use this when you've edited config files, scripts, or environment variables for one component and don't want to restart everything.
+
+```bash
+# 1. Stop just the package you changed
+./instant package down -n <package-name> --env-file .env
+
+# 2. Make your changes (edit files, update .env, etc.)
+
+# 3. Bring that package back up
+./instant package up -n <package-name> --env-file .env
+```
+
+Package names match the folder names under `packages/` and `projects/`, e.g.:
+- `interoperability-layer-openhim`
+- `fhir-datastore-hapi-fhir`
+- `emr-isanteplus`
+- `client-registry-opencr`
+- `reverse-proxy-nginx`
+
+**If your change involves rebuilding a Docker image** (e.g. you changed a Dockerfile or updated `.omod` files in `emr-isanteplus`):
+```bash
+# Rebuild the image first
+./build-custom-images.sh
+
+# Then force the service to use the new image
+docker service update --force --image <image-name>:<tag> <stack>_<service>
+# Example:
+docker service update --force --image itechuw/docker-isanteplus-server:local-2 isanteplus_isanteplus
+```
+> You do **not** need to `down` the package first for an image-only update — `--force` triggers a rolling restart with the new image.
+
+---
+
+### Scenario B — Stop everything, make changes, restart all
+
+Use this when you've made cross-cutting changes (e.g. `.env` variables that affect multiple services).
+
+```bash
+# 1. Stop all services (volumes are preserved)
+./instant project down --env-file .env
+
+# 2. Make your changes
+
+# 3. Restart all services
+./instant project up --env-file .env
+```
+
+> **Known issue — nginx SSL ports after `up`:** The `up` command re-runs the nginx setup, which can leave nginx without its published ports (80/443) and SSL certificates. After every `up`, check that subdomains are reachable. If not, restore nginx manually:
+> ```bash
+> # Find the most recent cert/config timestamp
+> docker secret ls | grep fullchain
+> docker config ls | grep nginx
+>
+> # Restore nginx with the latest timestamp
+> TIMESTAMP=<latest-timestamp>
+> docker service update \
+>   --config-add source=${TIMESTAMP}-nginx.conf,target=/etc/nginx/nginx.conf \
+>   --secret-add source=${TIMESTAMP}-fullchain.pem,target=/run/secrets/fullchain.pem \
+>   --secret-add source=${TIMESTAMP}-privkey.pem,target=/run/secrets/privkey.pem \
+>   --publish-add published=80,target=80 \
+>   --publish-add published=443,target=443 \
+>   reverse-proxy_reverse-proxy-nginx
+> ```
+
+---
+
+### Scenario C — Full reset (wipe everything and start fresh)
+
+Use this only when you want to destroy all data and start from zero.
+
+```bash
+sudo bash purge-local.sh
+```
+
+> **Important:**
+> - Run as `sudo bash purge-local.sh`, **not** `sudo ./purge-local.sh`. The script waits for all containers to fully stop before returning, so it is safe to run `./instant project init` immediately after.
+> - This is **irreversible** — all persistent data (databases, certificates, configs) will be deleted.
+> - After a purge, follow the [First-Time / Fresh Deploy](#first-time--fresh-deploy-new-server) steps above, starting from `./build-custom-images.sh`.
+
+---
+
 
 ## Troubleshooting & Logging
 
