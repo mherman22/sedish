@@ -15,7 +15,9 @@ fhirdata:
   dwhRootPrefix: "/dwh/pipeline_DWH"
   generateParquetFiles: false
 
-  # Incremental pipeline schedule — "0 0 * * * *" = every hour
+  # Pipeline schedule — incremental sync every 5 minutes
+  # To force a full sync, trigger manually:
+  #   for port in 8095 8096 8097 8098; do curl -X POST "http://localhost:${port}/run?runMode=FULL"; done
   incrementalSchedule: "0 */5 * * * *"
   purgeSchedule: "0 */10 * * * *"
   numOfDwhSnapshotsToRetain: 2
