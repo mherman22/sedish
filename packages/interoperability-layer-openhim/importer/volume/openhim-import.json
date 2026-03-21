@@ -90,7 +90,6 @@
       "methods": [
         "GET",
         "POST",
-        "DELETE",
         "PUT"
       ],
       "type": "http",
@@ -452,7 +451,7 @@
         "test"
       ],
       "whitelist": [],
-      "authType": "public",
+      "authType": "private",
       "routes": [
         {
           "name": "LNSP passthrough",

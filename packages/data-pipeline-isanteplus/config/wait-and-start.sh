@@ -7,7 +7,7 @@
 
 set -e
 
-# Extract fhirServerUrl from the config or env var override
+# Extract fhirServerUrl from env var override first, then config file
 FHIR_URL="${fhirdata_fhirServerUrl:-}"
 if [ -z "$FHIR_URL" ]; then
   FHIR_URL=$(grep 'fhirServerUrl' /app/config/application.yaml | head -1 | sed 's/.*"\(.*\)".*/\1/')
@@ -36,11 +36,17 @@ while [ $WAITED -lt $MAX_WAIT ]; do
 done
 
 if [ $WAITED -ge $MAX_WAIT ]; then
-  echo "WARNING: FHIR source did not become ready after ${MAX_WAIT}s. Starting pipeline anyway."
+  echo "ERROR: FHIR source did not become ready after ${MAX_WAIT}s. Exiting."
+  exit 1
 fi
 
-# Clear DWH so the first run is a full sync (not incremental against stale data)
-DWH_PREFIX=$(grep 'dwhRootPrefix' /app/config/application.yaml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+# Clear DWH so the first run is a full sync (not incremental against stale data).
+# Read prefix from env var first (each pipeline overrides this), fallback to config.
+DWH_PREFIX="${fhirdata_dwhRootPrefix:-}"
+if [ -z "$DWH_PREFIX" ]; then
+  DWH_PREFIX=$(grep 'dwhRootPrefix' /app/config/application.yaml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+fi
+
 if [ -n "$DWH_PREFIX" ] && [ -d "$DWH_PREFIX" ]; then
   echo "Clearing stale DWH at $DWH_PREFIX to force initial full run"
   rm -rf "${DWH_PREFIX}"*

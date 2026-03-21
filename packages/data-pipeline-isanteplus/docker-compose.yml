@@ -9,6 +9,7 @@ services:
       - FLINK_CONF_DIR=/app/config
       - fhirdata.fhirServerUrl=http://isanteplus:8080/openmrs/ws/fhir2/R4
       - fhirdata.dwhRootPrefix=/dwh/pipeline_DWH
+      - fhirdata.incrementalSchedule=0 0/5 * * * *
     configs:
       - source: application_yaml
         target: /app/config/application.yaml
@@ -24,6 +25,15 @@ services:
         published: 8095
         protocol: tcp
         mode: host
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+      resources:
+        limits:
+          memory: 3G
+        reservations:
+          memory: 2G
     networks:
       - openhim
       - shr
@@ -38,6 +48,7 @@ services:
       - FLINK_CONF_DIR=/app/config
       - fhirdata.fhirServerUrl=http://isanteplus2:8080/openmrs/ws/fhir2/R4
       - fhirdata.dwhRootPrefix=/dwh/pipeline_DWH2
+      - fhirdata.incrementalSchedule=0 1/5 * * * *
     configs:
       - source: application_yaml
         target: /app/config/application.yaml
@@ -53,6 +64,15 @@ services:
         published: 8096
         protocol: tcp
         mode: host
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+      resources:
+        limits:
+          memory: 3G
+        reservations:
+          memory: 2G
     networks:
       - openhim
       - shr
@@ -67,6 +87,7 @@ services:
       - FLINK_CONF_DIR=/app/config
       - fhirdata.fhirServerUrl=http://isanteplus3:8080/openmrs/ws/fhir2/R4
       - fhirdata.dwhRootPrefix=/dwh/pipeline_DWH3
+      - fhirdata.incrementalSchedule=0 2/5 * * * *
     configs:
       - source: application_yaml
         target: /app/config/application.yaml
@@ -82,6 +103,15 @@ services:
         published: 8097
         protocol: tcp
         mode: host
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+      resources:
+        limits:
+          memory: 3G
+        reservations:
+          memory: 2G
     networks:
       - openhim
       - shr
@@ -96,6 +126,7 @@ services:
       - FLINK_CONF_DIR=/app/config
       - fhirdata.fhirServerUrl=http://isanteplus4:8080/openmrs/ws/fhir2/R4
       - fhirdata.dwhRootPrefix=/dwh/pipeline_DWH4
+      - fhirdata.incrementalSchedule=0 3/5 * * * *
     configs:
       - source: application_yaml
         target: /app/config/application.yaml
@@ -111,6 +142,15 @@ services:
         published: 8098
         protocol: tcp
         mode: host
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+      resources:
+        limits:
+          memory: 3G
+        reservations:
+          memory: 2G
     networks:
       - openhim
       - shr

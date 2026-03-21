@@ -19,7 +19,6 @@ echo "Applying HAPI FHIR configuration overrides..."
 docker service update --detach \
   --env-add "hapi.fhir.enforce_referential_integrity_on_write=false" \
   --env-add "hapi.fhir.auto_create_placeholder_reference_targets=true" \
-  --env-add "hapi.fhir.allow_multiple_delete=true" \
   --env-add "hapi.fhir.client_id_strategy=ANY" \
   --env-add "hapi.fhir.server_address=https://shr.${DOMAIN_NAME}/fhir" \
   hapi-fhir_hapi-fhir
