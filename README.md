@@ -99,7 +99,7 @@ sudo mkdir -p /backups/elasticsearch /tmp/backups
 docker service ls
 ```
 
-> iSantePlus instances take **5–10 minutes** to fully boot. Wait for the login page to load before testing data flows.
+> iSantePlus instances take **5–10 minutes** to fully boot. The data pipelines automatically wait for their respective iSantePlus instance to be ready before starting.
 
 ---
 
@@ -201,10 +201,10 @@ done
 ```
 
 > **When to run this:**
-> - After initial deployment (to create the DWH baseline)
-> - After adding new iSantePlus instances
 > - If incremental runs show "0 secs" despite new data existing
-> - After any pipeline redeployment (`docker stack rm pipeline && docker stack deploy ...`)
+> - After adding new iSantePlus instances
+>
+> Note: after a fresh deployment, the pipeline automatically waits for iSantePlus to boot and runs a full sync on first start — no manual trigger needed.
 
 ### Resource Types Synced
 

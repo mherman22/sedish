@@ -1,0 +1,50 @@
+#!/bin/bash
+# Wrapper entrypoint for fhir-data-pipes that waits for the FHIR source
+# (iSantePlus) to be ready before starting the pipeline. This prevents
+# the pipeline from creating a corrupt/empty DWH baseline when iSantePlus
+# is still booting, which would cause all subsequent incremental runs to
+# report "0 secs" with no data synced.
+
+set -e
+
+# Extract fhirServerUrl from the config or env var override
+FHIR_URL="${fhirdata_fhirServerUrl:-}"
+if [ -z "$FHIR_URL" ]; then
+  FHIR_URL=$(grep 'fhirServerUrl' /app/config/application.yaml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+fi
+
+FHIR_USER=$(grep 'fhirServerUserName' /app/config/application.yaml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+FHIR_PASS=$(grep 'fhirServerPassword' /app/config/application.yaml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+
+echo "Waiting for FHIR source to be ready: $FHIR_URL"
+
+MAX_WAIT=600  # 10 minutes max
+WAITED=0
+INTERVAL=10
+
+while [ $WAITED -lt $MAX_WAIT ]; do
+  RESPONSE=$(curl -sf -u "${FHIR_USER}:${FHIR_PASS}" -o /dev/null -w "%{http_code}" "${FHIR_URL}/metadata" 2>/dev/null || echo "000")
+
+  if [ "$RESPONSE" = "200" ]; then
+    echo "FHIR source is ready (HTTP 200 after ${WAITED}s)"
+    break
+  fi
+
+  echo "FHIR source not ready (HTTP $RESPONSE), retrying in ${INTERVAL}s... (${WAITED}/${MAX_WAIT}s)"
+  sleep $INTERVAL
+  WAITED=$((WAITED + INTERVAL))
+done
+
+if [ $WAITED -ge $MAX_WAIT ]; then
+  echo "WARNING: FHIR source did not become ready after ${MAX_WAIT}s. Starting pipeline anyway."
+fi
+
+# Clear DWH so the first run is a full sync (not incremental against stale data)
+DWH_PREFIX=$(grep 'dwhRootPrefix' /app/config/application.yaml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+if [ -n "$DWH_PREFIX" ] && [ -d "$DWH_PREFIX" ]; then
+  echo "Clearing stale DWH at $DWH_PREFIX to force initial full run"
+  rm -rf "${DWH_PREFIX}"*
+fi
+
+# Hand off to the original entrypoint
+exec /docker-entrypoint.sh

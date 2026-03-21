@@ -3,6 +3,7 @@ version: "3.9"
 services:
   streaming-pipeline:
     image: us-docker.pkg.dev/cloud-build-fhir/fhir-analytics/main:latest
+    entrypoint: /app/config/wait-and-start.sh
     environment:
       - JAVA_OPTS=-Xms2g -Xmx2g
       - FLINK_CONF_DIR=/app/config
@@ -13,6 +14,9 @@ services:
         target: /app/config/application.yaml
       - source: flink_conf_yaml
         target: /app/config/flink-conf.yaml
+      - source: wait_and_start
+        target: /app/config/wait-and-start.sh
+        mode: 0755
     volumes:
       - pipeline-dwh:/dwh
     ports:
@@ -28,6 +32,7 @@ services:
 
   streaming-pipeline-2:
     image: us-docker.pkg.dev/cloud-build-fhir/fhir-analytics/main:latest
+    entrypoint: /app/config/wait-and-start.sh
     environment:
       - JAVA_OPTS=-Xms2g -Xmx2g
       - FLINK_CONF_DIR=/app/config
@@ -38,6 +43,9 @@ services:
         target: /app/config/application.yaml
       - source: flink_conf_yaml
         target: /app/config/flink-conf.yaml
+      - source: wait_and_start
+        target: /app/config/wait-and-start.sh
+        mode: 0755
     volumes:
       - pipeline-dwh-2:/dwh
     ports:
@@ -53,6 +61,7 @@ services:
 
   streaming-pipeline-3:
     image: us-docker.pkg.dev/cloud-build-fhir/fhir-analytics/main:latest
+    entrypoint: /app/config/wait-and-start.sh
     environment:
       - JAVA_OPTS=-Xms2g -Xmx2g
       - FLINK_CONF_DIR=/app/config
@@ -63,6 +72,9 @@ services:
         target: /app/config/application.yaml
       - source: flink_conf_yaml
         target: /app/config/flink-conf.yaml
+      - source: wait_and_start
+        target: /app/config/wait-and-start.sh
+        mode: 0755
     volumes:
       - pipeline-dwh-3:/dwh
     ports:
@@ -78,6 +90,7 @@ services:
 
   streaming-pipeline-4:
     image: us-docker.pkg.dev/cloud-build-fhir/fhir-analytics/main:latest
+    entrypoint: /app/config/wait-and-start.sh
     environment:
       - JAVA_OPTS=-Xms2g -Xmx2g
       - FLINK_CONF_DIR=/app/config
@@ -88,6 +101,9 @@ services:
         target: /app/config/application.yaml
       - source: flink_conf_yaml
         target: /app/config/flink-conf.yaml
+      - source: wait_and_start
+        target: /app/config/wait-and-start.sh
+        mode: 0755
     volumes:
       - pipeline-dwh-4:/dwh
     ports:
@@ -112,6 +128,11 @@ configs:
     name: pipeline_flink_conf_yaml
     labels:
       name: pipeline_flink_conf_yaml
+  wait_and_start:
+    file: ./config/wait-and-start.sh
+    name: pipeline_wait_and_start
+    labels:
+      name: pipeline_wait_and_start
 
 volumes:
   pipeline-dwh:
