@@ -13,9 +13,7 @@ if [ -z "$FHIR_URL" ]; then
   FHIR_URL=$(grep 'fhirServerUrl' /app/config/application.yaml | head -1 | sed 's/.*"\(.*\)".*/\1/')
 fi
 
-FHIR_USER=$(grep 'fhirServerUserName' /app/config/application.yaml | head -1 | sed 's/.*"\(.*\)".*/\1/')
-FHIR_PASS=$(grep 'fhirServerPassword' /app/config/application.yaml | head -1 | sed 's/.*"\(.*\)".*/\1/')
-
+# No auth needed — the gateway proxy injects credentials
 echo "Waiting for FHIR source to be ready: $FHIR_URL"
 
 MAX_WAIT=600  # 10 minutes max
@@ -23,7 +21,7 @@ WAITED=0
 INTERVAL=10
 
 while [ $WAITED -lt $MAX_WAIT ]; do
-  RESPONSE=$(curl -sf -u "${FHIR_USER}:${FHIR_PASS}" -o /dev/null -w "%{http_code}" "${FHIR_URL}/metadata" 2>/dev/null || echo "000")
+  RESPONSE=$(curl -sf -o /dev/null -w "%{http_code}" "${FHIR_URL}/metadata" 2>/dev/null || echo "000")
 
   if [ "$RESPONSE" = "200" ]; then
     echo "FHIR source is ready (HTTP 200 after ${WAITED}s)"
@@ -40,17 +38,22 @@ if [ $WAITED -ge $MAX_WAIT ]; then
   exit 1
 fi
 
-# Clear DWH so the first run is a full sync (not incremental against stale data).
-# Read prefix from env var first (each pipeline overrides this), fallback to config.
+# Check if a DWH baseline exists. If not, the first scheduled run will
+# automatically be a full sync. Do NOT clear existing DWH on restart —
+# that would force a multi-hour re-sync of all data.
 DWH_PREFIX="${fhirdata_dwhRootPrefix:-}"
 if [ -z "$DWH_PREFIX" ]; then
   DWH_PREFIX=$(grep 'dwhRootPrefix' /app/config/application.yaml | head -1 | sed 's/.*"\(.*\)".*/\1/')
 fi
 
-if [ -n "$DWH_PREFIX" ] && [ -d "$DWH_PREFIX" ]; then
-  echo "Clearing stale DWH at $DWH_PREFIX to force initial full run"
-  rm -rf "${DWH_PREFIX}"*
+if [ -n "$DWH_PREFIX" ] && [ -d "/dwh" ] && [ -z "$(ls -A /dwh/ 2>/dev/null)" ]; then
+  echo "No DWH baseline found — first run will be a full sync"
+else
+  echo "Existing DWH found — incremental runs will resume"
 fi
+
+# Ensure Spring Boot reads from our config directory
+export SPRING_CONFIG_LOCATION="file:/app/config/application.yaml"
 
 # Hand off to the original entrypoint
 exec /docker-entrypoint.sh

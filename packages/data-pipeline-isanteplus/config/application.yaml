@@ -1,23 +1,22 @@
 fhirdata:
   fhirFetchMode: "FHIR_SEARCH"
 
-  # This is where you set where the Data is fetched from.
-  fhirServerUrl: "http://isanteplus:8080/openmrs/ws/fhir2/R4"
-  fhirServerUserName: "admin"
-  fhirServerPassword: "Admin123"
+  # Source FHIR server — routed through the auth-injecting gateway proxy.
+  # The gateway adds Basic auth headers because fhir-data-pipes Flink workers
+  # cannot pass credentials (they are not serialized in Beam PipelineOptions).
+  # Each pipeline instance overrides this URL via env var to point to a different
+  # iSantePlus instance through the gateway.
+  fhirServerUrl: "http://gateway:8090/isanteplus/openmrs/ws/fhir2/R4"
 
-  # This is where you set where the Data is sent to.
-  sinkFhirServerUrl: "http://openhim-core:5001/SHR/fhir"
-  sinkUserName: "shr-pipeline"
-  sinkPassword: "instant101"
+  # Sink — writes directly to HAPI FHIR (no auth required, no OpenHIM needed).
+  # OpenHIM is for external API governance, not internal ETL pipelines.
+  sinkFhirServerUrl: "http://hapi-fhir:8080/fhir"
   sinkDbConfigPath:
 
   dwhRootPrefix: "/dwh/pipeline_DWH"
   generateParquetFiles: false
 
   # Pipeline schedule — incremental sync every 5 minutes
-  # To force a full sync, trigger manually:
-  #   for port in 8095 8096 8097 8098; do curl -X POST "http://localhost:${port}/run?runMode=FULL"; done
   incrementalSchedule: "0 */5 * * * *"
   purgeSchedule: "0 */10 * * * *"
   numOfDwhSnapshotsToRetain: 2

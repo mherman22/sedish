@@ -29,8 +29,8 @@ while [ $WAITED -lt $MAX_WAIT ]; do
 done
 
 if [ $WAITED -ge $MAX_WAIT ]; then
-  echo "[post-start] WARNING: OpenMRS did not become ready after ${MAX_WAIT}s. Skipping configuration."
-  exit 0
+  echo "[post-start] ERROR: OpenMRS did not become ready after ${MAX_WAIT}s. Per-instance config NOT applied."
+  exit 1
 fi
 
 set_property() {
@@ -50,8 +50,11 @@ set_property "mpi-client.pid.local" "http://${INSTANCE}/ws/fhir2/pid/openmrsid/"
 set_property "mpi-client.msg.sendingApplication" "${INSTANCE}"
 # 3. MPI client auth token — must match the OpenHIM client ID for this instance
 set_property "mpi-client.security.authtoken" "${INSTANCE}"
-# 4. FHIR2 URI prefix — makes identifier systems unique per instance
-set_property "fhir2.uriPrefix" "http://${INSTANCE}.sedishtest.live/openmrs/fhir2"
+# 4. FHIR2 URI prefix — makes identifier systems unique per instance AND
+# routes FHIR pagination links through the pipeline gateway (which injects auth).
+# This is required because fhir-data-pipes Flink workers follow pagination next
+# links and need them to go through the auth-injecting gateway.
+set_property "fhir2.uriPrefix" "http://gateway:8090/${INSTANCE}/openmrs/fhir2"
 
 # XDS-Sender endpoints and credentials
 set_property "xdssender.exportCcdEndpoint" "https://${DOMAIN}/SHR/fhir"

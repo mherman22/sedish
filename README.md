@@ -177,6 +177,175 @@ Each HIE component is deployed as a package. Use the `instant` CLI to manage the
 
 ---
 
+## Adding a New iSantePlus Instance
+
+Each iSantePlus instance requires configuration across **5 components** to ensure patients from different facilities are not merged in OpenCR. Here's the complete checklist for adding instance N (e.g., `isanteplus5`):
+
+### Step 1 — MySQL database
+
+The `projects/isanteplus-db/initdb/10-create-dbs.sh` script automatically creates databases `openmrs`, `openmrs2`, ..., `openmrsN` on first boot. Set `OPENMRS_DB_COUNT` in `.env` to cover the number of instances.
+
+The `20-configure-per-instance.sh` script sets per-instance global properties on fresh databases. For existing databases, the `post-start.sh` script (baked into the image) handles this automatically.
+
+### Step 2 — OpenHIM client
+
+Each instance needs its own OpenHIM client so OpenCR can distinguish patient sources. Add to `packages/interoperability-layer-openhim/importer/volume/openhim-import.json`:
+
+```json
+{
+  "roles": ["emr"],
+  "clientID": "isanteplusN",
+  "name": "isanteplusN",
+  "passwordAlgorithm": "sha512",
+  "passwordSalt": "<salt>",
+  "passwordHash": "<hash>"
+}
+```
+
+Generate the hash (password = clientID):
+
+```python
+python3 -c "
+import hashlib, os
+password = 'isanteplusN'
+salt = os.urandom(16).hex()
+print(f'passwordSalt: {salt}')
+print(f'passwordHash: {hashlib.sha512((password + salt).encode()).hexdigest()}')
+"
+```
+
+For an **existing** deployment, also create the client via the API:
+
+```bash
+curl -sk -u 'root@openhim.org:instant101' -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{"clientID":"isanteplusN","name":"isanteplusN","roles":["emr"],"passwordAlgorithm":"sha512","passwordSalt":"<salt>","passwordHash":"<hash>"}' \
+  https://openhimcore.<domain>/clients
+```
+
+### Step 3 — iSantePlus docker-compose
+
+Add the new service to `packages/emr-isanteplus/docker-compose.yml`, following the pattern of existing instances. Key differences per instance:
+
+```yaml
+isanteplusN:
+  image: itechuw/docker-isanteplus-server:local-2
+  environment:
+    - OMRS_CONFIG_CONNECTION_URL=${OMRS_CONFIG_CONNECTION_URL_N}  # jdbc:mysql://mysql:3306/openmrsN
+    - OMRS_CONFIG_CONNECTION_USERNAME=${OMRS_CONFIG_CONNECTION_USERNAME_N}
+    - OMRS_CONFIG_CONNECTION_PASSWORD=${OMRS_CONFIG_CONNECTION_PASSWORD_N}
+    - ISANTEPLUS_INSTANCE=isanteplusN   # CRITICAL: unique per instance
+  volumes:
+    - isanteplusN-data:/openmrs/data    # unique volume per instance
+  networks:
+    - public
+    - reverse-proxy
+    - mysql
+    - openhim
+```
+
+The `ISANTEPLUS_INSTANCE` env var drives the `post-start.sh` script which automatically sets:
+
+| Property | Value | Purpose |
+|----------|-------|---------|
+| `mpi-client.pid.local` | `http://isanteplusN/ws/fhir2/pid/openmrsid/` | Unique MPI identifier system |
+| `mpi-client.msg.sendingApplication` | `isanteplusN` | Source tag in OpenCR |
+| `mpi-client.security.authtoken` | `isanteplusN` | OpenHIM client auth |
+| `fhir2.uriPrefix` | `http://isanteplusN.sedishtest.live/openmrs/fhir2` | Unique FHIR identifier systems |
+| `xdssender.oshr.username` | `isanteplusN` | OpenHIM client for SHR push |
+| `xdssender.oshr.password` | `isanteplusN` | Must match the OpenHIM client hash |
+
+### Step 4 — Nginx reverse proxy
+
+Add a server block to `packages/reverse-proxy-nginx/package-conf-secure/http-isanteplus-secure.conf`:
+
+```nginx
+server {
+    listen 80;
+    server_name  facilityname.*;
+    location / { return 301 https://$host$request_uri; }
+}
+server {
+    listen 443 ssl;
+    server_name  facilityname.*;
+    location / {
+        resolver 127.0.0.11 valid=30s;
+        set $upstream_isanteplusN isanteplusN;
+        proxy_pass http://$upstream_isanteplusN:8080;
+    }
+}
+```
+
+Add the subdomain to `SUBDOMAINS` in `.env`:
+
+```
+SUBDOMAINS=...,facilityname.sedishtest.live
+```
+
+### Step 5 — Data pipeline
+
+Add a new pipeline service to `packages/data-pipeline-isanteplus/docker-compose.yml`:
+
+```yaml
+streaming-pipeline-N:
+  image: us-docker.pkg.dev/cloud-build-fhir/fhir-analytics/main:latest
+  entrypoint: /app/config/wait-and-start.sh
+  environment:
+    - JAVA_OPTS=-Xms2g -Xmx2g
+    - FLINK_CONF_DIR=/app/config
+    - fhirdata.fhirServerUrl=http://isanteplusN:8080/openmrs/ws/fhir2/R4
+    - fhirdata.dwhRootPrefix=/dwh/pipeline_DWHN
+    - fhirdata.incrementalSchedule=0 N/5 * * * *   # stagger: offset by N minutes
+  configs:
+    - source: application_yaml
+      target: /app/config/application.yaml
+    - source: flink_conf_yaml
+      target: /app/config/flink-conf.yaml
+    - source: wait_and_start
+      target: /app/config/wait-and-start.sh
+      mode: 0755
+  volumes:
+    - pipeline-dwh-N:/dwh
+  ports:
+    - target: 8080
+      published: 809N    # unique host port
+      protocol: tcp
+      mode: host
+```
+
+Add the volume under `volumes:` and redeploy:
+
+```bash
+docker stack rm pipeline && sleep 10
+docker stack deploy -c packages/data-pipeline-isanteplus/docker-compose.yml pipeline
+```
+
+### Step 6 — .env variables
+
+Add the database connection variables for the new instance:
+
+```
+OMRS_CONFIG_CONNECTION_URL_N=jdbc:mysql://mysql:3306/openmrsN?autoReconnect=true
+OMRS_CONFIG_CONNECTION_USERNAME_N=openmrsN
+OMRS_CONFIG_CONNECTION_PASSWORD_N=dev_password_only
+```
+
+Add the subdomain mapping:
+
+```
+SUBDOMAIN_CORE_ISANTEPLUSN=facilityname
+```
+
+### Why all this is needed
+
+OpenCR determines patient identity using a combination of:
+- **Source tag** (OpenHIM clientID) — which facility the patient came from
+- **Identifier system + value** — e.g., `http://isanteplusN.../3-isanteplus-id` = `1000NG`
+
+If two instances share the same clientID and identifier system, OpenCR treats patients with the same ID value (e.g., `1000NG`) as the same person and **overwrites** the record. Each instance must have unique values for all of these to prevent cross-facility patient merging.
+
+---
+
 ## Data Pipeline
 
 The FHIR Data Pipeline runs **4 instances** — one per iSantePlus site — syncing data to the SHR every 5 minutes.

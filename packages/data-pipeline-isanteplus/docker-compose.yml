@@ -1,15 +1,26 @@
 version: "3.9"
 
 services:
+  # Auth-injecting gateway proxy for iSantePlus FHIR endpoints.
+  # The fhir-data-pipes Flink workers cannot pass Basic auth credentials,
+  # so this proxy adds the Authorization header before forwarding.
+  gateway:
+    image: nginx:stable
+    configs:
+      - source: gateway_conf
+        target: /etc/nginx/conf.d/default.conf
+    networks:
+      - isanteplus
+
   streaming-pipeline:
     image: us-docker.pkg.dev/cloud-build-fhir/fhir-analytics/main:latest
     entrypoint: /app/config/wait-and-start.sh
     environment:
       - JAVA_OPTS=-Xms2g -Xmx2g
       - FLINK_CONF_DIR=/app/config
-      - fhirdata.fhirServerUrl=http://isanteplus:8080/openmrs/ws/fhir2/R4
+      - fhirdata.fhirServerUrl=http://gateway:8090/isanteplus/openmrs/ws/fhir2/R4
+      - fhirdata.sinkFhirServerUrl=http://hapi-fhir:8080/fhir
       - fhirdata.dwhRootPrefix=/dwh/pipeline_DWH
-      - fhirdata.incrementalSchedule=0 0/5 * * * *
     configs:
       - source: application_yaml
         target: /app/config/application.yaml
@@ -35,9 +46,9 @@ services:
         reservations:
           memory: 2G
     networks:
+      - isanteplus
       - openhim
       - shr
-      - isanteplus
       - hapi-fhir
 
   streaming-pipeline-2:
@@ -46,9 +57,9 @@ services:
     environment:
       - JAVA_OPTS=-Xms2g -Xmx2g
       - FLINK_CONF_DIR=/app/config
-      - fhirdata.fhirServerUrl=http://isanteplus2:8080/openmrs/ws/fhir2/R4
+      - fhirdata.fhirServerUrl=http://gateway:8090/isanteplus2/openmrs/ws/fhir2/R4
+      - fhirdata.sinkFhirServerUrl=http://hapi-fhir:8080/fhir
       - fhirdata.dwhRootPrefix=/dwh/pipeline_DWH2
-      - fhirdata.incrementalSchedule=0 1/5 * * * *
     configs:
       - source: application_yaml
         target: /app/config/application.yaml
@@ -74,9 +85,9 @@ services:
         reservations:
           memory: 2G
     networks:
+      - isanteplus
       - openhim
       - shr
-      - isanteplus
       - hapi-fhir
 
   streaming-pipeline-3:
@@ -85,9 +96,9 @@ services:
     environment:
       - JAVA_OPTS=-Xms2g -Xmx2g
       - FLINK_CONF_DIR=/app/config
-      - fhirdata.fhirServerUrl=http://isanteplus3:8080/openmrs/ws/fhir2/R4
+      - fhirdata.fhirServerUrl=http://gateway:8090/isanteplus3/openmrs/ws/fhir2/R4
+      - fhirdata.sinkFhirServerUrl=http://hapi-fhir:8080/fhir
       - fhirdata.dwhRootPrefix=/dwh/pipeline_DWH3
-      - fhirdata.incrementalSchedule=0 2/5 * * * *
     configs:
       - source: application_yaml
         target: /app/config/application.yaml
@@ -113,9 +124,9 @@ services:
         reservations:
           memory: 2G
     networks:
+      - isanteplus
       - openhim
       - shr
-      - isanteplus
       - hapi-fhir
 
   streaming-pipeline-4:
@@ -124,9 +135,9 @@ services:
     environment:
       - JAVA_OPTS=-Xms2g -Xmx2g
       - FLINK_CONF_DIR=/app/config
-      - fhirdata.fhirServerUrl=http://isanteplus4:8080/openmrs/ws/fhir2/R4
+      - fhirdata.fhirServerUrl=http://gateway:8090/isanteplus4/openmrs/ws/fhir2/R4
+      - fhirdata.sinkFhirServerUrl=http://hapi-fhir:8080/fhir
       - fhirdata.dwhRootPrefix=/dwh/pipeline_DWH4
-      - fhirdata.incrementalSchedule=0 3/5 * * * *
     configs:
       - source: application_yaml
         target: /app/config/application.yaml
@@ -152,9 +163,9 @@ services:
         reservations:
           memory: 2G
     networks:
+      - isanteplus
       - openhim
       - shr
-      - isanteplus
       - hapi-fhir
 
 configs:
@@ -173,6 +184,11 @@ configs:
     name: pipeline_wait_and_start
     labels:
       name: pipeline_wait_and_start
+  gateway_conf:
+    file: ./config/gateway.conf
+    name: pipeline_gateway_conf
+    labels:
+      name: pipeline_gateway_conf
 
 volumes:
   pipeline-dwh:
@@ -186,9 +202,6 @@ networks:
     external: true
   shr:
     name: shr
-    external: true
-  mysql:
-    name: mysql_public
     external: true
   isanteplus:
     name: isanteplus_public
