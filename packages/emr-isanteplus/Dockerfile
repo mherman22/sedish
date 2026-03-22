@@ -17,5 +17,9 @@ RUN chmod +x /usr/local/tomcat/post-start.sh
 
 # Inject the post-start script into startup.sh so it runs in the background
 # after OpenMRS is up but before the final `wait` that holds the container open.
-RUN sed -i '/# bring tomcat process to foreground again/i \
-/usr/local/tomcat/post-start.sh \&\n' /usr/local/tomcat/startup.sh
+# We must capture the Tomcat PID before launching post-start.sh, otherwise
+# `wait ${!}` waits for post-start.sh (which exits quickly) instead of Tomcat.
+RUN sed -i 's|/usr/local/tomcat/bin/catalina.sh run \&|/usr/local/tomcat/bin/catalina.sh run \&\nTOMCAT_PID=$!|' /usr/local/tomcat/startup.sh && \
+    sed -i '/# bring tomcat process to foreground again/i \
+/usr/local/tomcat/post-start.sh \&\n' /usr/local/tomcat/startup.sh && \
+    sed -i 's|wait ${!}|wait $TOMCAT_PID|' /usr/local/tomcat/startup.sh

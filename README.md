@@ -250,16 +250,87 @@ Certificates are automatically provisioned during `init` via Certbot. The `set-s
 ### Rebuild and redeploy after code changes
 
 ```bash
+# If iSantePlus Dockerfile or modules changed:
+docker build -t itechuw/docker-isanteplus-server:local-2 packages/emr-isanteplus/
+
+# If other images changed:
 ./build-custom-images.sh
+
+# Force the service to use the new image:
 docker service update --force --image <image>:<tag> <stack>_<service>
 ```
 
 ### Full teardown and redeploy
 
+This is the most common scenario — stopping everything and restarting. Here's the exact procedure with all post-deploy steps:
+
 ```bash
+# 1. Stop all services
 ./instant project down --env-file .env
+
+# 2. Rebuild images (if code changed)
+docker build -t itechuw/docker-isanteplus-server:local-2 packages/emr-isanteplus/
+./build-image.sh
+
+# 3. Deploy
 ./instant project init --env-file .env
+
+# 4. Apply HAPI FHIR overrides
 ./packages/fhir-datastore-hapi-fhir/post-deploy.sh
+
+# 5. Redeploy the pipeline (instant tooling can't update Docker configs in-place)
+docker stack rm pipeline && sleep 10
+docker stack deploy -c packages/data-pipeline-isanteplus/docker-compose.yml pipeline
+
+# 6. Verify
+docker service ls --format '{{.Name}} {{.Replicas}}' | grep '0/' | grep -v 'await-helper\|config-importer'
+```
+
+#### Expected errors during `project init` (safe to ignore)
+
+| Error | Reason | Impact |
+|-------|--------|--------|
+| OpenHIM config importer fails with "Incorrect credentials" | MongoDB data persists across `down`/`init` — the password was already changed from default on a previous init | None — channels/clients are already configured |
+| Pipeline "Wrong configuration" | Docker configs are immutable; the instant tooling can't update existing configs with new content | Fixed by step 5 above (`docker stack rm` + `deploy`) |
+| ElasticSearch "Failed to set elastic passwords" | Passwords already set from previous init | None — ES is running |
+| LNSP mediator timeout | Non-critical lab integration service | None for core HIE |
+
+#### Post-deploy verification checklist
+
+```bash
+# All services should be 1/1 (except await-helper and config-importer at 0/1)
+docker service ls
+
+# SSL cert should show real Let's Encrypt issuer (not STAGING)
+docker exec $(docker ps -q -f name=reverse-proxy_reverse-proxy-nginx) \
+  openssl x509 -in /run/secrets/fullchain.pem -noout -issuer -dates
+
+# HAPI FHIR overrides should be set
+docker service inspect hapi-fhir_hapi-fhir \
+  --format '{{range .Spec.TaskTemplate.ContainerSpec.Env}}{{println .}}{{end}}' \
+  | grep -E 'referential|client_id|server_address'
+
+# OpenHIM should have channels configured
+docker exec $(docker ps -q -f name=openhim_openhim-core.1) \
+  curl -sk -u 'root@openhim.org:instant101' https://localhost:8080/channels \
+  | python3 -c "import sys,json; print(f'{len(json.load(sys.stdin))} channels')"
+
+# Wait for iSantePlus to boot (~5-10 min), then verify per-instance config
+for svc in isanteplus isanteplus2 isanteplus3; do
+  pid=$(docker exec $(docker ps -q -f name=isanteplus_${svc}.1) \
+    curl -s -u 'admin:Admin123' \
+    "http://localhost:8080/openmrs/ws/rest/v1/systemsetting/mpi-client.pid.local" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('value','NOT READY'))" 2>/dev/null)
+  echo "$svc: $pid"
+done
+
+# Trigger full pipeline sync (after iSantePlus is fully booted)
+for port in 8095 8096 8097 8098; do
+  curl -X POST "http://localhost:${port}/run?runMode=FULL"
+done
+
+# Verify SHR is accessible
+curl -s https://shr.<your-domain>/fhir/Patient | head -c 100
 ```
 
 ### Complete wipe (destroys all data)
@@ -268,6 +339,8 @@ docker service update --force --image <image>:<tag> <stack>_<service>
 sudo bash purge-local.sh
 # Then follow Quick Start from step 5
 ```
+
+> After a complete wipe, `project init` will succeed without the "Incorrect credentials" error because the MongoDB is fresh.
 
 ---
 
@@ -279,13 +352,23 @@ sudo bash purge-local.sh
 docker service ls --format '{{.Name}} {{.Replicas}}' | grep '0/'
 ```
 
-> `await-helper` services at `0/1` are normal.
+> Services at `0/1` that are **expected**: `await-helper`, `config-importer`. Everything else should be `1/1`.
 
 ### Check service logs
 
 ```bash
 docker service logs <service_name> --tail 50
 ```
+
+### SHR (HAPI FHIR browser) returns 502
+
+HAPI FHIR needs to be on the `reverse-proxy_public` network for nginx to reach it:
+
+```bash
+docker service update --network-add reverse-proxy_public hapi-fhir_hapi-fhir
+```
+
+> This is already in `docker-compose.yml` but may not be applied if the instant tooling overrides the service spec.
 
 ### Check SSL certificate
 
@@ -325,6 +408,16 @@ docker service inspect hapi-fhir_hapi-fhir \
 
 If missing, run `./packages/fhir-datastore-hapi-fhir/post-deploy.sh`.
 
+### Pipeline fails to deploy ("Wrong configuration")
+
+Docker configs are immutable. If you changed `application.yaml`, `flink-conf.yaml`, or `wait-and-start.sh`, the existing Docker config can't be updated in-place:
+
+```bash
+docker stack rm pipeline
+sleep 10
+docker stack deploy -c packages/data-pipeline-isanteplus/docker-compose.yml pipeline
+```
+
 ### Pipeline authentication failure
 
 ```bash
@@ -337,15 +430,30 @@ docker exec $(docker ps -q -f name=pipeline_streaming-pipeline.1) \
   curl -s -u 'shr-pipeline:instant101' http://openhim-core:5001/SHR/fhir/metadata | head -c 100
 ```
 
-### Updating pipeline configuration
+### OpenCR shows fewer patients than expected
 
-Docker configs are immutable. To update `application.yaml`:
+Check if per-instance identifiers are set (all should be different):
 
 ```bash
-docker stack rm pipeline
-# Edit config files, then redeploy:
-docker stack deploy -c packages/data-pipeline-isanteplus/docker-compose.yml pipeline
+for svc in isanteplus isanteplus2 isanteplus3; do
+  docker exec $(docker ps -q -f name=isanteplus_${svc}.1) \
+    curl -s -u 'admin:Admin123' \
+    "http://localhost:8080/openmrs/ws/rest/v1/systemsetting/mpi-client.pid.local" \
+    | python3 -c "import sys,json; print('$svc:', json.load(sys.stdin).get('value','NOT SET'))"
+done
 ```
+
+If they're all the same, the `post-start.sh` didn't run yet (iSantePlus still booting) or the `ISANTEPLUS_INSTANCE` env var is missing. Wait 5-10 minutes and check again.
+
+### iSantePlus returns 404 on /openmrs
+
+OpenMRS is still in its initial setup phase. It takes **5-10 minutes** to fully boot (module loading, liquibase migrations, Spring context refresh). Check progress:
+
+```bash
+docker service logs isanteplus_isanteplus --tail 5
+```
+
+Look for `Refreshing Context` or `Started OpenMRS` — those indicate boot is nearly complete.
 
 ### Force restart a stuck service
 
