@@ -70,36 +70,6 @@
       "passwordHash": "5e57dc8fa047b7822b7248c7a1be3770aebf5041a779eaabd334906dc9d7017f995927a5d5fbd99b27325f98426b3a50830e8d4abec118276fa4b232fdd28127"
     },
     {
-      "roles": [
-        "emr"
-      ],
-      "clientID": "isanteplus2",
-      "name": "isanteplus2",
-      "passwordAlgorithm": "sha512",
-      "passwordSalt": "a20514810f3a16068b04a39ae21f93c0",
-      "passwordHash": "c99228dbcec159d83773968dfff41ab11838af05cfada289a0c03e51a9e1ea7ae7f8bacb2454500e60c01636be7c643708f9b627d6bc48aab2642f522a855745"
-    },
-    {
-      "roles": [
-        "emr"
-      ],
-      "clientID": "isanteplus3",
-      "name": "isanteplus3",
-      "passwordAlgorithm": "sha512",
-      "passwordSalt": "a20514810f3a16068b04a39ae21f93c0",
-      "passwordHash": "a5361debf905e99e072f5e1e2441418adf679c24b0cf7b3a2024db8c5d7969e83ab2af39e95fa30d3a7b4fd1e1a306ca3a76f8640793e6b6082e05db391a06ee"
-    },
-    {
-      "roles": [
-        "emr"
-      ],
-      "clientID": "isanteplus4",
-      "name": "isanteplus4",
-      "passwordAlgorithm": "sha512",
-      "passwordSalt": "a20514810f3a16068b04a39ae21f93c0",
-      "passwordHash": "11423ed50ff8fe900b950b8a97d11f04b9fef374f6eb619f73bed156f697268772e61648a95473b3c8d25fe8f370f6692d58bcc0562898f20cf01dfbb977ff66"
-    },
-    {
       "clientID": "lnsp",
       "name": "lnsp",
       "roles": [

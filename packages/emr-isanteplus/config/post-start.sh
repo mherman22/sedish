@@ -15,7 +15,7 @@ OPENMRS_URL="http://localhost:8080/openmrs"
 
 echo "[post-start] Waiting for OpenMRS to be ready..."
 
-MAX_WAIT=600
+MAX_WAIT=900
 WAITED=0
 while [ $WAITED -lt $MAX_WAIT ]; do
   STATUS=$(curl -sf -o /dev/null -w "%{http_code}" -u "${OPENMRS_USER}:${OPENMRS_PASS}" \
@@ -46,20 +46,19 @@ set_property() {
 # Unique identifiers per instance (prevents OpenCR from merging patients across sites)
 # 1. MPI client local PID system — unique URI per facility
 set_property "mpi-client.pid.local" "http://${INSTANCE}/ws/fhir2/pid/openmrsid/"
-# 2. MPI client sending application — used as the source tag in OpenCR
+# 2. MPI client sending application — identifies the source facility in OpenCR
 set_property "mpi-client.msg.sendingApplication" "${INSTANCE}"
-# 3. MPI client auth token — must match the OpenHIM client ID for this instance
-set_property "mpi-client.security.authtoken" "${INSTANCE}"
-# 4. FHIR2 URI prefix — makes identifier systems unique per instance AND
-# routes FHIR pagination links through the pipeline gateway (which injects auth).
-# This is required because fhir-data-pipes Flink workers follow pagination next
-# links and need them to go through the auth-injecting gateway.
-set_property "fhir2.uriPrefix" "http://gateway:8090/${INSTANCE}/openmrs/fhir2"
+# 3. MPI client auth token — matches the shared OpenHIM 'isanteplus' client
+set_property "mpi-client.security.authtoken" "isanteplus"
+# 4. FHIR2 URI prefix — makes identifier systems unique per instance.
+# Uses internal Docker hostname. These are identifier namespaces used by OpenCR
+# to distinguish patients across facilities.
+set_property "fhir2.uriPrefix" "http://${INSTANCE}:8080/openmrs/fhir2"
 
 # XDS-Sender endpoints and credentials
 set_property "xdssender.exportCcdEndpoint" "https://${DOMAIN}/SHR/fhir"
 set_property "xdssender.mpiEndpoint" "https://${DOMAIN}/CR/fhir"
-set_property "xdssender.oshr.password" "${INSTANCE}"
-set_property "xdssender.oshr.username" "${INSTANCE}"
+set_property "xdssender.oshr.password" "isanteplus"
+set_property "xdssender.oshr.username" "isanteplus"
 
 echo "[post-start] Configuration complete for instance: ${INSTANCE}"
