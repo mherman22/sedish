@@ -52,9 +52,10 @@ set_property "xdssender.oshr.username" "isanteplus"
 # Set the "Facility ID Prefix" attribute on the default location.
 # This drives the idgen LocationBasedPrefixProvider to generate
 # facility-specific patient IDs (e.g., HUEH1000NG, LAPAIX1000NG).
-LOC_UUID=$(curl -sf -u "${OPENMRS_USER}:${OPENMRS_PASS}" \
-  "${OPENMRS_URL}/ws/rest/v1/location?limit=1&v=default" 2>/dev/null | \
-  python3 -c "import sys,json; r=json.load(sys.stdin).get('results',[]); print(r[0]['uuid'] if r else '')" 2>/dev/null || echo "")
+# Note: no python3 in the container, so we parse JSON with grep/sed.
+LOC_UUID=$(curl -s -u "${OPENMRS_USER}:${OPENMRS_PASS}" \
+  "${OPENMRS_URL}/ws/rest/v1/location?limit=1" 2>/dev/null | \
+  grep -o '"uuid":"[^"]*"' | head -1 | sed 's/"uuid":"//;s/"//' || echo "")
 
 if [ -n "$LOC_UUID" ]; then
   curl -sf -u "${OPENMRS_USER}:${OPENMRS_PASS}" \
