@@ -18,7 +18,7 @@ services:
       - OMRS_CONFIG_CONNECTION_USERNAME=${OMRS_CONFIG_CONNECTION_USERNAME_1}
       - OMRS_CONFIG_CONNECTION_PASSWORD=${OMRS_CONFIG_CONNECTION_PASSWORD_1}
       - OMRS_DEV_DEBUG_PORT=${OMRS_DEV_DEBUG_PORT}
-      - ISANTEPLUS_INSTANCE=isanteplus
+      - FACILITY_NAME=HUEH
     volumes:
       - isanteplus-data:/openmrs/data
       - /etc/timezone:/etc/timezone:ro

@@ -1,13 +1,13 @@
 #!/bin/bash
-# Post-start configuration for iSantePlus instances.
-# Runs in the background after OpenMRS boots and sets per-instance
-# global properties that cannot be baked into the shared MySQL dump.
+# Post-start configuration for iSantePlus.
+# Runs in the background after OpenMRS boots and sets global properties
+# that need to match the deployment environment and facility identity.
 #
 # Required env vars:
-#   ISANTEPLUS_INSTANCE - service name (e.g., isanteplus, isanteplus2)
-#   OPENHIM_DOMAIN      - OpenHIM domain (default: sedishtest.live)
+#   FACILITY_NAME  - facility prefix for patient IDs (e.g., HUEH, LAPAIX)
+#   OPENHIM_DOMAIN - OpenHIM domain (default: openhimcore.sedishtest.live)
 
-INSTANCE="${ISANTEPLUS_INSTANCE:-isanteplus}"
+FACILITY="${FACILITY_NAME:-SITE1}"
 DOMAIN="${OPENHIM_DOMAIN:-openhimcore.sedishtest.live}"
 OPENMRS_USER="${OPENMRS_ADMIN_USER:-admin}"
 OPENMRS_PASS="${OPENMRS_ADMIN_PASS:-Admin123}"
@@ -29,7 +29,7 @@ while [ $WAITED -lt $MAX_WAIT ]; do
 done
 
 if [ $WAITED -ge $MAX_WAIT ]; then
-  echo "[post-start] ERROR: OpenMRS did not become ready after ${MAX_WAIT}s. Per-instance config NOT applied."
+  echo "[post-start] ERROR: OpenMRS did not become ready after ${MAX_WAIT}s."
   exit 1
 fi
 
@@ -43,22 +43,27 @@ set_property() {
   echo "[post-start] Set ${prop} = ${value}"
 }
 
-# Unique identifiers per instance (prevents OpenCR from merging patients across sites)
-# 1. MPI client local PID system — unique URI per facility
-set_property "mpi-client.pid.local" "http://${INSTANCE}/ws/fhir2/pid/openmrsid/"
-# 2. MPI client sending application — identifies the source facility in OpenCR
-set_property "mpi-client.msg.sendingApplication" "${INSTANCE}"
-# 3. MPI client auth token — matches the shared OpenHIM 'isanteplus' client
-set_property "mpi-client.security.authtoken" "isanteplus"
-# 4. FHIR2 URI prefix — makes identifier systems unique per instance.
-# Uses internal Docker hostname. These are identifier namespaces used by OpenCR
-# to distinguish patients across facilities.
-set_property "fhir2.uriPrefix" "http://${INSTANCE}:8080/openmrs/fhir2"
-
-# XDS-Sender endpoints and credentials
+# XDS-Sender endpoints — point to the correct OpenHIM domain
 set_property "xdssender.exportCcdEndpoint" "https://${DOMAIN}/SHR/fhir"
 set_property "xdssender.mpiEndpoint" "https://${DOMAIN}/CR/fhir"
 set_property "xdssender.oshr.password" "isanteplus"
 set_property "xdssender.oshr.username" "isanteplus"
 
-echo "[post-start] Configuration complete for instance: ${INSTANCE}"
+# Set the "Facility ID Prefix" attribute on the default location.
+# This drives the idgen LocationBasedPrefixProvider to generate
+# facility-specific patient IDs (e.g., HUEH1000NG, LAPAIX1000NG).
+LOC_UUID=$(curl -sf -u "${OPENMRS_USER}:${OPENMRS_PASS}" \
+  "${OPENMRS_URL}/ws/rest/v1/location?limit=1&v=default" 2>/dev/null | \
+  python3 -c "import sys,json; r=json.load(sys.stdin).get('results',[]); print(r[0]['uuid'] if r else '')" 2>/dev/null || echo "")
+
+if [ -n "$LOC_UUID" ]; then
+  curl -sf -u "${OPENMRS_USER}:${OPENMRS_PASS}" \
+    -X POST -H 'Content-Type: application/json' \
+    -d "{\"attributeType\":\"d4f5e8a1-9b3c-4e7f-a2d6-1c8b9e0f3a5d\",\"value\":\"${FACILITY}\"}" \
+    "${OPENMRS_URL}/ws/rest/v1/location/${LOC_UUID}/attribute" > /dev/null 2>&1
+  echo "[post-start] Set Facility ID Prefix = ${FACILITY} on location ${LOC_UUID}"
+else
+  echo "[post-start] WARNING: Could not find default location to set facility prefix"
+fi
+
+echo "[post-start] Configuration complete."
