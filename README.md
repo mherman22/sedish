@@ -17,14 +17,9 @@ A Docker Swarm-based Health Information Exchange (HIE) for Haiti, built on [Inst
 │ (Site 1)    │                 │    OpenHIM      │───/SHR/fhir──▶│  HAPI FHIR   │
 │ iSantePlus  │──mpi-client───▶│  (Mediator)     │                │   (SHR)      │
 │ (Site 2)    │                 │                 │                │              │
-│ iSantePlus  │──mpi-client───▶│   Port 5001     │                └──────▲───────┘
-│ (Site 3)    │                 └────────▲────────┘                       │
-└─────────────┘                          │                                │
-       │                          ┌──────┴───────┐               ┌───────┴───────┐
-       │                          │  SHR Mediator │               │  FHIR Data    │
-       └──────────────────────────│  (Express.js) │──────────────▶│  Pipeline     │
-              xds-sender          └──────────────┘  (batch sync)  │  (per site)   │
-           (lab orders only)                                      └───────────────┘
+│ iSantePlus  │──mpi-client───▶│   Port 5001     │                └──────────────┘
+│ (Site N)    │                 └─────────────────┘
+└─────────────┘
 ```
 
 **Data flows:**
@@ -33,7 +28,6 @@ A Docker Swarm-based Health Information Exchange (HIE) for Haiti, built on [Inst
 |------|---------|------|---------|
 | Patient identity | Patient create/update | iSantePlus → OpenHIM → OpenCR | Real-time MPI registration via `mpi-client` module |
 | Clinical documents | Lab order (VL/EID) | iSantePlus → OpenHIM → SHR → HAPI FHIR | Real-time via `xds-sender` module |
-| Batch data sync | Every 5 minutes | Pipeline → iSantePlus (FHIR API) → OpenHIM → SHR → HAPI FHIR | Incremental sync of all resource types |
 
 ---
 
@@ -46,7 +40,6 @@ A Docker Swarm-based Health Information Exchange (HIE) for Haiti, built on [Inst
 | [OpenCR](https://github.com/intrahealth/client-registry) | `itechuw/opencr` | Master Patient Index (MPI) — de-duplicates patient identities |
 | [HAPI FHIR](https://hapifhir.io/) | `jembi/hapi:v7.0.3-wget` | FHIR R4 data store — Shared Health Record (SHR) |
 | [SHR Mediator](https://github.com/DIGI-UW/shared-health-record) | `itechuw/shared-health-record:main` | Proxies FHIR requests to HAPI FHIR with validation |
-| [FHIR Data Pipeline](https://github.com/google/fhir-data-pipes) | `us-docker.pkg.dev/.../fhir-analytics/main:latest` | Batch/incremental sync from iSantePlus to SHR |
 | [Keycloak](https://www.keycloak.org/) | `keycloak/keycloak:20.0` | Identity and access management (SSO) |
 | [Nginx](https://nginx.org/) | `nginx:stable` | Reverse proxy with Let's Encrypt SSL |
 | Monitoring | Grafana + Prometheus + Loki | Dashboards, metrics, and log aggregation |
@@ -81,7 +74,7 @@ git lfs pull
 
 # 4. Configure
 cp .env.hie .env
-# Edit .env — set DOMAIN_NAME, SUBDOMAINS, RENEWAL_EMAIL
+# Edit .env — set DOMAIN_NAME, SUBDOMAINS, RENEWAL_EMAIL, STAGING=false
 
 # 5. Build
 ./get-cli.sh linux
@@ -99,7 +92,7 @@ sudo mkdir -p /backups/elasticsearch /tmp/backups
 docker service ls
 ```
 
-> iSantePlus instances take **5–10 minutes** to fully boot. The data pipelines automatically wait for their respective iSantePlus instance to be ready before starting.
+> iSantePlus instances take **10–15 minutes** to fully boot on first start. The `post-start.sh` script automatically configures xds-sender endpoints once OpenMRS is ready.
 
 ---
 
@@ -135,6 +128,22 @@ After deployment, the following services are accessible via HTTPS:
 | Grafana | `https://grafana.<domain>` | — |
 | Keycloak | `https://keycloak.<domain>` | — |
 
+> Note: iSantePlus serves on `/openmrs`, not `/`. Going to `https://hueh.<domain>/` will return 404.
+
+---
+
+## Patient ID Uniqueness Across Facilities
+
+Each iSantePlus instance has its own MySQL database (`openmrs`, `openmrs2`, `openmrs3`, ...) initialized from the same SQL dump. To prevent patient ID collisions in OpenCR, two mechanisms are used:
+
+1. **Sequence offsets**: Each database starts its idgen sequence at a different value (instance 1 at 100000, instance 2 at 200000, etc.) so generated IDs never overlap.
+
+2. **Unique FHIR system URIs**: Each instance has a unique `mpi-client.pid.local` value (e.g., `http://hueh.sedishtest.live/ws/fhir2/pid/openmrsid/`) so OpenCR can distinguish patient sources even if IDs were to collide.
+
+Both are configured automatically by `projects/isanteplus-db/initdb/20-configure-per-instance.sh` during fresh database initialization. The `FACILITY_NAMES` env var controls the mapping (default: `hueh,lapaix,ofatma,fsc`).
+
+**Patient ID format**: iSantePlus uses the Luhn Mod-30 check digit validator with the character set `0123456789ACDEFGHJKLMNPRTUVWXY`. Note that B, I, O, Q, S, Z are deliberately excluded to avoid ambiguity.
+
 ---
 
 ## Package Management
@@ -160,7 +169,6 @@ Each HIE component is deployed as a package. Use the `instant` CLI to manage the
 | `interoperability-layer-openhim` | `openhim` | OpenHIM Core + Console + MongoDB |
 | `fhir-datastore-hapi-fhir` | `hapi-fhir` | HAPI FHIR R4 Server (SHR) |
 | `shared-health-record-fhir` | `shared-health-record` | SHR Mediator |
-| `data-pipeline-isanteplus` | `pipeline` | FHIR Data Pipeline (4 instances) |
 | `emr-isanteplus` | `isanteplus` | iSantePlus EMR instances |
 | `client-registry-opencr` | `client-registry-opencr` | OpenCR MPI |
 | `database-postgres` | `postgres` | PostgreSQL (HAPI FHIR, Keycloak) |
@@ -173,70 +181,40 @@ Each HIE component is deployed as a package. Use the `instant` CLI to manage the
 - **`init` vs `up`**: Use `init` only for first-time deployment or after wiping data. Use `up` for restarts.
 - **HAPI FHIR**: Always run `./packages/fhir-datastore-hapi-fhir/post-deploy.sh` after deploying this package.
 - **OpenHIM**: If MongoDB was wiped, use `init` (not `up`) to re-run the config importer.
-- **Pipeline**: Config is injected via Docker configs. To update `application.yaml`, you must recreate the Docker config (see [Troubleshooting](#updating-pipeline-configuration)).
 
 ---
 
 ## Adding a New iSantePlus Instance
 
-Each iSantePlus instance requires configuration across **5 components** to ensure patients from different facilities are not merged in OpenCR. Here's the complete checklist for adding instance N (e.g., `isanteplus5`):
+Each iSantePlus instance requires configuration across multiple components. Here's the checklist for adding instance N (e.g., `isanteplus5`):
 
 ### Step 1 — MySQL database
 
 The `projects/isanteplus-db/initdb/10-create-dbs.sh` script automatically creates databases `openmrs`, `openmrs2`, ..., `openmrsN` on first boot. Set `OPENMRS_DB_COUNT` in `.env` to cover the number of instances.
 
-The `20-configure-per-instance.sh` script sets per-instance global properties on fresh databases. For existing databases, the `post-start.sh` script (baked into the image) handles this automatically.
+The `20-configure-per-instance.sh` script runs on fresh database init and sets:
+- xds-sender endpoints pointing to your OpenHIM domain
+- idgen sequence offset (instance N starts at N * 100000)
+- Unique `mpi-client.pid.local` FHIR system URI per facility
 
-### Step 2 — OpenHIM client
+Add the new facility to the `FACILITY_NAMES` env var (comma-separated, lowercase).
 
-Each instance needs its own OpenHIM client so OpenCR can distinguish patient sources. Add to `packages/interoperability-layer-openhim/importer/volume/openhim-import.json`:
+### Step 2 — iSantePlus docker-compose
 
-```json
-{
-  "roles": ["emr"],
-  "clientID": "isanteplusN",
-  "name": "isanteplusN",
-  "passwordAlgorithm": "sha512",
-  "passwordSalt": "<salt>",
-  "passwordHash": "<hash>"
-}
-```
-
-Generate the hash (password = clientID):
-
-```python
-python3 -c "
-import hashlib, os
-password = 'isanteplusN'
-salt = os.urandom(16).hex()
-print(f'passwordSalt: {salt}')
-print(f'passwordHash: {hashlib.sha512((password + salt).encode()).hexdigest()}')
-"
-```
-
-For an **existing** deployment, also create the client via the API:
-
-```bash
-curl -sk -u 'root@openhim.org:instant101' -X POST \
-  -H 'Content-Type: application/json' \
-  -d '{"clientID":"isanteplusN","name":"isanteplusN","roles":["emr"],"passwordAlgorithm":"sha512","passwordSalt":"<salt>","passwordHash":"<hash>"}' \
-  https://openhimcore.<domain>/clients
-```
-
-### Step 3 — iSantePlus docker-compose
-
-Add the new service to `packages/emr-isanteplus/docker-compose.yml`, following the pattern of existing instances. Key differences per instance:
+Add the new service to `packages/emr-isanteplus/docker-compose.yml`:
 
 ```yaml
 isanteplusN:
   image: itechuw/docker-isanteplus-server:local-2
   environment:
-    - OMRS_CONFIG_CONNECTION_URL=${OMRS_CONFIG_CONNECTION_URL_N}  # jdbc:mysql://mysql:3306/openmrsN
+    - OMRS_CONFIG_CONNECTION_URL=${OMRS_CONFIG_CONNECTION_URL_N}
     - OMRS_CONFIG_CONNECTION_USERNAME=${OMRS_CONFIG_CONNECTION_USERNAME_N}
     - OMRS_CONFIG_CONNECTION_PASSWORD=${OMRS_CONFIG_CONNECTION_PASSWORD_N}
-    - ISANTEPLUS_INSTANCE=isanteplusN   # CRITICAL: unique per instance
+    # ... (copy remaining OMRS env vars from existing instances)
   volumes:
-    - isanteplusN-data:/openmrs/data    # unique volume per instance
+    - isanteplusN-data:/openmrs/data
+    - /etc/timezone:/etc/timezone:ro
+    - /etc/localtime:/etc/localtime:ro
   networks:
     - public
     - reverse-proxy
@@ -244,20 +222,11 @@ isanteplusN:
     - openhim
 ```
 
-The `ISANTEPLUS_INSTANCE` env var drives the `post-start.sh` script which automatically sets:
+Add the volume under `volumes:` and the database variables to `package-metadata.json`.
 
-| Property | Value | Purpose |
-|----------|-------|---------|
-| `mpi-client.pid.local` | `http://isanteplusN/ws/fhir2/pid/openmrsid/` | Unique MPI identifier system |
-| `mpi-client.msg.sendingApplication` | `isanteplusN` | Source tag in OpenCR |
-| `mpi-client.security.authtoken` | `isanteplusN` | OpenHIM client auth |
-| `fhir2.uriPrefix` | `http://isanteplusN.sedishtest.live/openmrs/fhir2` | Unique FHIR identifier systems |
-| `xdssender.oshr.username` | `isanteplusN` | OpenHIM client for SHR push |
-| `xdssender.oshr.password` | `isanteplusN` | Must match the OpenHIM client hash |
+### Step 3 — Nginx reverse proxy
 
-### Step 4 — Nginx reverse proxy
-
-Add a server block to `packages/reverse-proxy-nginx/package-conf-secure/http-isanteplus-secure.conf`:
+Add a server block to `packages/reverse-proxy-nginx/package-conf-secure/`:
 
 ```nginx
 server {
@@ -276,121 +245,80 @@ server {
 }
 ```
 
-Add the subdomain to `SUBDOMAINS` in `.env`:
+Add the subdomain to `SUBDOMAINS` in `.env`.
 
-```
-SUBDOMAINS=...,facilityname.sedishtest.live
-```
-
-### Step 5 — Data pipeline
-
-Add a new pipeline service to `packages/data-pipeline-isanteplus/docker-compose.yml`:
-
-```yaml
-streaming-pipeline-N:
-  image: us-docker.pkg.dev/cloud-build-fhir/fhir-analytics/main:latest
-  entrypoint: /app/config/wait-and-start.sh
-  environment:
-    - JAVA_OPTS=-Xms2g -Xmx2g
-    - FLINK_CONF_DIR=/app/config
-    - fhirdata.fhirServerUrl=http://isanteplusN:8080/openmrs/ws/fhir2/R4
-    - fhirdata.dwhRootPrefix=/dwh/pipeline_DWHN
-    - fhirdata.incrementalSchedule=0 N/5 * * * *   # stagger: offset by N minutes
-  configs:
-    - source: application_yaml
-      target: /app/config/application.yaml
-    - source: flink_conf_yaml
-      target: /app/config/flink-conf.yaml
-    - source: wait_and_start
-      target: /app/config/wait-and-start.sh
-      mode: 0755
-  volumes:
-    - pipeline-dwh-N:/dwh
-  ports:
-    - target: 8080
-      published: 809N    # unique host port
-      protocol: tcp
-      mode: host
-```
-
-Add the volume under `volumes:` and redeploy:
-
-```bash
-docker stack rm pipeline && sleep 10
-docker stack deploy -c packages/data-pipeline-isanteplus/docker-compose.yml pipeline
-```
-
-### Step 6 — .env variables
-
-Add the database connection variables for the new instance:
+### Step 4 — .env variables
 
 ```
 OMRS_CONFIG_CONNECTION_URL_N=jdbc:mysql://mysql:3306/openmrsN?autoReconnect=true
 OMRS_CONFIG_CONNECTION_USERNAME_N=openmrsN
 OMRS_CONFIG_CONNECTION_PASSWORD_N=dev_password_only
-```
-
-Add the subdomain mapping:
-
-```
 SUBDOMAIN_CORE_ISANTEPLUSN=facilityname
 ```
-
-### Why all this is needed
-
-OpenCR determines patient identity using a combination of:
-- **Source tag** (OpenHIM clientID) — which facility the patient came from
-- **Identifier system + value** — e.g., `http://isanteplusN.../3-isanteplus-id` = `1000NG`
-
-If two instances share the same clientID and identifier system, OpenCR treats patients with the same ID value (e.g., `1000NG`) as the same person and **overwrites** the record. Each instance must have unique values for all of these to prevent cross-facility patient merging.
-
----
-
-## Data Pipeline
-
-The FHIR Data Pipeline runs **4 instances** — one per iSantePlus site — syncing data to the SHR every 5 minutes.
-
-| Pipeline | Source | Host Port |
-|----------|--------|-----------|
-| `streaming-pipeline` | isanteplus (HUEH) | 8095 |
-| `streaming-pipeline-2` | isanteplus2 (La Paix) | 8096 |
-| `streaming-pipeline-3` | isanteplus3 (OFATMA) | 8097 |
-| `streaming-pipeline-4` | isanteplus4 (Foyer St-Camille) | 8098 |
-
-All instances share a single `application.yaml` config, with Spring Boot environment variable overrides for `fhirdata.fhirServerUrl` and `fhirdata.dwhRootPrefix` per service.
-
-### Triggering a Manual Full Run
-
-The scheduled runs use **incremental** mode, which only syncs resources changed since the last run. If new patients aren't appearing in the SHR, trigger a **full** run to resync everything:
-
-```bash
-for port in 8095 8096 8097 8098; do
-  curl -X POST "http://localhost:${port}/run?runMode=FULL"
-done
-```
-
-> **When to run this:**
-> - If incremental runs show "0 secs" despite new data existing
-> - After adding new iSantePlus instances
->
-> Note: after a fresh deployment, the pipeline automatically waits for iSantePlus to boot and runs a full sync on first start — no manual trigger needed.
-
-### Resource Types Synced
-
-`Patient`, `Encounter`, `Observation`, `Condition`, `AllergyIntolerance`, `MedicationRequest`, `Practitioner`, `Group`
 
 ---
 
 ## SSL/TLS Certificates
 
-### Let's Encrypt (Default)
+### How it works
 
-Certificates are automatically provisioned during `init` via Certbot. The `set-secure-mode.sh` script handles the ACME HTTP-01 challenge by temporarily scaling down nginx to free port 80.
+Certificates are provisioned during `init` via Certbot. The `set-secure-mode.sh` script:
+1. Generates a staging (dummy) cert to bootstrap nginx
+2. Scales nginx down to free port 80
+3. Generates a production cert via HTTP-01 challenge
+4. Updates nginx Docker secrets with the real cert and scales back up
 
-- Active when `INSECURE=false` and `USE_PROVIDED_CERTIFICATES=false` in `.env`
-- Rate limit: 5 certificates per exact domain set per 7 days
+### Rate limits
 
-### Provided Certificates (User-Supplied)
+Let's Encrypt allows **5 certificates per exact domain set per 7 days**. If you hit this limit, you'll see:
+
+```
+too many certificates (5) already issued for this exact set of identifiers
+```
+
+**Workaround**: Request a cert with a different subset of domains (a different "exact set" is not rate-limited):
+
+```bash
+# Scale down nginx to free port 80
+docker service scale reverse-proxy_reverse-proxy-nginx=0
+
+# Request cert with fewer domains
+docker run --rm --network host --name certbot \
+  -v prod-certbot-conf:/etc/letsencrypt/archive/${DOMAIN_NAME} \
+  certbot/certbot:v1.23.0 certonly -n --standalone \
+  -m admin@${DOMAIN_NAME} \
+  -d "${DOMAIN_NAME},subdomain1.${DOMAIN_NAME},subdomain2.${DOMAIN_NAME}" \
+  --agree-tos
+
+# Copy certs and create Docker secrets
+docker run --rm --network host -w /temp \
+  -v prod-certbot-conf:/temp-certificates \
+  -v instant:/temp busybox sh \
+  -c "rm -rf certificates; mkdir -p certificates; cp -r /temp-certificates/* /temp/certificates"
+
+TIMESTAMP=$(date "+%Y%m%d%H%M%S")
+docker secret create --label name=nginx "${TIMESTAMP}-fullchain.pem" \
+  <(docker run --rm -v instant:/temp busybox cat /temp/certificates/fullchain1.pem)
+docker secret create --label name=nginx "${TIMESTAMP}-privkey.pem" \
+  <(docker run --rm -v instant:/temp busybox cat /temp/certificates/privkey1.pem)
+
+# Swap secrets on nginx and scale back up
+CURR_FULL=$(docker service inspect reverse-proxy_reverse-proxy-nginx \
+  --format '{{(index .Spec.TaskTemplate.ContainerSpec.Secrets 0).SecretName}}')
+CURR_KEY=$(docker service inspect reverse-proxy_reverse-proxy-nginx \
+  --format '{{(index .Spec.TaskTemplate.ContainerSpec.Secrets 1).SecretName}}')
+
+docker service update --replicas 1 \
+  --secret-rm "$CURR_FULL" --secret-rm "$CURR_KEY" \
+  --secret-add source=${TIMESTAMP}-fullchain.pem,target=/run/secrets/fullchain.pem \
+  --secret-add source=${TIMESTAMP}-privkey.pem,target=/run/secrets/privkey.pem \
+  reverse-proxy_reverse-proxy-nginx
+
+# Clean up
+docker volume rm prod-certbot-conf
+```
+
+### User-supplied certificates
 
 1. Place `fullchain.pem` and `privkey.pem` on the host
 2. Set paths in `.env`:
@@ -422,16 +350,11 @@ Certificates are automatically provisioned during `init` via Certbot. The `set-s
 # If iSantePlus Dockerfile or modules changed:
 docker build -t itechuw/docker-isanteplus-server:local-2 packages/emr-isanteplus/
 
-# If other images changed:
-./build-custom-images.sh
-
-# Force the service to use the new image:
-docker service update --force --image <image>:<tag> <stack>_<service>
+# Force the service to pick up the new image:
+docker service update --force isanteplus_isanteplus
 ```
 
 ### Full teardown and redeploy
-
-This is the most common scenario — stopping everything and restarting. Here's the exact procedure with all post-deploy steps:
 
 ```bash
 # 1. Stop all services
@@ -447,59 +370,8 @@ docker build -t itechuw/docker-isanteplus-server:local-2 packages/emr-isanteplus
 # 4. Apply HAPI FHIR overrides
 ./packages/fhir-datastore-hapi-fhir/post-deploy.sh
 
-# 5. Redeploy the pipeline (instant tooling can't update Docker configs in-place)
-docker stack rm pipeline && sleep 10
-docker stack deploy -c packages/data-pipeline-isanteplus/docker-compose.yml pipeline
-
-# 6. Verify
+# 5. Verify
 docker service ls --format '{{.Name}} {{.Replicas}}' | grep '0/' | grep -v 'await-helper\|config-importer'
-```
-
-#### Expected errors during `project init` (safe to ignore)
-
-| Error | Reason | Impact |
-|-------|--------|--------|
-| OpenHIM config importer fails with "Incorrect credentials" | MongoDB data persists across `down`/`init` — the password was already changed from default on a previous init | None — channels/clients are already configured |
-| Pipeline "Wrong configuration" | Docker configs are immutable; the instant tooling can't update existing configs with new content | Fixed by step 5 above (`docker stack rm` + `deploy`) |
-| ElasticSearch "Failed to set elastic passwords" | Passwords already set from previous init | None — ES is running |
-| LNSP mediator timeout | Non-critical lab integration service | None for core HIE |
-
-#### Post-deploy verification checklist
-
-```bash
-# All services should be 1/1 (except await-helper and config-importer at 0/1)
-docker service ls
-
-# SSL cert should show real Let's Encrypt issuer (not STAGING)
-docker exec $(docker ps -q -f name=reverse-proxy_reverse-proxy-nginx) \
-  openssl x509 -in /run/secrets/fullchain.pem -noout -issuer -dates
-
-# HAPI FHIR overrides should be set
-docker service inspect hapi-fhir_hapi-fhir \
-  --format '{{range .Spec.TaskTemplate.ContainerSpec.Env}}{{println .}}{{end}}' \
-  | grep -E 'referential|client_id|server_address'
-
-# OpenHIM should have channels configured
-docker exec $(docker ps -q -f name=openhim_openhim-core.1) \
-  curl -sk -u 'root@openhim.org:instant101' https://localhost:8080/channels \
-  | python3 -c "import sys,json; print(f'{len(json.load(sys.stdin))} channels')"
-
-# Wait for iSantePlus to boot (~5-10 min), then verify per-instance config
-for svc in isanteplus isanteplus2 isanteplus3; do
-  pid=$(docker exec $(docker ps -q -f name=isanteplus_${svc}.1) \
-    curl -s -u 'admin:Admin123' \
-    "http://localhost:8080/openmrs/ws/rest/v1/systemsetting/mpi-client.pid.local" \
-    | python3 -c "import sys,json; print(json.load(sys.stdin).get('value','NOT READY'))" 2>/dev/null)
-  echo "$svc: $pid"
-done
-
-# Trigger full pipeline sync (after iSantePlus is fully booted)
-for port in 8095 8096 8097 8098; do
-  curl -X POST "http://localhost:${port}/run?runMode=FULL"
-done
-
-# Verify SHR is accessible
-curl -s https://shr.<your-domain>/fhir/Patient | head -c 100
 ```
 
 ### Complete wipe (destroys all data)
@@ -509,54 +381,168 @@ sudo bash purge-local.sh
 # Then follow Quick Start from step 5
 ```
 
-> After a complete wipe, `project init` will succeed without the "Incorrect credentials" error because the MongoDB is fresh.
-
 ---
 
 ## Troubleshooting
 
-### Which services are down?
+### Quick diagnostics
 
 ```bash
+# Which services are down?
 docker service ls --format '{{.Name}} {{.Replicas}}' | grep '0/'
-```
+# Expected at 0/1: await-helper, config-importer. Everything else should be 1/1.
 
-> Services at `0/1` that are **expected**: `await-helper`, `config-importer`. Everything else should be `1/1`.
-
-### Check service logs
-
-```bash
+# Check logs for a specific service
 docker service logs <service_name> --tail 50
+
+# Check logs for a specific container (faster for large log histories)
+docker logs $(docker ps -q -f name=<service_name>.1) --tail 50
+
+# Force restart a stuck service
+docker service update --force <service_name>
+
+# Check what networks a service is on
+docker inspect $(docker ps -q -f name=<service_name>) \
+  --format '{{range $net, $conf := .NetworkSettings.Networks}}{{$net}} {{end}}'
+
+# Check env vars on a running service
+docker service inspect <service_name> \
+  --format '{{range .Spec.TaskTemplate.ContainerSpec.Env}}{{println .}}{{end}}'
+
+# Check env vars inside a running container
+docker exec $(docker ps -q -f name=<service_name>.1) env | grep <VAR>
 ```
 
-### SHR (HAPI FHIR browser) returns 502
+### iSantePlus returns 404
 
-HAPI FHIR needs to be on the `reverse-proxy_public` network for nginx to reach it:
+OpenMRS is still booting. First boot takes **10–15 minutes** (module loading, liquibase migrations, Spring context refresh). Check progress:
 
 ```bash
-docker service update --network-add reverse-proxy_public hapi-fhir_hapi-fhir
+docker logs $(docker ps -q -f name=isanteplus_isanteplus.1) --tail 10
 ```
 
-> This is already in `docker-compose.yml` but may not be applied if the instant tooling overrides the service spec.
+- `Refreshing Context` — still loading, almost done
+- `DispatcherServlet.noHandlerFound` — REST API not mapped yet, still refreshing
+- `referenceapplication.started value: true` — boot complete
 
-### Check SSL certificate
+If it's stuck, check the container uptime:
+
+```bash
+docker ps --format "{{.Names}}\t{{.Status}}" | grep isanteplus
+```
+
+### iSantePlus container restarts every ~7 minutes
+
+The base image `startup.sh` uses `wait ${!}` which waits for the last background process (post-start.sh), not Tomcat. When post-start.sh completes, the container exits. This is fixed in the custom Dockerfile which captures `TOMCAT_PID=$!` and uses `wait $TOMCAT_PID`.
+
+If the container is still restarting, rebuild the image:
+
+```bash
+docker build -t itechuw/docker-isanteplus-server:local-2 packages/emr-isanteplus/
+docker service update --force isanteplus_isanteplus
+```
+
+### iSantePlus post-start.sh not running or timing out
+
+```bash
+# Check post-start output for a specific instance
+docker logs $(docker ps -q -f name=isanteplus_isanteplus.1) 2>&1 | grep "\[post-start\]"
+```
+
+- `Waiting for OpenMRS to be ready...` — still polling, OpenMRS not ready yet
+- `OpenMRS is ready (after Xs)` — success, then check for `Set xdssender.*` lines
+- `ERROR: OpenMRS did not become ready after 900s` — timed out; OpenMRS may need more time or has an error
+
+If post-start timed out, check if OpenMRS is actually running:
+
+```bash
+docker exec $(docker ps -q -f name=isanteplus_isanteplus.1) \
+  curl -sf -u admin:Admin123 http://localhost:8080/openmrs/ws/rest/v1/session
+```
+
+### Patient creation fails with "Select a preferred identifier"
+
+The idgen auto-generation is not working. Check the idgen configuration:
+
+```bash
+# Check idgen sequence config
+docker exec $(docker ps -q -f name=mysql_mysql) \
+  mysql -u openmrs -pdev_password_only openmrs -e \
+  "SELECT prefix, next_sequence_value FROM idgen_seq_id_gen WHERE id = 1;"
+
+# Check auto-generation is enabled
+docker exec $(docker ps -q -f name=mysql_mysql) \
+  mysql -u openmrs -pdev_password_only openmrs -e \
+  "SELECT * FROM idgen_auto_generation_option;"
+```
+
+The `automatic_generation_enabled` column must be `1` and `source` must point to a valid `idgen_identifier_source`.
+
+### OpenCR merges/overwrites patients from different facilities
+
+Check that each instance has a unique `mpi-client.pid.local`:
+
+```bash
+for svc in isanteplus isanteplus2 isanteplus3 isanteplus4; do
+  echo -n "$svc: "
+  docker exec $(docker ps -q -f name=isanteplus_${svc}.1) \
+    curl -s -u admin:Admin123 \
+    "http://localhost:8080/openmrs/ws/rest/v1/systemsetting/mpi-client.pid.local" 2>/dev/null \
+    | grep -o '"value":"[^"]*"' | sed 's/"value":"//;s/"//'
+done
+```
+
+If they're all the same (e.g., `http://isanteplus/ws/fhir2/pid/openmrsid/`), the `20-configure-per-instance.sh` didn't run. Fix manually:
+
+```bash
+# Replace <db>, <facility>, <domain> for each instance
+docker exec $(docker ps -q -f name=mysql_mysql) \
+  mysql -u <db> -pdev_password_only <db> -e \
+  "UPDATE global_property SET property_value = 'http://<facility>.<domain>/ws/fhir2/pid/openmrsid/'
+   WHERE property = 'mpi-client.pid.local';"
+```
+
+Then restart the iSantePlus instances to pick up the change.
+
+### SSL certificate shows staging issuer
+
+```bash
+# Check current certificate
+docker exec $(docker ps -q -f name=reverse-proxy_reverse-proxy-nginx) \
+  openssl x509 -in /run/secrets/fullchain.pem -noout -issuer -subject -dates
+```
+
+If issuer contains `(STAGING)`, the production cert generation failed. Common causes:
+- **Port 80 was not free** — nginx wasn't scaled down before certbot ran
+- **Rate limited** — too many certs issued in the last 7 days
+- **DNS not pointing to server** — the domain must resolve to this server's IP
+
+See the [SSL/TLS Certificates](#ssltls-certificates) section for the manual fix.
+
+### SSL certificate doesn't cover a subdomain
+
+Check the SANs on the current cert:
 
 ```bash
 docker exec $(docker ps -q -f name=reverse-proxy_reverse-proxy-nginx) \
-  openssl x509 -in /run/secrets/fullchain.pem -noout -issuer -dates
+  openssl x509 -in /run/secrets/fullchain.pem -noout -text | grep "DNS:"
 ```
 
-If issuer contains `(STAGING)`, redeploy nginx to get a real certificate.
+If a subdomain is missing, regenerate the cert with the correct domain list (see rate limit workaround above).
 
-### OpenHIM MongoDB "NotWritablePrimary"
+### Browser shows HSTS error (can't bypass)
+
+Firefox/Zen will refuse to load a page with a staging cert if HSTS is enabled. The only fix is to get a valid production certificate. In Chrome, you can:
+1. Go to `chrome://net-internals/#hsts`
+2. Delete the domain under "Delete domain security policies"
+3. Revisit and click "Advanced → Proceed"
+
+### SHR (HAPI FHIR browser) returns 502
+
+HAPI FHIR needs to be on the `reverse-proxy_public` network:
 
 ```bash
-# Initialize replica set
-docker exec $(docker ps -q -f name=openhim_mongo-1) mongo --eval \
-  'rs.initiate({_id:"mongo-set",members:[{_id:0,host:"mongo-1:27017"}]})'
-
-# Re-import channels/clients
-./instant package init -n interoperability-layer-openhim --env-file .env
+docker service update --network-add reverse-proxy_public hapi-fhir_hapi-fhir
 ```
 
 ### HAPI FHIR "database does not exist"
@@ -577,57 +563,54 @@ docker service inspect hapi-fhir_hapi-fhir \
 
 If missing, run `./packages/fhir-datastore-hapi-fhir/post-deploy.sh`.
 
-### Pipeline fails to deploy ("Wrong configuration")
-
-Docker configs are immutable. If you changed `application.yaml`, `flink-conf.yaml`, or `wait-and-start.sh`, the existing Docker config can't be updated in-place:
+### OpenHIM MongoDB "NotWritablePrimary"
 
 ```bash
-docker stack rm pipeline
-sleep 10
-docker stack deploy -c packages/data-pipeline-isanteplus/docker-compose.yml pipeline
+# Check replica set status
+docker exec $(docker ps -q -f name=openhim_mongo-1) mongo --eval "rs.status()"
+
+# Initialize replica set
+docker exec $(docker ps -q -f name=openhim_mongo-1) mongo --eval \
+  'rs.initiate({_id:"mongo-set",members:[{_id:0,host:"mongo-1:27017"}]})'
+
+# Restart OpenHIM Core
+docker service update --force openhim_openhim-core
+
+# Re-import channels/clients (if MongoDB was wiped)
+./instant package init -n interoperability-layer-openhim --env-file .env
 ```
 
-### Pipeline authentication failure
+### Instant CLI deploys with empty env vars
+
+If you run `docker stack deploy` directly (instead of via `./instant`), the `${OMRS_CONFIG_*}` variables in docker-compose.yml will resolve to empty strings because they come from `package-metadata.json`, which the instant CLI reads.
+
+**Always use the instant CLI to deploy packages:**
 
 ```bash
-# Check sink credentials
-docker exec $(docker ps -q -f name=pipeline_streaming-pipeline.1) \
-  cat /app/config/application.yaml | grep -A2 sink
-
-# Test auth
-docker exec $(docker ps -q -f name=pipeline_streaming-pipeline.1) \
-  curl -s -u 'shr-pipeline:instant101' http://openhim-core:5001/SHR/fhir/metadata | head -c 100
+./instant package init -n emr-isanteplus --env-file .env
 ```
 
-### OpenCR shows fewer patients than expected
-
-Check if per-instance identifiers are set (all should be different):
+If you need to update a single service's env var without redeploying:
 
 ```bash
-for svc in isanteplus isanteplus2 isanteplus3; do
-  docker exec $(docker ps -q -f name=isanteplus_${svc}.1) \
-    curl -s -u 'admin:Admin123' \
-    "http://localhost:8080/openmrs/ws/rest/v1/systemsetting/mpi-client.pid.local" \
-    | python3 -c "import sys,json; print('$svc:', json.load(sys.stdin).get('value','NOT SET'))"
+docker service update --env-add KEY=VALUE <service_name>
+```
+
+### Checking and updating idgen sequences directly
+
+```bash
+# Check all databases
+for db in openmrs openmrs2 openmrs3 openmrs4; do
+  echo "=== $db ==="
+  docker exec $(docker ps -q -f name=mysql_mysql) \
+    mysql -u "$db" -pdev_password_only "$db" -e \
+    "SELECT prefix, next_sequence_value FROM idgen_seq_id_gen WHERE id = 1;" 2>&1 | grep -v Warning
 done
-```
 
-If they're all the same, the `post-start.sh` didn't run yet (iSantePlus still booting) or the `ISANTEPLUS_INSTANCE` env var is missing. Wait 5-10 minutes and check again.
-
-### iSantePlus returns 404 on /openmrs
-
-OpenMRS is still in its initial setup phase. It takes **5-10 minutes** to fully boot (module loading, liquibase migrations, Spring context refresh). Check progress:
-
-```bash
-docker service logs isanteplus_isanteplus --tail 5
-```
-
-Look for `Refreshing Context` or `Started OpenMRS` — those indicate boot is nearly complete.
-
-### Force restart a stuck service
-
-```bash
-docker service update --force <service_name>
+# Update a specific database's sequence offset
+docker exec $(docker ps -q -f name=mysql_mysql) \
+  mysql -u openmrs2 -pdev_password_only openmrs2 -e \
+  "UPDATE idgen_seq_id_gen SET next_sequence_value = 200000 WHERE id = 1;"
 ```
 
 ---
@@ -662,13 +645,12 @@ print(f'passwordHash: {hash_val}')
 
 ## Security Considerations
 
+- **Default passwords**: Change `Admin123`, `instant101`, `dev_password_only` before production use
 - **Docker Secrets**: Use for sensitive configuration (passwords, API keys)
 - **Swarm Locking**: Rotate the CA key with `docker swarm ca --rotate`
 - **SSH Hardening**: Key-based auth only, disable root login
-- **AWS Security Groups**: Restrict inbound traffic to ports 80, 443 only
-- **Firewall**: Use iptables/nftables to whitelist necessary connections
-- **Encryption**: Enable EBS/RDS encryption with KMS-managed keys
-- **Monitoring**: Enable CloudWatch and GuardDuty for threat detection
+- **Firewall**: Restrict inbound traffic to ports 80, 443 only
+- **Encryption**: Enable disk encryption for data at rest
 
 ---
 
@@ -681,24 +663,27 @@ sedish/
 ├── build-image.sh                # Builds the management/deployment image
 ├── get-cli.sh                    # Downloads the Instant OpenHIE CLI
 ├── instant                       # Instant OpenHIE CLI binary
-├── SETUP-GUIDE.md                # Quick reference setup guide
 ├── packages/
 │   ├── reverse-proxy-nginx/      # Nginx + Let's Encrypt
 │   ├── interoperability-layer-openhim/  # OpenHIM
 │   ├── fhir-datastore-hapi-fhir/ # HAPI FHIR + post-deploy.sh
 │   ├── shared-health-record-fhir/ # SHR Mediator
-│   ├── data-pipeline-isanteplus/ # FHIR Data Pipeline (4 instances)
 │   ├── emr-isanteplus/           # iSantePlus EMR
+│   │   ├── Dockerfile            # Custom image with post-start.sh
+│   │   ├── config/post-start.sh  # Auto-configures xds-sender on boot
+│   │   └── docker-compose.yml    # Service definitions for all instances
 │   ├── client-registry-opencr/   # OpenCR
 │   ├── database-postgres/        # PostgreSQL
 │   ├── database-mysql/           # MySQL
 │   ├── identity-access-manager-keycloak/ # Keycloak
-│   ├── monitoring/               # Grafana + Prometheus + Loki
-│   └── lnsp-mediator/            # LNSP lab integration
+│   └── monitoring/               # Grafana + Prometheus + Loki
 └── projects/
-    ├── isanteplus-db/            # MySQL seed data for iSantePlus
-    ├── lnsp-mediator/            # LNSP mediator source
-    └── lnsp-analytics/           # LNSP analytics dashboard
+    └── isanteplus-db/            # MySQL seed data for iSantePlus
+        ├── Dockerfile            # Custom MySQL image
+        └── initdb/
+            ├── 10-create-dbs.sh  # Creates openmrs, openmrs2, ... databases
+            ├── 20-configure-per-instance.sh  # Sets sequence offsets + unique URIs
+            └── isanteplus-db.sql # Base SQL dump (Git LFS)
 ```
 
 ---
@@ -711,4 +696,3 @@ sedish/
 - [HAPI FHIR Documentation](https://hapifhir.io/hapi-fhir/docs/)
 - [OpenCR Documentation](https://intrahealth.github.io/client-registry/)
 - [iSantePlus Wiki](https://wiki.openmrs.org/display/RES/iSantePlus)
-- [FHIR Data Pipes](https://github.com/google/fhir-data-pipes)
