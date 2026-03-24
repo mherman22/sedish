@@ -24,6 +24,18 @@ services:
       - isanteplus
       - hapi-fhir
 
+configs:
+  application_yaml:
+    file: ./config/application.yaml
+    name: pipeline_application_yaml
+    labels:
+      name: pipeline_application_yaml
+  flink_conf_yaml:
+    file: ./config/flink-conf.yaml
+    name: pipeline_flink_conf_yaml
+    labels:
+      name: pipeline_flink_conf_yaml
+
 volumes:
   pipeline-dwh:
 

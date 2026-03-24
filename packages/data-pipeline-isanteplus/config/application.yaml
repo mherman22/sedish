@@ -1,16 +1,14 @@
 fhirdata:
   fhirFetchMode: "FHIR_SEARCH"
 
-  # This is where you set where the Data is fetched from.
-  # NOTE: Credentials embedded in URL to work around Apache Beam Flink serialization issue
-  # where fhirServerUserName/Password aren't passed to worker nodes
+  # Source: iSantePlus FHIR R4 endpoint
   fhirServerUrl: "http://isanteplus:8080/openmrs/ws/fhir2/R4"
   fhirServerUserName: "admin"
   fhirServerPassword: "Admin123"
 
   # This is where you set where the Data is sent to.
   sinkFhirServerUrl: "http://openhim-core:5001/SHR/fhir"
-  sinkUserName: "root@openhim.org"
+  sinkUserName: "shr-pipeline"
   sinkPassword: "instant101"
   sinkDbConfigPath:
 
@@ -22,13 +20,11 @@ fhirdata:
   purgeSchedule: "0 30 * * * *"
   numOfDwhSnapshotsToRetain: 2
 
-  resourceList: "Patient,Encounter,Observation,Condition,AllergyIntolerance,MedicationRequest,Practitioner,Group"
+  resourceList: "Location,Patient,Encounter,Observation,Condition,AllergyIntolerance,MedicationRequest,Practitioner,Group"
 
   fhirVersion: "R4"
   numThreads: 1
 
-  # Using default FlinkRunner (implicit)
-  # Testing without DirectRunner to see if volume-mounted config resolves credential serialization
   autoGenerateFlinkConfiguration: true
   rowGroupSizeForParquetFiles: 33554432  # 32mb
   recursiveDepth: 1
