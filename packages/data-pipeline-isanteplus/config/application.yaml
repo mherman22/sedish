@@ -1,10 +1,10 @@
 fhirdata:
   fhirFetchMode: "FHIR_SEARCH"
 
-  # Source: iSantePlus FHIR R4 endpoint
-  fhirServerUrl: "http://isanteplus:8080/openmrs/ws/fhir2/R4"
-  fhirServerUserName: "admin"
-  fhirServerPassword: "Admin123"
+  # Source: FHIR Aggregator — fans out to all iSantePlus instances
+  fhirServerUrl: "http://fhir-aggregator_fhir-aggregator:3000/fhir"
+  fhirServerUserName: ""
+  fhirServerPassword: ""
 
   # This is where you set where the Data is sent to.
   sinkFhirServerUrl: "http://openhim-core:5001/SHR/fhir"

@@ -15,6 +15,7 @@ packages:
   - shared-health-record-fhir
   # Sedish Haiti packages
   - emr-isanteplus
+  - fhir-aggregator-mediator
   - data-pipeline-isanteplus
   - lnsp-mediator
 
@@ -35,6 +36,7 @@ profiles:
       - dashboard-visualiser-kibana
       # Sedish Haiti packages
       - emr-isanteplus
+      - fhir-aggregator-mediator
       - data-pipeline-isanteplus
       - document-data-store-xds
       - shared-health-record-openshr
@@ -58,6 +60,7 @@ profiles:
       - dashboard-visualiser-kibana
       # Sedish Haiti packages
       - emr-isanteplus
+      - fhir-aggregator-mediator
       - data-pipeline-isanteplus
       - document-data-store-xds
       - shared-health-record-openshr
