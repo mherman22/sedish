@@ -23,6 +23,7 @@ services:
       - shr
       - isanteplus
       - hapi-fhir
+      - reverse-proxy
 
 configs:
   application_yaml:
@@ -54,4 +55,7 @@ networks:
     external: true
   hapi-fhir:
     name: hapi-fhir_public
+    external: true
+  reverse-proxy:
+    name: reverse-proxy_public
     external: true

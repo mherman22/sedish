@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   fhir-aggregator:
-    image: fhir-aggregator-mediator:latest
+    image: ghcr.io/mherman22/fhir-aggregator-mediator:1.0.0
     environment:
       - SOURCE_isanteplus_USERNAME=${ISANTEPLUS_USERNAME:-admin}
       - SOURCE_isanteplus_PASSWORD=${ISANTEPLUS_PASSWORD:-Admin123}
