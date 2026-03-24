@@ -9,13 +9,10 @@ fhirdata:
   fhirServerPassword: "Admin123"
 
   # This is where you set where the Data is sent to.
-  # NOTE: Using direct PostgreSQL database access instead of HTTP sink.
-  # This bypasses the Apache Beam Flink serialization issue where credentials
-  # are not propagated to worker TaskManagers. See CHALLENGES.md Problem 13.
-  sinkFhirServerUrl:
-  sinkUserName:
-  sinkPassword:
-  sinkDbConfigPath: "/config/hapi-postgres-config_local.json"
+  sinkFhirServerUrl: "http://openhim-core:5001/SHR/fhir"
+  sinkUserName: "root@openhim.org"
+  sinkPassword: "instant101"
+  sinkDbConfigPath:
 
   dwhRootPrefix: "/dwh/pipeline_DWH"
   generateParquetFiles: false
