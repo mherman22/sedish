@@ -1,0 +1,9 @@
+{
+  "jdbcDriverClass": "org.postgresql.Driver",
+  "databaseService": "postgresql",
+  "databaseHostName": "postgres-1",
+  "databasePort": "5432",
+  "databaseUser": "postgres",
+  "databasePassword": "instant101",
+  "databaseName": "hapi"
+}

@@ -2,15 +2,20 @@ fhirdata:
   fhirFetchMode: "FHIR_SEARCH"
 
   # This is where you set where the Data is fetched from.
+  # NOTE: Credentials embedded in URL to work around Apache Beam Flink serialization issue
+  # where fhirServerUserName/Password aren't passed to worker nodes
   fhirServerUrl: "http://isanteplus:8080/openmrs/ws/fhir2/R4"
   fhirServerUserName: "admin"
   fhirServerPassword: "Admin123"
 
   # This is where you set where the Data is sent to.
-  sinkFhirServerUrl: "http://openhim-core:5001/SHR/fhir"
-  sinkUserName: "root@openhim.org"
-  sinkPassword: "instant101"
-  sinkDbConfigPath:
+  # NOTE: Using direct PostgreSQL database access instead of HTTP sink.
+  # This bypasses the Apache Beam Flink serialization issue where credentials
+  # are not propagated to worker TaskManagers. See CHALLENGES.md Problem 13.
+  sinkFhirServerUrl:
+  sinkUserName:
+  sinkPassword:
+  sinkDbConfigPath: "/config/hapi-postgres-config_local.json"
 
   dwhRootPrefix: "/dwh/pipeline_DWH"
   generateParquetFiles: false
@@ -24,6 +29,9 @@ fhirdata:
 
   fhirVersion: "R4"
   numThreads: 1
+
+  # Using default FlinkRunner (implicit)
+  # Testing without DirectRunner to see if volume-mounted config resolves credential serialization
   autoGenerateFlinkConfiguration: true
   rowGroupSizeForParquetFiles: 33554432  # 32mb
   recursiveDepth: 1

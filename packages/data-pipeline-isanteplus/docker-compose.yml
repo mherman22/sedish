@@ -6,12 +6,8 @@ services:
     environment:
       - JAVA_OPTS=-Xms2g -Xmx2g
       - FLINK_CONF_DIR=/app/config
-    configs:
-      - source: application_yaml
-        target: /app/config/application.yaml
-      - source: flink_conf_yaml
-        target: /app/config/flink-conf.yaml
     volumes:
+      - ./config:/app/config:ro
       - pipeline-dwh:/dwh
     ports:
       - target: 8080
@@ -23,18 +19,6 @@ services:
       - shr
       - isanteplus
       - hapi-fhir
-
-configs:
-  application_yaml:
-    file: ./config/application.yaml
-    name: pipeline_application_yaml
-    labels:
-      name: pipeline_application_yaml
-  flink_conf_yaml:
-    file: ./config/flink-conf.yaml
-    name: pipeline_flink_conf_yaml
-    labels:
-      name: pipeline_flink_conf_yaml
 
 volumes:
   pipeline-dwh:
