@@ -43,7 +43,7 @@
     "OMRS_CONFIG_CONNECTION_PASSWORD_9": "dev_password_only",
     "OMRS_CONFIG_CONNECTION_PASSWORD_10": "dev_password_only",
     "OMRS_DEV_DEBUG_PORT": "1044",
-    "OMRS_JAVA_MEMORY_OPTS": "-Xmx1024m -Xms256m -XX:NewSize=128m",
+    "OMRS_JAVA_MEMORY_OPTS": "-Xmx1024m -Xms256m -XX:NewSize=96m",
     "ISANTEPLUS_VERSION": "v2.3.4",
     "OPENMRS_INSTANCES": "1",
     "ISANTEPLUS_INSTANCES_1": "1",
