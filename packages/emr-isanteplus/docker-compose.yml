@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    deploy:
+      replicas: 0
     environment:
       - OMRS_JAVA_MEMORY_OPTS=${OMRS_JAVA_MEMORY_OPTS}
       - OMRS_CONFIG_CONNECTION_SERVER=${OMRS_CONFIG_CONNECTION_SERVER}
@@ -41,12 +43,15 @@ services:
       - public
       - reverse-proxy
       - mysql
+      - openhim
 
   isanteplus2:
     image: itechuw/docker-isanteplus-server:local-2
     build:
       context: .
       dockerfile: Dockerfile
+    deploy:
+      replicas: 0
     environment:
       - OMRS_JAVA_MEMORY_OPTS=${OMRS_JAVA_MEMORY_OPTS}
       - OMRS_CONFIG_CONNECTION_SERVER=${OMRS_CONFIG_CONNECTION_SERVER}
@@ -82,12 +87,15 @@ services:
       - public
       - reverse-proxy
       - mysql
+      - openhim
 
   isanteplus3:
     image: itechuw/docker-isanteplus-server:local-2
     build:
       context: .
       dockerfile: Dockerfile
+    deploy:
+      replicas: 0
     environment:
       - OMRS_JAVA_MEMORY_OPTS=${OMRS_JAVA_MEMORY_OPTS}
       - OMRS_CONFIG_CONNECTION_SERVER=${OMRS_CONFIG_CONNECTION_SERVER}
@@ -123,12 +131,15 @@ services:
       - public
       - reverse-proxy
       - mysql
+      - openhim
 
   isanteplus4:
     image: itechuw/docker-isanteplus-server:local-2
     build:
       context: .
       dockerfile: Dockerfile
+    deploy:
+      replicas: 0
     environment:
       - OMRS_JAVA_MEMORY_OPTS=${OMRS_JAVA_MEMORY_OPTS}
       - OMRS_CONFIG_CONNECTION_SERVER=${OMRS_CONFIG_CONNECTION_SERVER}
@@ -164,6 +175,7 @@ services:
       - public
       - reverse-proxy
       - mysql
+      - openhim
 
   # isanteplus5:
   #   image: itechuw/docker-isanteplus-server:local
@@ -341,4 +353,7 @@ networks:
     name: mysql_public
   reverse-proxy:
     name: reverse-proxy_public
+    external: true
+  openhim:
+    name: openhim_public
     external: true

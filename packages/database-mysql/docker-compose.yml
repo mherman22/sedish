@@ -9,8 +9,6 @@ services:
       - OPENMRS_DB_COUNT=${OPENMRS_DB_COUNT}
       - INITIAL_SQL_FILE=${INITIAL_SQL_FILE}
       - MYSQL_ROOT_HOST=% # Allow docker containers to connect to mysql
-    volumes:
-      # - /home/ubuntu/db/mysql:/var/lib/mysql
     networks:
       - mysql
     configs:
@@ -37,6 +35,3 @@ networks:
     external: true
     name: mysql_public
 
-volumes:
-  mysql_data:
-    external: true

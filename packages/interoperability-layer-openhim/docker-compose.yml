@@ -4,7 +4,6 @@ services:
   openhim-core:
     image: ${OPENHIM_CORE_IMAGE}
     networks:
-      kafka:
       hapi-fhir:
       reverse-proxy:
       traefik:
@@ -18,7 +17,6 @@ services:
       - mongo_atnaUrl=${OPENHIM_MONGO_ATNAURL}
       - api_authenticationTypes=["token", "basic", "openid", "local"]
       - authentication_enableCustomTokenAuthentication=true
-      - router_kafkaBrokers=${KAFKA_HOSTS}
       - api_openid_url=${KC_API_URL}/realms/${KC_REALM_NAME}
       - api_openid_issuerUrl=${KC_FRONTEND_URL}/realms/${KC_REALM_NAME}
       - api_openid_callbackUrl=${KC_OPENHIM_ROOT_URL}
@@ -77,6 +75,9 @@ services:
       OPENHIM_API_HOST: ${OPENHIM_API_HOST}
       OPENHIM_API_PORT: ${OPENHIM_API_PORT}
       NODE_TLS_REJECT_UNAUTHORIZED: 0
+    configs:
+      - source: openhim_console_config
+        target: /usr/share/nginx/html/config/default.json
     networks:
       reverse-proxy:
       traefik:
@@ -104,10 +105,14 @@ services:
           cpus: ${OPENHIM_CONSOLE_CPU_RESERVE}
           memory: ${OPENHIM_CONSOLE_MEMORY_RESERVE}
 
+configs:
+  openhim_console_config:
+    file: ./config/console-default.json
+    name: openhim-console-config
+    labels:
+      name: openhim
+
 networks:
-  kafka:
-    name: kafka_public
-    external: true
   hapi-fhir:
     name: hapi-fhir_public
     external: true

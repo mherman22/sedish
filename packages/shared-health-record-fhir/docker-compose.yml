@@ -2,10 +2,9 @@ version: '3.8'
 
 services:
   shr:
-    image: itechuw/shared-health-record:v0.13.0
+    image: itechuw/shared-health-record:main
     networks:
       - openhim
-      - kafka
       - shr
       - hapi-fhir
     configs:
@@ -40,9 +39,6 @@ networks:
     external: true
   shr:
     name: shr
-    external: true
-  kafka:
-    name: kafka_public
     external: true
   hapi-fhir:
     name: hapi-fhir_public

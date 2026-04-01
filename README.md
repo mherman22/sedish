@@ -1,85 +1,148 @@
-# SEDISH: The Haiti HIE 
-This README details the end-to-end deployment of a docker-swarm based HIE using instant OpenHIE. The deployment follows the Jembi platform pattern and includes instructions for setting up the Linux environment, installing and configuring Docker, initializing a Docker Swarm, configuring security best practices, and deploying the project packages.
+# SEDISH: Haiti Health Information Exchange
 
-[![CI](https://github.com/I-TECH-UW/sedish-haiti.org/actions/workflows/main.yml/badge.svg)](https://github.com/I-TECH-UW/sedish-haiti.org/actions/workflows/main.yml)
+A Docker Swarm-based Health Information Exchange (HIE) for Haiti, built on [Instant OpenHIE v2](https://jembi.gitbook.io/instant-v2). SEDISH connects multiple iSantePlus (OpenMRS) clinic sites to a centralized data exchange layer for patient identity management, shared health records, and clinical data analytics.
+
+---
+
+## Architecture
+
+```
+                                 ┌──────────────┐
+                                 │   OpenCR     │
+                                 │ (Patient MPI)│
+                                 └──────▲───────┘
+                                        │ /CR/fhir
+┌─────────────┐                 ┌───────┴────────┐                ┌──────────────┐
+│ iSantePlus  │──mpi-client───▶│                 │                │              │
+│ (Site 1)    │                 │    OpenHIM      │───/SHR/fhir──▶│  HAPI FHIR   │
+│ iSantePlus  │──mpi-client───▶│  (Mediator)     │                │   (SHR)      │
+│ (Site 2)    │                 │                 │                │              │
+│ iSantePlus  │──mpi-client───▶│   Port 5001     │                └──────────────┘
+│ (Site N)    │                 └─────────────────┘
+└─────────────┘
+```
+
+**Data flows:**
+
+| Flow | Trigger | Path | Purpose |
+|------|---------|------|---------|
+| Patient identity | Patient create/update | iSantePlus → OpenHIM → OpenCR | Real-time MPI registration via `mpi-client` module |
+| Clinical documents | Lab order (VL/EID) | iSantePlus → OpenHIM → SHR → HAPI FHIR | Real-time via `xds-sender` module |
+
+---
+
 ## Components
 
-### 1. iSantePlus EMR
-### Links
-https://github.com/IsantePlus/openmrs-distro-isanteplus
-https://github.com/IsantePlus/docker-isanteplus-server
-
-### 2. OpenCR
-https://github.com/intrahealth/client-registry
-
-### 3. OpenHIM
-http://openhim.org/docs/installation/docker
-
-### 4. HAPI JPA Server
-https://github.com/hapifhir/hapi-fhir-jpaserver-starter#deploy-with-docker-compose
-https://hapifhir.io/hapi-fhir/docs/server_jpa/get_started.html
-
-
-## Deployment Guide
-
-
-> **Note:** This deployment uses instant OpenHIE v2. For more background, see the [Instant OpenHIE documentation](https://jembi.gitbook.io/instant-v2) and [Jembi Platform README](https://github.com/jembi/platform/blob/main/README.md).
+| Component | Image | Purpose |
+|-----------|-------|---------|
+| [iSantePlus](https://github.com/IsantePlus/openmrs-distro-isanteplus) | `itechuw/docker-isanteplus-server:local-2` | OpenMRS-based EMR (multiple clinic instances) |
+| [OpenHIM](http://openhim.org/) | `jembi/openhim-core:v8.5.0` | Interoperability layer — routes, logs, and secures all data exchange |
+| [OpenCR](https://github.com/intrahealth/client-registry) | `itechuw/opencr` | Master Patient Index (MPI) — de-duplicates patient identities |
+| [HAPI FHIR](https://hapifhir.io/) | `jembi/hapi:v7.0.3-wget` | FHIR R4 data store — Shared Health Record (SHR) |
+| [SHR Mediator](https://github.com/DIGI-UW/shared-health-record) | `itechuw/shared-health-record:main` | Proxies FHIR requests to HAPI FHIR with validation |
+| [Keycloak](https://www.keycloak.org/) | `keycloak/keycloak:20.0` | Identity and access management (SSO) |
+| [Nginx](https://nginx.org/) | `nginx:stable` | Reverse proxy with Let's Encrypt SSL |
+| Monitoring | Grafana + Prometheus + Loki | Dashboards, metrics, and log aggregation |
 
 ---
 
-## Table of Contents
+## Prerequisites
 
-- [SEDISH: The Haiti HIE](#sedish-the-haiti-hie)
-  - [Components](#components)
-    - [1. iSantePlus EMR](#1-isanteplus-emr)
-    - [Links](#links)
-    - [2. OpenCR](#2-opencr)
-    - [3. OpenHIM](#3-openhim)
-    - [4. HAPI JPA Server](#4-hapi-jpa-server)
-  - [Deployment Guide](#deployment-guide)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [System Requirements](#system-requirements)
-  - [Environment Setup](#environment-setup)
-    - [Linux VM Setup](#linux-vm-setup)
-    - [Installing Git and Docker](#installing-git-and-docker)
-    - [Initializing Docker Swarm](#initializing-docker-swarm)
-  - [Security Best Practices](#security-best-practices)
-    - [Docker and Swarm Security](#docker-and-swarm-security)
-    - [Host and OS Hardening](#host-and-os-hardening)
-    - [Cloud-Specific Controls (AWS)](#cloud-specific-controls-aws)
-  - [Project Configuration](#project-configuration)
-    - [Project Structure and .env File](#project-structure-and-env-file)
-    - [Docker Secrets and Swarm Locking](#docker-secrets-and-swarm-locking)
-  - [Component Modules](#component-modules)
-    - [Interoperability Layer – OpenHIM](#interoperability-layer--openhim)
-    - [Reverse Proxy – Nginx](#reverse-proxy--nginx)
-    - [FHIR Datastore – HAPI FHIR](#fhir-datastore--hapi-fhir)
-    - [Monitoring](#monitoring)
-    - [Database Modules – Postgres \& MySQL](#database-modules--postgres--mysql)
-    - [Analytics Datastore – ElasticSearch](#analytics-datastore--elasticsearch)
-    - [Message Bus – Kafka](#message-bus--kafka)
-    - [Shared Health Record – FHIR / OpenSHR](#shared-health-record--fhir--openshr)
-    - [Sedish Haiti Custom Packages](#sedish-haiti-custom-packages)
-  - [Deployment Steps](#deployment-steps)
-  - [Post-Deployment Configuration](#post-deployment-configuration)
-  - [Troubleshooting \& Logging](#troubleshooting--logging)
-  - [Additional Resources](#additional-resources)
+- **Server**: Ubuntu 20.04+ with at least 16 GB RAM (32 GB recommended)
+- **Docker**: Docker CE with Swarm mode
+- **Domain**: A domain with wildcard DNS (`*.yourdomain.com`) pointing to the server
+- **Git LFS**: Required for `.omod` and `.sql` binary files
 
 ---
 
-## Overview
+## Quick Start
 
-This project deploys a multi-component Health Information Exchange (HIE) on a cloud-based AWS Linux VM using Docker Swarm. The system uses [instant OpenHIE](https://jembi.gitbook.io/instant-v2) to package and deploy several modules following the Jembi platform pattern. The deployed components include core interoperability layers, data stores, identity management, analytics, messaging, and additional custom packages for the Sedish Haiti project.
+```bash
+# 1. Install dependencies
+sudo apt-get update && sudo apt-get install -y git jq
+curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+sudo apt-get install -y git-lfs && git lfs install
+# Install Docker CE: https://docs.docker.com/engine/install/ubuntu/
+
+# 2. Initialize Docker Swarm
+docker swarm init
+
+# 3. Clone and fetch LFS files
+git clone https://github.com/charess-org/sedish.git
+cd sedish
+git lfs pull
+
+# 4. Configure
+cp .env.hie .env
+# Edit .env — set DOMAIN_NAME, SUBDOMAINS, RENEWAL_EMAIL, STAGING=false
+
+# 5. Build
+./get-cli.sh linux
+sudo mkdir -p /backups/elasticsearch /tmp/backups
+./build-custom-images.sh
+./build-image.sh
+
+# 6. Deploy
+./instant project init --env-file .env
+
+# 7. Apply HAPI FHIR overrides (required after every deploy)
+./packages/fhir-datastore-hapi-fhir/post-deploy.sh
+
+# 8. Verify
+docker service ls
+```
+
+> iSantePlus instances take **10–15 minutes** to fully boot on first start. The `post-start.sh` script automatically configures xds-sender endpoints once OpenMRS is ready.
 
 ---
 
-## Suggested System Requirements
+## Environment Configuration
 
-- **Operating System:** AWS Linux VM (Ubuntu, Amazon Linux 2, etc.)
-- **Docker:** Latest Docker CE installed (with Docker Swarm mode enabled)
-- **Git:** Installed for source code retrieval
-- **AWS:** Proper IAM roles and security group configuration for port and network isolation
+Copy `.env.hie` to `.env` and configure at minimum:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DOMAIN_NAME` | Base domain for all services | `sedishtest.live` |
+| `SUBDOMAINS` | Comma-separated list of all subdomains | `opencr.sedishtest.live,openhimconsole.sedishtest.live,...` |
+| `RENEWAL_EMAIL` | Email for Let's Encrypt notifications | `admin@example.com` |
+| `STAGING` | Set to `false` for production SSL certs | `false` |
+| `INSECURE` | Set to `false` to enable HTTPS | `false` |
+
+See `.env.hie` for the full list of configurable variables.
+
+---
+
+## Services & URLs
+
+After deployment, the following services are accessible via HTTPS:
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| iSantePlus (HUEH) | `https://hueh.<domain>/openmrs` | `admin` / `Admin123` |
+| iSantePlus (La Paix) | `https://lapaix.<domain>/openmrs` | `admin` / `Admin123` |
+| iSantePlus (OFATMA) | `https://ofatma.<domain>/openmrs` | `admin` / `Admin123` |
+| iSantePlus (Foyer St-Camille) | `https://foyer-saint-camille.<domain>/openmrs` | `admin` / `Admin123` |
+| OpenHIM Console | `https://openhimconsole.<domain>` | `root@openhim.org` / `instant101` |
+| OpenCR | `https://opencr.<domain>/crux` | — |
+| SHR (HAPI FHIR Browser) | `https://shr.<domain>/fhir` | — |
+| Grafana | `https://grafana.<domain>` | — |
+| Keycloak | `https://keycloak.<domain>` | — |
+
+> Note: iSantePlus serves on `/openmrs`, not `/`. Going to `https://hueh.<domain>/` will return 404.
+
+---
+
+## Patient ID Uniqueness Across Facilities
+
+Each iSantePlus instance has its own MySQL database (`openmrs`, `openmrs2`, `openmrs3`, ...) initialized from the same SQL dump. To prevent patient ID collisions in OpenCR, two mechanisms are used:
+
+1. **Sequence offsets**: Each database starts its idgen sequence at a different value (instance 1 at 100000, instance 2 at 200000, etc.) so generated IDs never overlap.
+
+2. **Unique FHIR system URIs**: Each instance has a unique `mpi-client.pid.local` value (e.g., `http://hueh.sedishtest.live/ws/fhir2/pid/openmrsid/`) so OpenCR can distinguish patient sources even if IDs were to collide.
+
+Both are configured automatically by `projects/isanteplus-db/initdb/20-configure-per-instance.sh` during fresh database initialization. The `FACILITY_NAMES` env var controls the mapping (default: `hueh,lapaix,ofatma,fsc`).
+
+**Patient ID format**: iSantePlus uses the Luhn Mod-30 check digit validator with the character set `0123456789ACDEFGHJKLMNPRTUVWXY`. Note that B, I, O, Q, S, Z are deliberately excluded to avoid ambiguity.
 
 ### Resource Requirements by Profile
 
@@ -91,265 +154,472 @@ This project deploys a multi-component Health Information Exchange (HIE) on a cl
 
 ---
 
-## Environment Setup
+## Package Management
 
-### Linux VM Setup
+Each HIE component is deployed as a package. Use the `instant` CLI to manage them:
 
-1. **Provision an AWS Linux VM:**  
-   Use your preferred AWS method (EC2, AWS Marketplace AMI, etc.) and ensure you have SSH access.
+```bash
+# Deploy a package (first time)
+./instant package init -n <package-name> --env-file .env
 
-2. **Update your system:**  
-   ```bash
-   sudo apt update && sudo apt upgrade -y
-   ```
+# Stop a package (preserves data)
+./instant package down -n <package-name> --env-file .env
 
-### Installing Git and Docker
+# Restart a package
+./instant package up -n <package-name> --env-file .env
+```
 
-1. **Install Git:**  
-   ```bash
-   sudo apt install -y git
-   ```
+### Package Names
 
-2. **Install Docker:**  
-   Follow [Docker’s installation guide](https://docs.docker.com/engine/install/ubuntu/) for your Linux distribution. 
+| Package ID | Stack | Description |
+|------------|-------|-------------|
+| `reverse-proxy-nginx` | `reverse-proxy` | Nginx + Let's Encrypt SSL |
+| `interoperability-layer-openhim` | `openhim` | OpenHIM Core + Console + MongoDB |
+| `fhir-datastore-hapi-fhir` | `hapi-fhir` | HAPI FHIR R4 Server (SHR) |
+| `shared-health-record-fhir` | `shared-health-record` | SHR Mediator |
+| `emr-isanteplus` | `isanteplus` | iSantePlus EMR instances |
+| `client-registry-opencr` | `client-registry-opencr` | OpenCR MPI |
+| `database-postgres` | `postgres` | PostgreSQL (HAPI FHIR, Keycloak) |
+| `database-mysql` | `mysql` | MySQL (iSantePlus) |
+| `identity-access-manager-keycloak` | `keycloak` | Keycloak SSO |
+| `monitoring` | `monitoring` | Grafana + Prometheus + Loki |
 
-### Initializing Docker Swarm
+### Important Notes
 
-1. **Enable Swarm mode:**  
-   ```bash
-   docker swarm init
-   ```
-   If you have multiple nodes, join worker nodes using the token provided by the `docker swarm init` command.
-
-2. **Lock the Swarm:**  
-   To secure the swarm’s Certificate Authority (CA) key, run:
-   ```bash
-   docker swarm ca --rotate --passphrase "YourSecurePassphrase"
-   ```
+- **`init` vs `up`**: Use `init` only for first-time deployment or after wiping data. Use `up` for restarts.
+- **HAPI FHIR**: Always run `./packages/fhir-datastore-hapi-fhir/post-deploy.sh` after deploying this package.
+- **OpenHIM**: If MongoDB was wiped, use `init` (not `up`) to re-run the config importer.
 
 ---
 
-## HIE Setup and Configuration
+## Adding a New iSantePlus Instance
 
-### 1. Clone the Repository
+Each iSantePlus instance requires configuration across multiple components. Here's the checklist for adding instance N (e.g., `isanteplus5`):
 
-```bash
-git clone https://github.com/I-TECH-UW/sedish-haiti.org.git
-cd sedish-haiti.org
+### Step 1 — MySQL database
+
+The `projects/isanteplus-db/initdb/10-create-dbs.sh` script automatically creates databases `openmrs`, `openmrs2`, ..., `openmrsN` on first boot. Set `OPENMRS_DB_COUNT` in `.env` to cover the number of instances.
+
+The `20-configure-per-instance.sh` script runs on fresh database init and sets:
+- xds-sender endpoints pointing to your OpenHIM domain
+- idgen sequence offset (instance N starts at N * 100000)
+- Unique `mpi-client.pid.local` FHIR system URI per facility
+
+Add the new facility to the `FACILITY_NAMES` env var (comma-separated, lowercase).
+
+### Step 2 — iSantePlus docker-compose
+
+Add the new service to `packages/emr-isanteplus/docker-compose.yml`:
+
+```yaml
+isanteplusN:
+  image: itechuw/docker-isanteplus-server:local-2
+  environment:
+    - OMRS_CONFIG_CONNECTION_URL=${OMRS_CONFIG_CONNECTION_URL_N}
+    - OMRS_CONFIG_CONNECTION_USERNAME=${OMRS_CONFIG_CONNECTION_USERNAME_N}
+    - OMRS_CONFIG_CONNECTION_PASSWORD=${OMRS_CONFIG_CONNECTION_PASSWORD_N}
+    # ... (copy remaining OMRS env vars from existing instances)
+  volumes:
+    - isanteplusN-data:/openmrs/data
+    - /etc/timezone:/etc/timezone:ro
+    - /etc/localtime:/etc/localtime:ro
+  networks:
+    - public
+    - reverse-proxy
+    - mysql
+    - openhim
 ```
 
-### 2. Explore Project Structure
-The project follows a modular structure outlined by the Instant OpneHIE V2 framework. The main configuration file is `config.yaml`, and environment variables are defined in the `.env` file. The project structure is as follows:
+Add the volume under `volumes:` and the database variables to `package-metadata.json`.
 
-```
-/sedish-haiti.org
-  ├── config.yaml           # Main project configuration file
-  ├── .env                  # Environment variable definitions
-  ├── scripts/              # Helper scripts (e.g., deploy.sh)
-  ├── projects/             # Sedish-specific services
-  └── packages/
-        ├── interoperability-layer-openhim/
-        ├── reverse-proxy-nginx/
-        ├── fhir-datastore-hapi-fhir/
-        ├── monitoring/
-        ├── database-postgres/
-        ├── database-mysql/
-        ├── identity-access-manager-keycloak/
-        ├── client-registry-opencr/
-        ├── analytics-datastore-elastic-search/
-        ├── message-bus-kafka/
-        ├── shared-health-record-fhir/
-        ├── emr-isanteplus/
-        ├── data-pipeline-isanteplus/
-        ├── document-data-store-xds/
-        ├── shared-health-record-openshr/
-        ├── openhim-mediator-openxds/
-        └── lnsp-mediator/
+### Step 3 — Nginx reverse proxy
+
+Add a server block to `packages/reverse-proxy-nginx/package-conf-secure/`:
+
+```nginx
+server {
+    listen 80;
+    server_name  facilityname.*;
+    location / { return 301 https://$host$request_uri; }
+}
+server {
+    listen 443 ssl;
+    server_name  facilityname.*;
+    location / {
+        resolver 127.0.0.11 valid=30s;
+        set $upstream_isanteplusN isanteplusN;
+        proxy_pass http://$upstream_isanteplusN:8080;
+    }
+}
 ```
 
-This template `.env` file can be used as a starting point for configuration:
+Add the subdomain to `SUBDOMAINS` in `.env`.
 
-```bash
-# General
-CLUSTERED_MODE=false
+### Step 4 — .env variables
 
-# Log configuration
-DEBUG=1
-BASHLOG_FILE=1
-BASHLOG_FILE_PATH=platform.log
-
-# Interoperability Layer - OpenHIM
-OPENHIM_CORE_INSTANCES=1
-OPENHIM_CONSOLE_INSTANCES=1
-OPENHIM_MEDIATOR_API_PORT=443
-OPENHIM_CORE_MEDIATOR_HOSTNAME=openhimcomms.sedish.live
-MONGO_SET_COUNT=1
-OPENHIM_MONGO_URL=mongodb://mongo-1:27017/openhim
-OPENHIM_MONGO_ATNAURL=mongodb://mongo-1:27017/openhim
-
-# FHIR Datastore - HAPI FHIR
-HAPI_FHIR_INSTANCES=1
-REPMGR_PARTNER_NODES=postgres-1
-POSTGRES_REPLICA_SET=postgres-1:5432
-
-# Reverse Proxy - Nginx
-REVERSE_PROXY_INSTANCES=1
-DOMAIN_NAME=sedish.live
-SUBDOMAINS=openhimcomms.sedish.live,openhimcore.sedish.live,openhimconsole.sedish.live,keycloak.sedish.live,grafana.sedish.live,isanteplus.sedish.live,hueh.sedish.live,lapaix.sedish.live,ofatma.sedish.live,foyer-saint-camille.sedish.live,klinik-eritaj.sedish.live,ofatma-sonapi.sedish.live,gressier.sedish.live,pestel.sedish.live,stdemiragoane.sedish.live,bethel-fdn.sedish.live
-STAGING=false
-INSECURE=false
-
-# Message Bus - Kafka
-KAFKA_TOPICS=map-concepts,map-locations,send-adt-to-ipms,send-orm-to-ipms,save-pims-patient,save-ipms-patient,handle-oru-from-ipms
-KAFKA_HOSTS=kafka-01:9092
-
-# Identity Access Manager - Keycloak
-KC_FRONTEND_URL=https://keycloak.sedish.live
-KC_GRAFANA_ROOT_URL=https://grafana.sedish.live
-KC_SUPERSET_ROOT_URL=https://superset.domain
-KC_OPENHIM_ROOT_URL=https://openhimconsole.sedish.live
-GF_SERVER_DOMAIN=grafana.sedish.live
-
-# Resource limits
-OPENHIM_MEMORY_LIMIT=4G
-ES_MEMORY_LIMIT=20G
-LOGSTASH_MEMORY_LIMIT=8G
-KAFKA_MEMORY_LIMIT=8G
-KAFDROP_MEMORY_LIMIT=500M
-
-LNSP_RUN_MIGRATIONS=true
-LNSP_DATABASE_EXISTS=true
 ```
-
-### 3. Build the Project
-
-1. Run `./get-cli.sh linux` to download the Instant OpenHIE CLI for Linux.
-
-2. Run `./build-custom-images.sh` to build the necessary project components.
-
-3. Run `./build-images.sh` to build the Docker images for the HIE deployment.
-
-
-### 4. Configure the Project
-
-1. Update the `.env` file with your specific configuration settings.
-
-### 5. Deploy the Project
-
-1. Run `./instant project up --env-file .env` to deploy the project.
-
-### 6. Manage individual packages
-
-You can use the `mk.sh` file or the `instant` CLI to manage individual packages. For example, to bring up the OpenHIM package:
-
-```bash
-./instant package up -n interoperability-layer-openhim --env-file .env
-``` 
-
-## Security Best Practices
-
-### Docker and Swarm Security
-
-- **Docker Secrets:**  
-  Use Docker secrets to securely manage sensitive data (passwords, API keys). Create secrets during deployment and reference them in your services.
-  ```bash
-  echo "my-secret-value" | docker secret create my_secret -
-  ```
-
-- **Private Networks for Swarm Traffic:**  
-  Ensure manager/worker communications occur over a private VLAN/VPC. When creating overlay networks, use:
-  ```bash
-  docker network create --driver overlay --opt encrypted my_overlay_network
-  ```
-
-### Host and OS Hardening
-
-- **Patch & Update:**  
-  Regularly update your Linux distribution and kernel to apply security patches.
-
-- **SSH Hardening:**  
-  - Enforce key-based authentication.
-  - Disable root login.
-  - Consider using an SSH bastion host or VPN.
-  
-- **Firewall Configuration:**  
-  Use iptables or nftables to whitelist only necessary inbound/outbound connections.
-
-- **SELinux/AppArmor:**  
-  Enable SELinux (for Red Hat-based distros) or AppArmor (for Ubuntu/Debian) to add extra process-level isolation.
-
-### Cloud-Specific Controls (AWS)
-
-- **AWS Security Groups:**  
-  Restrict inbound/outbound traffic to only what’s necessary for your HIE components.
-  
-- **External WAF:**  
-  Consider AWS WAF or third-party services to protect your public endpoints.
-
-- **Load Balancer:**  
-  Use AWS ALB/NLB to distribute traffic and integrate with AWS WAF.
-
-- **EBS/RDS Encryption:**  
-  Use KMS-managed keys to encrypt data volumes and databases.
-
-- **IAM Roles:**  
-  Grant least privilege permissions to your EC2 instances and containers.
-
-- **Monitoring:**  
-  Enable CloudWatch and GuardDuty for real-time threat detection and log analysis.
+OMRS_CONFIG_CONNECTION_URL_N=jdbc:mysql://mysql:3306/openmrsN?autoReconnect=true
+OMRS_CONFIG_CONNECTION_USERNAME_N=openmrsN
+OMRS_CONFIG_CONNECTION_PASSWORD_N=dev_password_only
+SUBDOMAIN_CORE_ISANTEPLUSN=facilityname
+```
 
 ---
 
-### Docker Secrets and Swarm Locking
+## SSL/TLS Certificates
 
-- **Docker Secrets:** Store sensitive configuration (e.g., passwords) as Docker secrets. Reference these secrets in your service definitions.
-- **Swarm Locking:** Use the CA rotation command (as shown above) to secure your swarm’s CA key.
+### How it works
+
+Certificates are provisioned during `init` via Certbot. The `set-secure-mode.sh` script:
+1. Generates a staging (dummy) cert to bootstrap nginx
+2. Scales nginx down to free port 80
+3. Generates a production cert via HTTP-01 challenge
+4. Updates nginx Docker secrets with the real cert and scales back up
+
+### Rate limits
+
+Let's Encrypt allows **5 certificates per exact domain set per 7 days**. If you hit this limit, you'll see:
+
+```
+too many certificates (5) already issued for this exact set of identifiers
+```
+
+**Workaround**: Request a cert with a different subset of domains (a different "exact set" is not rate-limited):
+
+```bash
+# Scale down nginx to free port 80
+docker service scale reverse-proxy_reverse-proxy-nginx=0
+
+# Request cert with fewer domains
+docker run --rm --network host --name certbot \
+  -v prod-certbot-conf:/etc/letsencrypt/archive/${DOMAIN_NAME} \
+  certbot/certbot:v1.23.0 certonly -n --standalone \
+  -m admin@${DOMAIN_NAME} \
+  -d "${DOMAIN_NAME},subdomain1.${DOMAIN_NAME},subdomain2.${DOMAIN_NAME}" \
+  --agree-tos
+
+# Copy certs and create Docker secrets
+docker run --rm --network host -w /temp \
+  -v prod-certbot-conf:/temp-certificates \
+  -v instant:/temp busybox sh \
+  -c "rm -rf certificates; mkdir -p certificates; cp -r /temp-certificates/* /temp/certificates"
+
+TIMESTAMP=$(date "+%Y%m%d%H%M%S")
+docker secret create --label name=nginx "${TIMESTAMP}-fullchain.pem" \
+  <(docker run --rm -v instant:/temp busybox cat /temp/certificates/fullchain1.pem)
+docker secret create --label name=nginx "${TIMESTAMP}-privkey.pem" \
+  <(docker run --rm -v instant:/temp busybox cat /temp/certificates/privkey1.pem)
+
+# Swap secrets on nginx and scale back up
+CURR_FULL=$(docker service inspect reverse-proxy_reverse-proxy-nginx \
+  --format '{{(index .Spec.TaskTemplate.ContainerSpec.Secrets 0).SecretName}}')
+CURR_KEY=$(docker service inspect reverse-proxy_reverse-proxy-nginx \
+  --format '{{(index .Spec.TaskTemplate.ContainerSpec.Secrets 1).SecretName}}')
+
+docker service update --replicas 1 \
+  --secret-rm "$CURR_FULL" --secret-rm "$CURR_KEY" \
+  --secret-add source=${TIMESTAMP}-fullchain.pem,target=/run/secrets/fullchain.pem \
+  --secret-add source=${TIMESTAMP}-privkey.pem,target=/run/secrets/privkey.pem \
+  reverse-proxy_reverse-proxy-nginx
+
+# Clean up
+docker volume rm prod-certbot-conf
+```
+
+### User-supplied certificates
+
+1. Place `fullchain.pem` and `privkey.pem` on the host
+2. Set paths in `.env`:
+   ```
+   USE_PROVIDED_CERTIFICATES=true
+   HOST_PROVIDED_CERT_FULLCHAIN_PATH=/ssl/your_domain/fullchain.pem
+   HOST_PROVIDED_CERT_PRIVKEY_PATH=/ssl/your_domain/privkey.pem
+   ```
+3. Rebuild: `./build-image.sh`
+4. Redeploy: `./instant package init -n reverse-proxy-nginx --env-file .env`
 
 ---
 
-## Component Modules
+## Redeployment Scenarios
 
-Each package listed in the configuration file corresponds to a containerized module in the HIE. Below is a brief description of each:
+### Redeploy a single package
 
-### Interoperability Layer – OpenHIM
-- **Purpose:** Acts as the central mediator for all data exchange. It validates, routes, and logs messages between HIE components.
-- **Configuration:** Managed via environment variables (e.g., API ports, MongoDB URLs).
+```bash
+./instant package down -n <package-name> --env-file .env
+./instant package up -n <package-name> --env-file .env
 
-### Reverse Proxy – Nginx
-- **Purpose:** Provides a reverse proxy layer to direct incoming requests to the appropriate internal services.
-- **Configuration:** Uses the DOMAIN_NAME and SUBDOMAINS to configure virtual hosts.
+# If HAPI FHIR:
+./packages/fhir-datastore-hapi-fhir/post-deploy.sh
+```
 
-### FHIR Datastore – HAPI FHIR
-- **Purpose:** Serves as the FHIR compliant datastore for healthcare records.
-- **Configuration:** Linked with the OpenHIM layer for secure data exchange and uses Postgres as the backend.
+### Rebuild and redeploy after code changes
 
-### Monitoring
-- **Purpose:** Collects metrics and logs from all services to facilitate system health monitoring and debugging.
-- **Configuration:** Environment variables define memory and instance limits.
+```bash
+# If iSantePlus Dockerfile or modules changed:
+docker build -t itechuw/docker-isanteplus-server:local-2 packages/emr-isanteplus/
 
-### Database Modules – Postgres & MySQL
-- **Purpose:** Provide robust data storage for different parts of the HIE.
-- **Configuration:** Integrated with replication settings (for Postgres) and tailored resource allocations.
+# Force the service to pick up the new image:
+docker service update --force isanteplus_isanteplus
+```
 
-### Analytics Datastore – ElasticSearch
-- **Purpose:** Stores and indexes analytics data, enabling rapid query and reporting.
-- **Configuration:** Resource limits ensure that heavy data loads do not impact system performance.
+### Full teardown and redeploy
 
-### Message Bus – Kafka
-- **Purpose:** Facilitates asynchronous message passing between HIE components.
-- **Configuration:** Topics and host addresses are defined through environment variables.
+```bash
+# 1. Stop all services
+./instant project down --env-file .env
 
-### Shared Health Record – FHIR / OpenSHR
-- **Purpose:** Manages shared patient records in a standardized FHIR format.
-- **Configuration:** Tightly integrated with the FHIR datastore and OpenHIM for secure data flow.
+# 2. Rebuild images (if code changed)
+docker build -t itechuw/docker-isanteplus-server:local-2 packages/emr-isanteplus/
+./build-image.sh
 
-### Sedish Haiti Custom Packages
-- **Modules:** 
-  - **emr-isanteplus**
-  - **data-pipeline-isanteplus**
+# 3. Deploy
+./instant project init --env-file .env
 
-- **Purpose:** These packages provide additional functionality specific to the Sedish Haiti deployment, such as electronic medical records, data pipelines, and document storage.
-- **Configuration:** Managed through package-specific environment variables and integrated with the core HIE components.
+# 4. Apply HAPI FHIR overrides
+./packages/fhir-datastore-hapi-fhir/post-deploy.sh
+
+# 5. Verify
+docker service ls --format '{{.Name}} {{.Replicas}}' | grep '0/' | grep -v 'await-helper\|config-importer'
+```
+
+### Complete wipe (destroys all data)
+
+```bash
+sudo bash purge-local.sh
+# Then follow Quick Start from step 5
+```
+
+---
+
+## Troubleshooting
+
+### Quick diagnostics
+
+```bash
+# Which services are down?
+docker service ls --format '{{.Name}} {{.Replicas}}' | grep '0/'
+# Expected at 0/1: await-helper, config-importer. Everything else should be 1/1.
+
+# Check logs for a specific service
+docker service logs <service_name> --tail 50
+
+# Check logs for a specific container (faster for large log histories)
+docker logs $(docker ps -q -f name=<service_name>.1) --tail 50
+
+# Force restart a stuck service
+docker service update --force <service_name>
+
+# Check what networks a service is on
+docker inspect $(docker ps -q -f name=<service_name>) \
+  --format '{{range $net, $conf := .NetworkSettings.Networks}}{{$net}} {{end}}'
+
+# Check env vars on a running service
+docker service inspect <service_name> \
+  --format '{{range .Spec.TaskTemplate.ContainerSpec.Env}}{{println .}}{{end}}'
+
+# Check env vars inside a running container
+docker exec $(docker ps -q -f name=<service_name>.1) env | grep <VAR>
+```
+
+### iSantePlus returns 404
+
+OpenMRS is still booting. First boot takes **10–15 minutes** (module loading, liquibase migrations, Spring context refresh). Check progress:
+
+```bash
+docker logs $(docker ps -q -f name=isanteplus_isanteplus.1) --tail 10
+```
+
+- `Refreshing Context` — still loading, almost done
+- `DispatcherServlet.noHandlerFound` — REST API not mapped yet, still refreshing
+- `referenceapplication.started value: true` — boot complete
+
+If it's stuck, check the container uptime:
+
+```bash
+docker ps --format "{{.Names}}\t{{.Status}}" | grep isanteplus
+```
+
+### iSantePlus container restarts every ~7 minutes
+
+The base image `startup.sh` uses `wait ${!}` which waits for the last background process (post-start.sh), not Tomcat. When post-start.sh completes, the container exits. This is fixed in the custom Dockerfile which captures `TOMCAT_PID=$!` and uses `wait $TOMCAT_PID`.
+
+If the container is still restarting, rebuild the image:
+
+```bash
+docker build -t itechuw/docker-isanteplus-server:local-2 packages/emr-isanteplus/
+docker service update --force isanteplus_isanteplus
+```
+
+### iSantePlus post-start.sh not running or timing out
+
+```bash
+# Check post-start output for a specific instance
+docker logs $(docker ps -q -f name=isanteplus_isanteplus.1) 2>&1 | grep "\[post-start\]"
+```
+
+- `Waiting for OpenMRS to be ready...` — still polling, OpenMRS not ready yet
+- `OpenMRS is ready (after Xs)` — success, then check for `Set xdssender.*` lines
+- `ERROR: OpenMRS did not become ready after 900s` — timed out; OpenMRS may need more time or has an error
+
+If post-start timed out, check if OpenMRS is actually running:
+
+```bash
+docker exec $(docker ps -q -f name=isanteplus_isanteplus.1) \
+  curl -sf -u admin:Admin123 http://localhost:8080/openmrs/ws/rest/v1/session
+```
+
+### Patient creation fails with "Select a preferred identifier"
+
+The idgen auto-generation is not working. Check the idgen configuration:
+
+```bash
+# Check idgen sequence config
+docker exec $(docker ps -q -f name=mysql_mysql) \
+  mysql -u openmrs -pdev_password_only openmrs -e \
+  "SELECT prefix, next_sequence_value FROM idgen_seq_id_gen WHERE id = 1;"
+
+# Check auto-generation is enabled
+docker exec $(docker ps -q -f name=mysql_mysql) \
+  mysql -u openmrs -pdev_password_only openmrs -e \
+  "SELECT * FROM idgen_auto_generation_option;"
+```
+
+The `automatic_generation_enabled` column must be `1` and `source` must point to a valid `idgen_identifier_source`.
+
+### OpenCR merges/overwrites patients from different facilities
+
+Check that each instance has a unique `mpi-client.pid.local`:
+
+```bash
+for svc in isanteplus isanteplus2 isanteplus3 isanteplus4; do
+  echo -n "$svc: "
+  docker exec $(docker ps -q -f name=isanteplus_${svc}.1) \
+    curl -s -u admin:Admin123 \
+    "http://localhost:8080/openmrs/ws/rest/v1/systemsetting/mpi-client.pid.local" 2>/dev/null \
+    | grep -o '"value":"[^"]*"' | sed 's/"value":"//;s/"//'
+done
+```
+
+If they're all the same (e.g., `http://isanteplus/ws/fhir2/pid/openmrsid/`), the `20-configure-per-instance.sh` didn't run. Fix manually:
+
+```bash
+# Replace <db>, <facility>, <domain> for each instance
+docker exec $(docker ps -q -f name=mysql_mysql) \
+  mysql -u <db> -pdev_password_only <db> -e \
+  "UPDATE global_property SET property_value = 'http://<facility>.<domain>/ws/fhir2/pid/openmrsid/'
+   WHERE property = 'mpi-client.pid.local';"
+```
+
+Then restart the iSantePlus instances to pick up the change.
+
+### SSL certificate shows staging issuer
+
+```bash
+# Check current certificate
+docker exec $(docker ps -q -f name=reverse-proxy_reverse-proxy-nginx) \
+  openssl x509 -in /run/secrets/fullchain.pem -noout -issuer -subject -dates
+```
+
+If issuer contains `(STAGING)`, the production cert generation failed. Common causes:
+- **Port 80 was not free** — nginx wasn't scaled down before certbot ran
+- **Rate limited** — too many certs issued in the last 7 days
+- **DNS not pointing to server** — the domain must resolve to this server's IP
+
+See the [SSL/TLS Certificates](#ssltls-certificates) section for the manual fix.
+
+### SSL certificate doesn't cover a subdomain
+
+Check the SANs on the current cert:
+
+```bash
+docker exec $(docker ps -q -f name=reverse-proxy_reverse-proxy-nginx) \
+  openssl x509 -in /run/secrets/fullchain.pem -noout -text | grep "DNS:"
+```
+
+If a subdomain is missing, regenerate the cert with the correct domain list (see rate limit workaround above).
+
+### Browser shows HSTS error (can't bypass)
+
+Firefox/Zen will refuse to load a page with a staging cert if HSTS is enabled. The only fix is to get a valid production certificate. In Chrome, you can:
+1. Go to `chrome://net-internals/#hsts`
+2. Delete the domain under "Delete domain security policies"
+3. Revisit and click "Advanced → Proceed"
+
+### SHR (HAPI FHIR browser) returns 502
+
+HAPI FHIR needs to be on the `reverse-proxy_public` network:
+
+```bash
+docker service update --network-add reverse-proxy_public hapi-fhir_hapi-fhir
+```
+
+### HAPI FHIR "database does not exist"
+
+```bash
+docker exec $(docker ps -q -f name=postgres_postgres-1) \
+  env PGPASSWORD=instant101 psql -U postgres -c 'CREATE DATABASE hapi;'
+docker service update --force hapi-fhir_hapi-fhir
+```
+
+### HAPI FHIR missing configuration overrides
+
+```bash
+docker service inspect hapi-fhir_hapi-fhir \
+  --format '{{range .Spec.TaskTemplate.ContainerSpec.Env}}{{println .}}{{end}}' \
+  | grep -E 'referential|client_id'
+```
+
+If missing, run `./packages/fhir-datastore-hapi-fhir/post-deploy.sh`.
+
+### OpenHIM MongoDB "NotWritablePrimary"
+
+```bash
+# Check replica set status
+docker exec $(docker ps -q -f name=openhim_mongo-1) mongo --eval "rs.status()"
+
+# Initialize replica set
+docker exec $(docker ps -q -f name=openhim_mongo-1) mongo --eval \
+  'rs.initiate({_id:"mongo-set",members:[{_id:0,host:"mongo-1:27017"}]})'
+
+# Restart OpenHIM Core
+docker service update --force openhim_openhim-core
+
+# Re-import channels/clients (if MongoDB was wiped)
+./instant package init -n interoperability-layer-openhim --env-file .env
+```
+
+### Instant CLI deploys with empty env vars
+
+If you run `docker stack deploy` directly (instead of via `./instant`), the `${OMRS_CONFIG_*}` variables in docker-compose.yml will resolve to empty strings because they come from `package-metadata.json`, which the instant CLI reads.
+
+**Always use the instant CLI to deploy packages:**
+
+```bash
+./instant package init -n emr-isanteplus --env-file .env
+```
+
+If you need to update a single service's env var without redeploying:
+
+```bash
+docker service update --env-add KEY=VALUE <service_name>
+```
+
+### Checking and updating idgen sequences directly
+
+```bash
+# Check all databases
+for db in openmrs openmrs2 openmrs3 openmrs4; do
+  echo "=== $db ==="
+  docker exec $(docker ps -q -f name=mysql_mysql) \
+    mysql -u "$db" -pdev_password_only "$db" -e \
+    "SELECT prefix, next_sequence_value FROM idgen_seq_id_gen WHERE id = 1;" 2>&1 | grep -v Warning
+done
+
+# Update a specific database's sequence offset
+docker exec $(docker ps -q -f name=mysql_mysql) \
+  mysql -u openmrs2 -pdev_password_only openmrs2 -e \
+  "UPDATE idgen_seq_id_gen SET next_sequence_value = 200000 WHERE id = 1;"
+```
 
 ---
 
@@ -415,145 +685,84 @@ ISANTEPLUS_MEMORY_RESERVE=256M
 ---
 
 ## Summary of Deployment Steps
+## OpenHIM Client Password Management
 
-1. **Clone the Repository:**  
-   ```bash
-   git clone https://github.com/your-org/sedish-haiti.git
-   cd sedish-haiti
-   ```
+OpenHIM clients authenticate on port 5001 using Basic auth with SHA512-hashed passwords.
 
-2. **Set Up the Environment:**  
-   Ensure your `.env` file is correctly configured (see sample above).
+**Generate a password hash:**
 
-3. **Initialize Docker Swarm (if not already):**  
-   ```bash
-   docker swarm init
-   ```
+```python
+python3 -c "
+import hashlib, os
+password = 'instant101'
+salt = os.urandom(16).hex()
+hash_val = hashlib.sha512((password + salt).encode()).hexdigest()
+print(f'passwordSalt: {salt}')
+print(f'passwordHash: {hash_val}')
+"
+```
 
-4. **Deploy the Instant Project:**  
-   Use the instant OpenHIE CLI command to start the project:
-   ```bash
-   ./instant project up --env-file .env
-   ```
-   This command will:
-   - Pull the required Docker images.
-   - Create Docker services for each package.
-   - Mount logs to the specified logPath (e.g., `/tmp/logs`).
+> Formula: `sha512(password + salt)` — **password first, then salt**.
 
-5. **Verify Deployment:**  
-   Check service status with:
-   ```bash
-   docker service ls
-   ```
-   And review logs (e.g., via `docker logs <service_name>`) to ensure each component is running correctly.
+**Files that must stay in sync:**
+
+| File | Field |
+|------|-------|
+| `packages/data-pipeline-isanteplus/config/application.yaml` | `sinkUserName` / `sinkPassword` |
+| `packages/interoperability-layer-openhim/importer/volume/openhim-import.json` | Client `passwordHash` / `passwordSalt` |
 
 ---
 
-# Post-Deployment Configuration
+## Security Considerations
 
+- **Default passwords**: Change `Admin123`, `instant101`, `dev_password_only` before production use
+- **Docker Secrets**: Use for sensitive configuration (passwords, API keys)
+- **Swarm Locking**: Rotate the CA key with `docker swarm ca --rotate`
+- **SSH Hardening**: Key-based auth only, disable root login
+- **Firewall**: Restrict inbound traffic to ports 80, 443 only
+- **Encryption**: Enable disk encryption for data at rest
 
-After the containers are up, complete the following manual configurations:
-
-## SSL/TLS Certificate Management
-
-This project supports two methods for managing SSL/TLS certificates for HTTPS, primarily for the Nginx reverse proxy:
-
-1.  **Let's Encrypt (Default)**:
-    *   Certificates are automatically provisioned and renewed via Certbot.
-    *   Active when `USE_PROVIDED_CERTIFICATES="false"` in `.env`.
-    *   Handled by `packages/reverse-proxy-nginx/set-secure-mode.sh`.
-
-2.  **Provided Certificates (User-Supplied)**:
-    *   Use certificates from a third-party Certificate Authority (CA).
-    *   Active when `USE_PROVIDED_CERTIFICATES="true"` in `.env`.
-
-### Using Provided Certificates
-
-1.  **Securely Store Certificates on Host**:
-    *   Place your `fullchain.pem` (server certificate + intermediate CAs) and `privkey.pem` (private key) in a secure directory on the host machine where `./build-image.sh` is executed (e.g., `/ssl/your_domain.com/`).
-    *   Ensure the private key has restrictive permissions (e.g., `chmod 600 /ssl/your_domain.com/privkey.pem`).
-
-2.  **Configure Host Paths in `.env`**:
-    *   In `/home/ubuntu/sedish-haiti.org/.env`, set:
-        ```properties
-        # Host paths for certificates, used during 'docker build'
-        HOST_PROVIDED_CERT_FULLCHAIN_PATH="/ssl/your_domain.com/fullchain.pem"
-        HOST_PROVIDED_CERT_PRIVKEY_PATH="/ssl/your_domain.com/privkey.pem"
-        ```
-
-3.  **Image Build Process (`./build-image.sh`)**:
-    *   `./build-image.sh` reads these host paths from `.env`.
-    *   Uses Docker BuildKit's `--secret` feature to securely pass these files to the build process.
-    *   Certificates are copied into `/opt/certs/` within the management Docker image. This avoids including them in the build context or image layers directly.
-
-4.  **Nginx Configuration (`packages/reverse-proxy-nginx/swarm.sh`)**:
-    *   The `swarm.sh` script uses the in-image paths (defined in `.env` and `package-metadata.json`):
-        ```properties
-        # Paths inside the management container for swarm.sh
-        PROVIDED_CERT_FULLCHAIN_PATH="/opt/certs/fullchain.pem"
-        PROVIDED_CERT_PRIVKEY_PATH="/opt/certs/privkey.pem"
-        ```
-    *   `swarm.sh` creates Docker Swarm secrets from these in-image files.
-    *   These Swarm secrets are mounted into the Nginx service container at `/run/secrets/fullchain.pem` and `/run/secrets/privkey.pem`.
-
-### Certificate Renewal
-
-#### Let's Encrypt Certificates
-*   Renewal is generally handled by Certbot's standard mechanisms. The initial setup is done by `set-secure-mode.sh`. For ongoing automated renewal, ensure Certbot's renewal process (e.g., via a cron job running `certbot renew` in the Certbot container) is active.
-
-#### Provided Certificates (Manual Process)
-
-1.  **Obtain Renewed Certificates**:
-    *   Get the new `fullchain.pem` and `privkey.pem` from your CA.
-
-2.  **Replace Old Certificates on Host**:
-    *   Update the files on the host machine at the locations specified by `HOST_PROVIDED_CERT_FULLCHAIN_PATH` and `HOST_PROVIDED_CERT_PRIVKEY_PATH` in your `.env` file.
-
-3.  **Re-build the Management Docker Image**:
-    *   This incorporates the new certificates into the image.
-        ```bash
-        sudo ./build-image.sh
-        ```
-
-4.  **Update the Nginx Service**:
-    *   Re-initialize or update the `reverse-proxy-nginx` package to apply the new certificates.
-        ```bash
-        sudo ./instant package init -n reverse-proxy-nginx --env-file .env
-        # Or, if already initialized:
-        # sudo ./instant package up -n reverse-proxy-nginx --env-file .env
-        ```
-    *   This triggers `swarm.sh` to create new Docker Swarm secrets from the updated certificates in the management image and updates the Nginx service.
-
-- **OpenHIM Setup:**  
-  - Change default passwords.
-  - Configure users, roles, and API keys.
-  - Set up channels/routes between OpenHIM and HAPI FHIR.
-- **Database Authentication:**  
-  - Verify that Postgres/MySQL instances are secure and that credentials are correctly passed via Docker secrets.
-- **Client Systems Registration:**  
-  - Add any external systems or client registries required to interface with the HIE.
-- **Connectivity Testing:**  
-  - Test data flows between components (e.g., send test FHIR messages through OpenHIM and verify reception in HAPI FHIR).
-  
 ---
 
-## Troubleshooting & Logging
+## Project Structure
 
-- **Logs:**  
-  All service logs are stored in `/tmp/logs` (or the location specified by `BASHLOG_FILE_PATH` in your .env file). Review these logs for error messages and warnings.
-- **Health Checks:**  
-  Use built-in container health checks and monitor via Docker Swarm’s service status.
-- **Security Audits:**  
-  Periodically rotate secrets and swarm CA keys. Review AWS CloudWatch and GuardDuty logs for any anomalies.
+```
+sedish/
+├── .env                          # Environment configuration
+├── build-custom-images.sh        # Builds iSantePlus, MySQL, ES images
+├── build-image.sh                # Builds the management/deployment image
+├── get-cli.sh                    # Downloads the Instant OpenHIE CLI
+├── instant                       # Instant OpenHIE CLI binary
+├── packages/
+│   ├── reverse-proxy-nginx/      # Nginx + Let's Encrypt
+│   ├── interoperability-layer-openhim/  # OpenHIM
+│   ├── fhir-datastore-hapi-fhir/ # HAPI FHIR + post-deploy.sh
+│   ├── shared-health-record-fhir/ # SHR Mediator
+│   ├── emr-isanteplus/           # iSantePlus EMR
+│   │   ├── Dockerfile            # Custom image with post-start.sh
+│   │   ├── config/post-start.sh  # Auto-configures xds-sender on boot
+│   │   └── docker-compose.yml    # Service definitions for all instances
+│   ├── client-registry-opencr/   # OpenCR
+│   ├── database-postgres/        # PostgreSQL
+│   ├── database-mysql/           # MySQL
+│   ├── identity-access-manager-keycloak/ # Keycloak
+│   └── monitoring/               # Grafana + Prometheus + Loki
+└── projects/
+    └── isanteplus-db/            # MySQL seed data for iSantePlus
+        ├── Dockerfile            # Custom MySQL image
+        └── initdb/
+            ├── 10-create-dbs.sh  # Creates openmrs, openmrs2, ... databases
+            ├── 20-configure-per-instance.sh  # Sets sequence offsets + unique URIs
+            └── isanteplus-db.sql # Base SQL dump (Git LFS)
+```
 
 ---
 
 ## Additional Resources
 
-- [Instant OpenHIE Documentation](https://jembi.gitbook.io/instant-v2)
-- [Jembi Platform README on GitHub](https://github.com/jembi/platform/blob/main/README.md)
-- [Docker Swarm Best Practices](https://docs.docker.com/engine/swarm/how-swarm-mode-works/)
-- [AWS Security Best Practices](https://aws.amazon.com/security/)
-- [Docker Secrets Documentation](https://docs.docker.com/engine/swarm/secrets/)
-
-~
+- [Instant OpenHIE v2 Documentation](https://jembi.gitbook.io/instant-v2)
+- [Jembi Platform](https://github.com/jembi/platform)
+- [OpenHIM Documentation](http://openhim.org/docs/)
+- [HAPI FHIR Documentation](https://hapifhir.io/hapi-fhir/docs/)
+- [OpenCR Documentation](https://intrahealth.github.io/client-registry/)
+- [iSantePlus Wiki](https://wiki.openmrs.org/display/RES/iSantePlus)

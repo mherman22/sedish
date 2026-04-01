@@ -46,8 +46,8 @@
       "clientID": "shr-pipeline",
       "name": "shr-pipeline",
       "passwordAlgorithm": "sha512",
-      "passwordSalt": "e538f4a341915058a00dd342b362349c",
-      "passwordHash": "0e2160d1a6be5bccd28181d0301a72e16d65424e86ee4a07a5227519423e8c3c5316e5feb459977d535a112c3a97c77fd466b835d2354ef9b6275822b2b279e8"
+      "passwordSalt": "a3d28f95fa476a64ab72a60db496845e",
+      "passwordHash": "5c1e5cc3f3ea5e4590a681de9253e11defc8053c1ebf8dd8881f5b92eef997d826236304a3f4b3a0f9c4977ec466db80b5dc54b034b4bf26ceba3a66d8647776"
     },
     {
       "roles": [
@@ -63,11 +63,11 @@
       "roles": [
         "emr"
       ],
-      "clientID": "isanteplus.sedish-haiti.org",
-      "name": "isanteplus.sedish-haiti.org",
+      "clientID": "isanteplus",
+      "name": "isanteplus",
       "passwordAlgorithm": "sha512",
-      "passwordSalt": "228b11da37d15ac9971e8ec7bee28752",
-      "passwordHash": "1c8f12ebe71f7394f12c7aacc69cbe8c1ba041351e28a67364b079eb523f00368a97941b30fa960c12943bfd044d9253d79a0464b225679f8da01dc90addb54a"
+      "passwordSalt": "a20514810f3a16068b04a39ae21f93c0",
+      "passwordHash": "5e57dc8fa047b7822b7248c7a1be3770aebf5041a779eaabd334906dc9d7017f995927a5d5fbd99b27325f98426b3a50830e8d4abec118276fa4b232fdd28127"
     },
     {
       "clientID": "lnsp",
@@ -90,7 +90,6 @@
       "methods": [
         "GET",
         "POST",
-        "DELETE",
         "PUT"
       ],
       "type": "http",
@@ -129,9 +128,21 @@
       "matchContentJson": null,
       "matchContentValue": null,
       "properties": [],
-      "txViewAcl": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "txViewFullAcl": [],
-      "txRerunAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "alerts": [],
       "status": "enabled",
       "rewriteUrls": false,
@@ -184,9 +195,21 @@
       ],
       "matchContentTypes": [],
       "properties": [],
-      "txViewAcl": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "txViewFullAcl": [],
-      "txRerunAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "alerts": [],
       "status": "enabled",
       "rewriteUrls": false,
@@ -238,9 +261,21 @@
       ],
       "matchContentTypes": [],
       "properties": [],
-      "txViewAcl": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "txViewFullAcl": [],
-      "txRerunAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "alerts": [],
       "status": "enabled",
       "rewriteUrls": false,
@@ -299,9 +334,21 @@
       ],
       "matchContentTypes": [],
       "properties": [],
-      "txViewAcl": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "txViewFullAcl": [],
-      "txRerunAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "alerts": [],
       "status": "enabled",
       "rewriteUrls": false,
@@ -352,9 +399,21 @@
       ],
       "matchContentTypes": [],
       "properties": [],
-      "txViewAcl": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "txViewFullAcl": [],
-      "txRerunAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "alerts": [],
       "status": "enabled",
       "rewriteUrls": false,
@@ -392,7 +451,7 @@
         "test"
       ],
       "whitelist": [],
-      "authType": "public",
+      "authType": "private",
       "routes": [
         {
           "name": "LNSP passthrough",
@@ -415,9 +474,21 @@
       "matchContentJson": null,
       "matchContentValue": null,
       "properties": [],
-      "txViewAcl": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "txViewFullAcl": [],
-      "txRerunAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "alerts": [],
       "status": "enabled",
       "rewriteUrls": false,
@@ -484,9 +555,21 @@
       "matchContentJson": null,
       "matchContentValue": null,
       "properties": [],
-      "txViewAcl": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "txViewFullAcl": [],
-      "txRerunAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
       "status": "enabled",
       "rewriteUrls": false,
       "addAutoRewriteRules": true,

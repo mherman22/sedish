@@ -12,10 +12,10 @@ packages:
   - identity-access-manager-keycloak
   - client-registry-opencr
   - analytics-datastore-elastic-search
-  - message-bus-kafka
   - shared-health-record-fhir
   # Sedish Haiti packages
   - emr-isanteplus
+  - fhir-aggregator-mediator
   - data-pipeline-isanteplus
   - fhir-aggregator-mediator
   - lnsp-mediator
@@ -33,11 +33,11 @@ profiles:
       - identity-access-manager-keycloak
       - client-registry-opencr
       - analytics-datastore-elastic-search
-      - message-bus-kafka
       - shared-health-record-fhir
       - dashboard-visualiser-kibana
       # Sedish Haiti packages
       - emr-isanteplus
+      - fhir-aggregator-mediator
       - data-pipeline-isanteplus
       - document-data-store-xds
       - shared-health-record-openshr
@@ -57,11 +57,11 @@ profiles:
       - identity-access-manager-keycloak
       - client-registry-opencr
       - analytics-datastore-elastic-search
-      - message-bus-kafka
       - shared-health-record-fhir
       - dashboard-visualiser-kibana
       # Sedish Haiti packages
       - emr-isanteplus
+      - fhir-aggregator-mediator
       - data-pipeline-isanteplus
       - document-data-store-xds
       - shared-health-record-openshr

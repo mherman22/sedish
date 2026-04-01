@@ -7,7 +7,7 @@
   "dependencies": [],
   "environmentVariables": {
     "MYSQL_IMAGE": "isanteplus-mysql:5.7.44",
-    "MYSQL_ROOT_PASSWORD": "root_password",
+    "MYSQL_ROOT_PW": "root_password",
     "OPENMRS_DB_COUNT": "10",
     "INITIAL_SQL_FILE": "/docker-entrypoint-initdb.d/initial.dump",
     "SWARM_STACK_NAME": "mysql_stack",
