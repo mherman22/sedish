@@ -18,10 +18,25 @@ services:
       - OMRS_CONFIG_CONNECTION_USERNAME=${OMRS_CONFIG_CONNECTION_USERNAME_1}
       - OMRS_CONFIG_CONNECTION_PASSWORD=${OMRS_CONFIG_CONNECTION_PASSWORD_1}
       - OMRS_DEV_DEBUG_PORT=${OMRS_DEV_DEBUG_PORT}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/openmrs/health/started"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 300s
     volumes:
       - isanteplus-data:/openmrs/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+    deploy:
+      replicas: ${ISANTEPLUS_INSTANCES_1:-1}
+      resources:
+        limits:
+          cpus: ${ISANTEPLUS_CPU_LIMIT:-0}
+          memory: ${ISANTEPLUS_MEMORY_LIMIT:-2G}
+        reservations:
+          cpus: ${ISANTEPLUS_CPU_RESERVE:-0.05}
+          memory: ${ISANTEPLUS_MEMORY_RESERVE:-512M}
     networks:
       - public
       - reverse-proxy
@@ -44,10 +59,25 @@ services:
       - OMRS_CONFIG_CONNECTION_USERNAME=${OMRS_CONFIG_CONNECTION_USERNAME_2}
       - OMRS_CONFIG_CONNECTION_PASSWORD=${OMRS_CONFIG_CONNECTION_PASSWORD_2}
       - OMRS_DEV_DEBUG_PORT=${OMRS_DEV_DEBUG_PORT}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/openmrs/health/started"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 300s
     volumes:
       - isanteplus2-data:/openmrs/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+    deploy:
+      replicas: ${ISANTEPLUS_INSTANCES_2:-1}
+      resources:
+        limits:
+          cpus: ${ISANTEPLUS_CPU_LIMIT:-0}
+          memory: ${ISANTEPLUS_MEMORY_LIMIT:-2G}
+        reservations:
+          cpus: ${ISANTEPLUS_CPU_RESERVE:-0.05}
+          memory: ${ISANTEPLUS_MEMORY_RESERVE:-512M}
     networks:
       - public
       - reverse-proxy
@@ -70,10 +100,25 @@ services:
       - OMRS_CONFIG_CONNECTION_USERNAME=${OMRS_CONFIG_CONNECTION_USERNAME_3}
       - OMRS_CONFIG_CONNECTION_PASSWORD=${OMRS_CONFIG_CONNECTION_PASSWORD_3}
       - OMRS_DEV_DEBUG_PORT=${OMRS_DEV_DEBUG_PORT}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/openmrs/health/started"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 300s
     volumes:
       - isanteplus3-data:/openmrs/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+    deploy:
+      replicas: ${ISANTEPLUS_INSTANCES_3:-1}
+      resources:
+        limits:
+          cpus: ${ISANTEPLUS_CPU_LIMIT:-0}
+          memory: ${ISANTEPLUS_MEMORY_LIMIT:-2G}
+        reservations:
+          cpus: ${ISANTEPLUS_CPU_RESERVE:-0.05}
+          memory: ${ISANTEPLUS_MEMORY_RESERVE:-512M}
     networks:
       - public
       - reverse-proxy
@@ -96,10 +141,25 @@ services:
       - OMRS_CONFIG_CONNECTION_USERNAME=${OMRS_CONFIG_CONNECTION_USERNAME_4}
       - OMRS_CONFIG_CONNECTION_PASSWORD=${OMRS_CONFIG_CONNECTION_PASSWORD_4}
       - OMRS_DEV_DEBUG_PORT=${OMRS_DEV_DEBUG_PORT}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/openmrs/health/started"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 300s
     volumes:
       - isanteplus4-data:/openmrs/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+    deploy:
+      replicas: ${ISANTEPLUS_INSTANCES_4:-1}
+      resources:
+        limits:
+          cpus: ${ISANTEPLUS_CPU_LIMIT:-0}
+          memory: ${ISANTEPLUS_MEMORY_LIMIT:-2G}
+        reservations:
+          cpus: ${ISANTEPLUS_CPU_RESERVE:-0.05}
+          memory: ${ISANTEPLUS_MEMORY_RESERVE:-512M}
     networks:
       - public
       - reverse-proxy

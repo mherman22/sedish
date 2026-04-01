@@ -81,6 +81,14 @@ This project deploys a multi-component Health Information Exchange (HIE) on a cl
 - **Git:** Installed for source code retrieval
 - **AWS:** Proper IAM roles and security group configuration for port and network isolation
 
+### Resource Requirements by Profile
+
+| Profile | Min RAM | Recommended RAM | Description |
+|---------|---------|-----------------|-------------|
+| **lite** | 8 GB | 16 GB | Two iSantePlus instances, core HIE services with FHIR aggregation |
+| **dev** | 16 GB | 32 GB | Full stack for development |
+| **prod** | 32 GB | 64 GB | Full stack with all instances and monitoring |
+
 ---
 
 ## Environment Setup
@@ -342,6 +350,67 @@ Each package listed in the configuration file corresponds to a containerized mod
 
 - **Purpose:** These packages provide additional functionality specific to the Sedish Haiti deployment, such as electronic medical records, data pipelines, and document storage.
 - **Configuration:** Managed through package-specific environment variables and integrated with the core HIE components.
+
+---
+
+## Resource-Limited Deployment (Lite Profile)
+
+For environments with limited resources (8-16 GB RAM), a **lite** profile is available that deploys only the essential services with reduced memory allocations. This is the recommended approach when:
+
+- Only one or a few iSantePlus instances are needed
+- The server has less than 32 GB RAM
+- iSantePlus instances fail to start due to memory exhaustion
+- You see 502 Bad Gateway errors from Nginx due to services being OOM-killed
+
+### Quick Start (Lite)
+
+```bash
+# Deploy with the lite profile
+./instant project up --env-file .env.lite
+```
+
+### What's included in the Lite Profile
+
+| Service | Included | Memory Limit |
+|---------|----------|-------------|
+| Nginx Reverse Proxy | ✅ | 512 MB |
+| PostgreSQL | ✅ | 3 GB |
+| MySQL | ✅ | 1 GB |
+| HAPI FHIR | ✅ | 1 GB |
+| OpenHIM | ✅ | 3 GB |
+| iSantePlus (2 instances) | ✅ | 1.2 GB each |
+| Data Pipeline | ✅ | 512 MB |
+| FHIR Aggregator Mediator | ✅ | 256 MB |
+| Monitoring (Prometheus/Grafana) | ❌ | — |
+| ElasticSearch | ❌ | — |
+| Kafka | ❌ | — |
+| Keycloak | ❌ | — |
+| OpenCR Client Registry | ❌ | — |
+
+### Customizing the Number of iSantePlus Instances
+
+The `.env.lite` file starts with two iSantePlus instances. To adjust, edit `.env.lite`:
+
+```bash
+# Enable 2 instances instead of 1
+ISANTEPLUS_INSTANCES_1=1
+ISANTEPLUS_INSTANCES_2=1
+ISANTEPLUS_INSTANCES_3=0
+ISANTEPLUS_INSTANCES_4=0
+```
+
+> **Tip:** Each iSantePlus instance requires approximately 1-2 GB RAM. When adding instances, ensure the host has sufficient available memory to avoid OOM conditions that cause cascading 502 errors.
+
+### Tuning Java Memory for iSantePlus
+
+The default Java heap for iSantePlus is `-Xmx1024m`. For very constrained environments, you can lower it further:
+
+```bash
+# In .env.lite - minimum viable for small clinics
+OMRS_JAVA_MEMORY_OPTS=-Xmx512m -Xms128m -XX:NewSize=64m
+ISANTEPLUS_MEMORY_LIMIT=768M
+ISANTEPLUS_MEMORY_RESERVE=256M
+```
 
 ---
 
