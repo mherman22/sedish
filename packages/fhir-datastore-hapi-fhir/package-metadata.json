@@ -1,0 +1,20 @@
+{
+  "id": "fhir-datastore-hapi-fhir",
+  "name": "HAPI FHIR",
+  "description": "FHIR Datastore using HAPI FHIR",
+  "type": "infrastructure",
+  "version": "0.0.0",
+  "dependencies": ["database-postgres"],
+  "environmentVariables": {
+    "HAPI_FHIR_INSTANCES": "1",
+    "HAPI_FHIR_MAX_REPLICAS_PER_NODE": "1",
+    "HAPI_FHIR_CPU_LIMIT": "0",
+    "HAPI_FHIR_CPU_RESERVE": "0.05",
+    "HAPI_FHIR_MEMORY_LIMIT": "3G",
+    "HAPI_FHIR_MEMORY_RESERVE": "512M",
+    "HF_JAVA_OPTS": "-Xmx1024m -Xms256m",
+    "HAPI_DB_SET": "postgres-1:5432",
+    "HF_POSTGRESQL_USERNAME": "hapi",
+    "HF_POSTGRESQL_PASSWORD": "hapi"
+  }
+}

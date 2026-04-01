@@ -69,3 +69,18 @@ profiles:
       - .env.prod
     dev: false
     only: false
+
+  - name: lite
+    packages:
+      - reverse-proxy-nginx
+      - database-postgres
+      - database-mysql
+      - fhir-datastore-hapi-fhir
+      - interoperability-layer-openhim
+      # Sedish Haiti packages
+      - emr-isanteplus
+      - data-pipeline-isanteplus
+    envFiles:
+      - .env.lite
+    dev: false
+    only: false

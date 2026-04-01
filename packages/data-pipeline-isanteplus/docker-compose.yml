@@ -4,7 +4,15 @@ services:
     ## SHR Resource Stream
   streaming-pipeline: 
     image: ghcr.io/i-tech-uw/openmrs-fhir-analytics/streaming-binlog:latest
-    
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0'
+          memory: ${PIPELINE_MEMORY_LIMIT:-1G}
+        reservations:
+          cpus: '0.05'
+          memory: ${PIPELINE_MEMORY_RESERVE:-256M}
     environment:
       - OPENMRS_URL=${OPENMRS_URL}
       - OPENMRS_USERNAME=${OPENMRS_USERNAME}
