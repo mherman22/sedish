@@ -45,8 +45,19 @@
     "cacheMaxSize": 1000,
     "cacheTtlMs": 3600000
   },
+  "deduplication": {
+    "Patient": {
+      "strategy": "identifier",
+      "system": "http://isanteplus/openmrs/ws/fhir2/pid/openmrsid"
+    },
+    "default": {
+      "strategy": "resourceId"
+    }
+  },
   "performance": {
     "timeoutMs": 30000,
-    "maxSocketsPerSource": 5
+    "requestTimeoutMs": 120000,
+    "maxSocketsPerSource": 5,
+    "rejectUnauthorized": false
   }
 }
