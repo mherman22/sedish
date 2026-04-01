@@ -17,4 +17,4 @@ packages:
   # - monitoring                        # Grafana/Prometheus/Loki (~7 containers, ~3GB RAM)
   # - identity-access-manager-keycloak  # SSO — OpenHIM works without it (~1GB RAM)
   # - analytics-datastore-elastic-search # Kibana analytics — OpenCR bundles its own ES (~3GB RAM)
-  # - lnsp-mediator                     # Lab integration — not in active use (~500MB RAM)
+  - lnsp-mediator                     # Lab integration — not in active use (~500MB RAM)

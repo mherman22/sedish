@@ -6,8 +6,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    deploy:
-      replicas: 0
     environment:
       - OMRS_JAVA_MEMORY_OPTS=${OMRS_JAVA_MEMORY_OPTS}
       - OMRS_CONFIG_CONNECTION_SERVER=${OMRS_CONFIG_CONNECTION_SERVER}
@@ -35,8 +33,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    deploy:
-      replicas: 0
     environment:
       - OMRS_JAVA_MEMORY_OPTS=${OMRS_JAVA_MEMORY_OPTS}
       - OMRS_CONFIG_CONNECTION_SERVER=${OMRS_CONFIG_CONNECTION_SERVER}
