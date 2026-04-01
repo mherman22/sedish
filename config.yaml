@@ -17,6 +17,7 @@ packages:
   # Sedish Haiti packages
   - emr-isanteplus
   - data-pipeline-isanteplus
+  - fhir-aggregator-mediator
   - lnsp-mediator
 
 
@@ -80,6 +81,7 @@ profiles:
       # Sedish Haiti packages
       - emr-isanteplus
       - data-pipeline-isanteplus
+      - fhir-aggregator-mediator
     envFiles:
       - .env.lite
     dev: false

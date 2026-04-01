@@ -1,0 +1,12 @@
+{
+  "id": "fhir-aggregator-mediator",
+  "name": "FHIR Aggregator Mediator",
+  "description": "OpenHIM mediator that aggregates FHIR R4 search results from multiple iSantePlus FHIR servers into a single endpoint",
+  "type": "infrastructure",
+  "version": "0.0.1",
+  "dependencies": ["interoperability-layer-openhim", "emr-isanteplus"],
+  "environmentVariables": {
+    "FHIR_AGGREGATOR_MEMORY_LIMIT": "512M",
+    "FHIR_AGGREGATOR_MEMORY_RESERVE": "256M"
+  }
+}

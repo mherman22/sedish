@@ -85,7 +85,7 @@ This project deploys a multi-component Health Information Exchange (HIE) on a cl
 
 | Profile | Min RAM | Recommended RAM | Description |
 |---------|---------|-----------------|-------------|
-| **lite** | 8 GB | 16 GB | Single iSantePlus instance, core HIE services only |
+| **lite** | 8 GB | 16 GB | Two iSantePlus instances, core HIE services with FHIR aggregation |
 | **dev** | 16 GB | 32 GB | Full stack for development |
 | **prod** | 32 GB | 64 GB | Full stack with all instances and monitoring |
 
@@ -378,8 +378,9 @@ For environments with limited resources (8-16 GB RAM), a **lite** profile is ava
 | MySQL | ✅ | 1 GB |
 | HAPI FHIR | ✅ | 1 GB |
 | OpenHIM | ✅ | 3 GB |
-| iSantePlus (1 instance) | ✅ | 1 GB |
+| iSantePlus (2 instances) | ✅ | 1.2 GB each |
 | Data Pipeline | ✅ | 512 MB |
+| FHIR Aggregator Mediator | ✅ | 256 MB |
 | Monitoring (Prometheus/Grafana) | ❌ | — |
 | ElasticSearch | ❌ | — |
 | Kafka | ❌ | — |
@@ -388,7 +389,7 @@ For environments with limited resources (8-16 GB RAM), a **lite** profile is ava
 
 ### Customizing the Number of iSantePlus Instances
 
-The `.env.lite` file starts with a single iSantePlus instance. To enable additional instances, edit `.env.lite`:
+The `.env.lite` file starts with two iSantePlus instances. To adjust, edit `.env.lite`:
 
 ```bash
 # Enable 2 instances instead of 1
