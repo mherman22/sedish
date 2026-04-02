@@ -11,7 +11,8 @@
       "expiry": null,
       "locked": false,
       "token": null,
-      "tokenType": null
+      "tokenType": null,
+      "password": "$2b$10$p4P.WSJEKJJzIfJoM147ReSIZ0lzmQXN/vndiyyJLY82WawY9FHfS"
     }
   ],
   "Passports": [
