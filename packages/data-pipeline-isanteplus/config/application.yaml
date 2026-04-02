@@ -20,7 +20,9 @@ fhirdata:
   purgeSchedule: "0 30 * * * *"
   numOfDwhSnapshotsToRetain: 2
 
-  resourceList: "Location,Patient,Encounter,Observation,Condition,AllergyIntolerance,MedicationRequest,Practitioner,Group"
+  # Order matters: referenced resources (Practitioner, Location) must sync
+  # before resources that reference them (Encounter, Observation)
+  resourceList: "Practitioner,Location,Patient,Encounter,Observation,Condition,AllergyIntolerance,MedicationRequest,Group"
 
   fhirVersion: "R4"
   numThreads: 1
