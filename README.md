@@ -179,8 +179,9 @@ Each HIE component is deployed as a package. Use the `instant` CLI to manage the
 ### Important Notes
 
 - **`init` vs `up`**: Use `init` only for first-time deployment or after wiping data. Use `up` for restarts.
-- **HAPI FHIR**: Always run `./packages/fhir-datastore-hapi-fhir/post-deploy.sh` after deploying this package.
+- **HAPI FHIR**: Always run `./packages/fhir-datastore-hapi-fhir/post-deploy.sh` after deploying or updating HAPI FHIR. This adds the `reverse-proxy_public` network (for SHR browser access) and sets referential integrity + placeholder target settings. The instant CLI reads compose files from the jembi/platform base image, which doesn't include our HAPI FHIR overrides — this script applies them.
 - **OpenHIM**: If MongoDB was wiped, use `init` (not `up`) to re-run the config importer.
+- **Pipeline resource order**: The data pipeline syncs resources in the order defined in `resourceList` in `application.yaml`. Referenced resources (Practitioner, Location) must come before resources that reference them (Encounter, Observation) to avoid referential integrity errors.
 
 ---
 
