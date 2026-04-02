@@ -13,7 +13,7 @@ fhirdata:
   sinkDbConfigPath:
 
   dwhRootPrefix: "/dwh/pipeline_DWH"
-  generateParquetFiles: false
+  generateParquetFiles: true
 
   # Incremental pipeline schedule — "0 0 * * * *" = every hour
   incrementalSchedule: "0 0 * * * *"
@@ -28,8 +28,9 @@ fhirdata:
   rowGroupSizeForParquetFiles: 33554432  # 32mb
   recursiveDepth: 1
   structureDefinitionsPath: "classpath:/r4-us-core-definitions"
+  viewDefinitionsDir: "/config/views"
   createHiveResourceTables: false
-  createParquetViews: false
+  createParquetViews: true
 
 management:
   endpoints:

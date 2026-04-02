@@ -11,6 +11,20 @@ services:
         target: /app/config/application.yaml
       - source: flink_conf_yaml
         target: /app/config/flink-conf.yaml
+      - source: patient_flat_view
+        target: /config/views/patient_flat_view.json
+      - source: observation_flat_view
+        target: /config/views/observation_flat_view.json
+      - source: condition_flat_view
+        target: /config/views/condition_flat_view.json
+      - source: practitioner_flat_view
+        target: /config/views/practitioner_flat_view.json
+      - source: location_flat_view
+        target: /config/views/location_flat_view.json
+      - source: medication_request_flat_view
+        target: /config/views/medication_request_flat_view.json
+      - source: diagnostic_report_flat_view
+        target: /config/views/diagnostic_report_flat_view.json
     volumes:
       - pipeline-dwh:/dwh
     ports:
@@ -35,6 +49,41 @@ configs:
     name: pipeline_flink_conf_yaml
     labels:
       name: pipeline_flink_conf_yaml
+  patient_flat_view:
+    file: ./config/views/patient_flat_view.json
+    name: pipeline_patient_flat_view
+    labels:
+      name: pipeline_patient_flat_view
+  observation_flat_view:
+    file: ./config/views/observation_flat_view.json
+    name: pipeline_observation_flat_view
+    labels:
+      name: pipeline_observation_flat_view
+  condition_flat_view:
+    file: ./config/views/condition_flat_view.json
+    name: pipeline_condition_flat_view
+    labels:
+      name: pipeline_condition_flat_view
+  practitioner_flat_view:
+    file: ./config/views/practitioner_flat_view.json
+    name: pipeline_practitioner_flat_view
+    labels:
+      name: pipeline_practitioner_flat_view
+  location_flat_view:
+    file: ./config/views/location_flat_view.json
+    name: pipeline_location_flat_view
+    labels:
+      name: pipeline_location_flat_view
+  medication_request_flat_view:
+    file: ./config/views/medication_request_flat_view.json
+    name: pipeline_medication_request_flat_view
+    labels:
+      name: pipeline_medication_request_flat_view
+  diagnostic_report_flat_view:
+    file: ./config/views/diagnostic_report_flat_view.json
+    name: pipeline_diagnostic_report_flat_view
+    labels:
+      name: pipeline_diagnostic_report_flat_view
 
 volumes:
   pipeline-dwh:
