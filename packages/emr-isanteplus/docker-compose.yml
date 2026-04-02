@@ -28,36 +28,8 @@ services:
       - mysql
       - openhim
 
-  isanteplus2:
-    image: itechuw/docker-isanteplus-server:local-2
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      - OMRS_JAVA_MEMORY_OPTS=${OMRS_JAVA_MEMORY_OPTS}
-      - OMRS_CONFIG_CONNECTION_SERVER=${OMRS_CONFIG_CONNECTION_SERVER}
-      - OMRS_CONFIG_CREATE_DATABASE_USER=${OMRS_CONFIG_CREATE_DATABASE_USER}
-      - OMRS_CONFIG_CREATE_TABLES=${OMRS_CONFIG_CREATE_TABLES}
-      - OMRS_CONFIG_ADD_DEMO_DATA=${OMRS_CONFIG_ADD_DEMO_DATA}
-      - OMRS_CONFIG_CONNECTION_URL=${OMRS_CONFIG_CONNECTION_URL_2}
-      - OMRS_CONFIG_HAS_CURRENT_OPENMRS_DATABASE=${OMRS_CONFIG_HAS_CURRENT_OPENMRS_DATABASE}
-      - OMRS_JAVA_SERVER_OPTS=${OMRS_JAVA_SERVER_OPTS}
-      - OMRS_CONFIG_CONNECTION_USERNAME=${OMRS_CONFIG_CONNECTION_USERNAME_2}
-      - OMRS_CONFIG_CONNECTION_PASSWORD=${OMRS_CONFIG_CONNECTION_PASSWORD_2}
-      - OMRS_DEV_DEBUG_PORT=${OMRS_DEV_DEBUG_PORT}
-    volumes:
-      - isanteplus2-data:/openmrs/data
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-    networks:
-      - public
-      - reverse-proxy
-      - mysql
-      - openhim
-
 volumes:
   isanteplus-data:
-  isanteplus2-data:
 networks:
   public:
     external: true

@@ -1,6 +1,6 @@
 # SEDISH: Haiti Health Information Exchange
 
-A Docker Swarm-based Health Information Exchange (HIE) for Haiti, built on [Instant OpenHIE v2](https://jembi.gitbook.io/instant-v2). SEDISH connects multiple iSantePlus (OpenMRS) clinic sites to a centralized data exchange layer for patient identity management, shared health records, and clinical data analytics.
+A Docker Swarm-based Health Information Exchange (HIE) for Haiti, built on [Instant OpenHIE v2](https://jembi.gitbook.io/instant-v2). SEDISH connects iSantePlus (OpenMRS) to a centralized data exchange layer for patient identity management, shared health records, and clinical data sync.
 
 ---
 
@@ -35,7 +35,7 @@ A Docker Swarm-based Health Information Exchange (HIE) for Haiti, built on [Inst
 
 | Component | Image | Purpose |
 |-----------|-------|---------|
-| [iSantePlus](https://github.com/IsantePlus/openmrs-distro-isanteplus) | `itechuw/docker-isanteplus-server:local-2` | OpenMRS-based EMR (multiple clinic instances) |
+| [iSantePlus](https://github.com/IsantePlus/openmrs-distro-isanteplus) | `itechuw/docker-isanteplus-server:local-2` | OpenMRS-based EMR |
 | [OpenHIM](http://openhim.org/) | `jembi/openhim-core:v8.5.0` | Interoperability layer — routes, logs, and secures all data exchange |
 | [OpenCR](https://github.com/intrahealth/client-registry) | `itechuw/opencr` | Master Patient Index (MPI) — de-duplicates patient identities |
 | [HAPI FHIR](https://hapifhir.io/) | `jembi/hapi:v7.0.3-wget` | FHIR R4 data store — Shared Health Record (SHR) |
@@ -119,9 +119,6 @@ After deployment, the following services are accessible via HTTPS:
 | Service | URL | Credentials |
 |---------|-----|-------------|
 | iSantePlus (HUEH) | `https://hueh.<domain>/openmrs` | `admin` / `Admin123` |
-| iSantePlus (La Paix) | `https://lapaix.<domain>/openmrs` | `admin` / `Admin123` |
-| iSantePlus (OFATMA) | `https://ofatma.<domain>/openmrs` | `admin` / `Admin123` |
-| iSantePlus (Foyer St-Camille) | `https://foyer-saint-camille.<domain>/openmrs` | `admin` / `Admin123` |
 | OpenHIM Console | `https://openhimconsole.<domain>` | `root@openhim.org` / `instant101` |
 | OpenCR | `https://opencr.<domain>/crux` | — |
 | SHR (HAPI FHIR Browser) | `https://shr.<domain>/fhir` | — |
@@ -140,7 +137,7 @@ Each iSantePlus instance has its own MySQL database (`openmrs`, `openmrs2`, `ope
 
 2. **Unique FHIR system URIs**: Each instance has a unique `mpi-client.pid.local` value (e.g., `http://hueh.sedishtest.live/ws/fhir2/pid/openmrsid/`) so OpenCR can distinguish patient sources even if IDs were to collide.
 
-Both are configured automatically by `projects/isanteplus-db/initdb/20-configure-per-instance.sh` during fresh database initialization. The `FACILITY_NAMES` env var controls the mapping (default: `hueh,lapaix,ofatma,fsc`).
+Both are configured automatically by `projects/isanteplus-db/initdb/20-configure-per-instance.sh` during fresh database initialization. The `FACILITY_NAMES` env var controls the mapping (default: `hueh`).
 
 **Patient ID format**: iSantePlus uses the Luhn Mod-30 check digit validator with the character set `0123456789ACDEFGHJKLMNPRTUVWXY`. Note that B, I, O, Q, S, Z are deliberately excluded to avoid ambiguity.
 
@@ -185,79 +182,6 @@ Each HIE component is deployed as a package. Use the `instant` CLI to manage the
 
 ---
 
-## Adding a New iSantePlus Instance
-
-Each iSantePlus instance requires configuration across multiple components. Here's the checklist for adding instance N (e.g., `isanteplus5`):
-
-### Step 1 — MySQL database
-
-The `projects/isanteplus-db/initdb/10-create-dbs.sh` script automatically creates databases `openmrs`, `openmrs2`, ..., `openmrsN` on first boot. Set `OPENMRS_DB_COUNT` in `.env` to cover the number of instances.
-
-The `20-configure-per-instance.sh` script runs on fresh database init and sets:
-- xds-sender endpoints pointing to your OpenHIM domain
-- idgen sequence offset (instance N starts at N * 100000)
-- Unique `mpi-client.pid.local` FHIR system URI per facility
-
-Add the new facility to the `FACILITY_NAMES` env var (comma-separated, lowercase).
-
-### Step 2 — iSantePlus docker-compose
-
-Add the new service to `packages/emr-isanteplus/docker-compose.yml`:
-
-```yaml
-isanteplusN:
-  image: itechuw/docker-isanteplus-server:local-2
-  environment:
-    - OMRS_CONFIG_CONNECTION_URL=${OMRS_CONFIG_CONNECTION_URL_N}
-    - OMRS_CONFIG_CONNECTION_USERNAME=${OMRS_CONFIG_CONNECTION_USERNAME_N}
-    - OMRS_CONFIG_CONNECTION_PASSWORD=${OMRS_CONFIG_CONNECTION_PASSWORD_N}
-    # ... (copy remaining OMRS env vars from existing instances)
-  volumes:
-    - isanteplusN-data:/openmrs/data
-    - /etc/timezone:/etc/timezone:ro
-    - /etc/localtime:/etc/localtime:ro
-  networks:
-    - public
-    - reverse-proxy
-    - mysql
-    - openhim
-```
-
-Add the volume under `volumes:` and the database variables to `package-metadata.json`.
-
-### Step 3 — Nginx reverse proxy
-
-Add a server block to `packages/reverse-proxy-nginx/package-conf-secure/`:
-
-```nginx
-server {
-    listen 80;
-    server_name  facilityname.*;
-    location / { return 301 https://$host$request_uri; }
-}
-server {
-    listen 443 ssl;
-    server_name  facilityname.*;
-    location / {
-        resolver 127.0.0.11 valid=30s;
-        set $upstream_isanteplusN isanteplusN;
-        proxy_pass http://$upstream_isanteplusN:8080;
-    }
-}
-```
-
-Add the subdomain to `SUBDOMAINS` in `.env`.
-
-### Step 4 — .env variables
-
-```
-OMRS_CONFIG_CONNECTION_URL_N=jdbc:mysql://mysql:3306/openmrsN?autoReconnect=true
-OMRS_CONFIG_CONNECTION_USERNAME_N=openmrsN
-OMRS_CONFIG_CONNECTION_PASSWORD_N=dev_password_only
-SUBDOMAIN_CORE_ISANTEPLUSN=facilityname
-```
-
----
 
 ## SSL/TLS Certificates
 
@@ -484,7 +408,7 @@ The `automatic_generation_enabled` column must be `1` and `source` must point to
 Check that each instance has a unique `mpi-client.pid.local`:
 
 ```bash
-for svc in isanteplus isanteplus2 isanteplus3 isanteplus4; do
+for svc in isanteplus; do
   echo -n "$svc: "
   docker exec $(docker ps -q -f name=isanteplus_${svc}.1) \
     curl -s -u admin:Admin123 \

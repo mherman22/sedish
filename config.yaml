@@ -3,18 +3,20 @@ image: itechuw/sedish-haiti:latest
 logPath: /tmp/logs
 
 packages:
+  # Core infrastructure
   - interoperability-layer-openhim
   - reverse-proxy-nginx
   - database-postgres
   - database-mysql
+  # FHIR & SHR
   - fhir-datastore-hapi-fhir
   - shared-health-record-fhir
   - client-registry-opencr
+  # EMR & data pipeline
   - emr-isanteplus
-  - fhir-aggregator-mediator          # DEMO/TEST ONLY — not needed in production (each site has its own pipeline)
   - data-pipeline-isanteplus
   # Not needed for core HIE — uncomment to enable:
   # - monitoring                        # Grafana/Prometheus/Loki (~7 containers, ~3GB RAM)
   # - identity-access-manager-keycloak  # SSO — OpenHIM works without it (~1GB RAM)
   # - analytics-datastore-elastic-search # Kibana analytics — OpenCR bundles its own ES (~3GB RAM)
-  - lnsp-mediator                     # Lab integration — not in active use (~500MB RAM)
+  # - lnsp-mediator                     # Lab integration — not in active use (~500MB RAM)

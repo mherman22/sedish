@@ -1,14 +1,10 @@
 fhirdata:
   fhirFetchMode: "FHIR_SEARCH"
 
-  # DEMO/TEST: Uses the FHIR Aggregator to read from multiple iSantePlus instances.
-  # PRODUCTION: Point directly at the local iSantePlus instance instead:
-  #   fhirServerUrl: "http://isanteplus:8080/openmrs/ws/fhir2/R4"
-  #   fhirServerUserName: "admin"
-  #   fhirServerPassword: "Admin123"
-  fhirServerUrl: "http://fhir-aggregator_fhir-aggregator:3000/fhir"
-  fhirServerUserName: ""
-  fhirServerPassword: ""
+  # Source: iSantePlus FHIR R4 endpoint
+  fhirServerUrl: "http://isanteplus:8080/openmrs/ws/fhir2/R4"
+  fhirServerUserName: "admin"
+  fhirServerPassword: "Admin123"
 
   # This is where you set where the Data is sent to.
   sinkFhirServerUrl: "http://openhim-core:5001/SHR/fhir"
