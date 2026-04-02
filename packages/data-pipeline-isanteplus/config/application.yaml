@@ -1,7 +1,11 @@
 fhirdata:
   fhirFetchMode: "FHIR_SEARCH"
 
-  # Source: FHIR Aggregator — fans out to all iSantePlus instances
+  # DEMO/TEST: Uses the FHIR Aggregator to read from multiple iSantePlus instances.
+  # PRODUCTION: Point directly at the local iSantePlus instance instead:
+  #   fhirServerUrl: "http://isanteplus:8080/openmrs/ws/fhir2/R4"
+  #   fhirServerUserName: "admin"
+  #   fhirServerPassword: "Admin123"
   fhirServerUrl: "http://fhir-aggregator_fhir-aggregator:3000/fhir"
   fhirServerUserName: ""
   fhirServerPassword: ""

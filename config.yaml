@@ -11,7 +11,7 @@ packages:
   - shared-health-record-fhir
   - client-registry-opencr
   - emr-isanteplus
-  - fhir-aggregator-mediator
+  - fhir-aggregator-mediator          # DEMO/TEST ONLY — not needed in production (each site has its own pipeline)
   - data-pipeline-isanteplus
   # Not needed for core HIE — uncomment to enable:
   # - monitoring                        # Grafana/Prometheus/Loki (~7 containers, ~3GB RAM)
