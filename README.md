@@ -181,7 +181,69 @@ Each HIE component is deployed as a package. Use the `instant` CLI to manage the
 - **`init` vs `up`**: Use `init` only for first-time deployment or after wiping data. Use `up` for restarts.
 - **HAPI FHIR**: Always run `./packages/fhir-datastore-hapi-fhir/post-deploy.sh` after deploying or updating HAPI FHIR. This adds the `reverse-proxy_public` network (for SHR browser access) and sets referential integrity + placeholder target settings. The instant CLI reads compose files from the jembi/platform base image, which doesn't include our HAPI FHIR overrides — this script applies them.
 - **OpenHIM**: If MongoDB was wiped, use `init` (not `up`) to re-run the config importer.
-- **Pipeline resource order**: The data pipeline syncs resources in the order defined in `resourceList` in `application.yaml`. Referenced resources (Practitioner, Location) must come before resources that reference them (Encounter, Observation) to avoid referential integrity errors.
+- **Pipeline resource order**: The data pipeline syncs resources in the order defined in `resourceList` in `application-isanteplus*.yaml`. Referenced resources (Practitioner, Location) must come before resources that reference them (Encounter, Observation) to avoid referential integrity errors.
+
+---
+
+## FHIR Data Pipeline Management
+
+Each iSantePlus instance has its own dedicated pipeline that syncs FHIR resources to the SHR. Pipelines run on a schedule (incremental sync every hour) and can be managed from the terminal.
+
+### Architecture
+
+```
+pipeline-isanteplus1 → http://isanteplus:8080/openmrs/ws/fhir2/R4   → SHR (via OpenHIM)
+pipeline-isanteplus2 → http://isanteplus2:8080/openmrs/ws/fhir2/R4  → SHR (via OpenHIM)
+```
+
+Schedules are staggered to avoid concurrent writes:
+- Pipeline 1: runs at `:00` (top of hour)
+- Pipeline 2: runs at `:30` (half hour)
+
+### Check pipeline status
+
+```bash
+# List pipeline services
+docker service ls -f name=pipeline
+
+# Check last run time and next scheduled run
+docker service logs pipeline_pipeline-isanteplus1 --tail 5
+docker service logs pipeline_pipeline-isanteplus2 --tail 5
+```
+
+### Trigger a pipeline run manually
+
+```bash
+# Full run (re-syncs all resources)
+docker exec $(docker ps -q -f name=pipeline_pipeline-isanteplus1) \
+  curl -s -X POST http://localhost:8080/run -F "runMode=FULL"
+
+# Incremental run (only changed resources since last run)
+docker exec $(docker ps -q -f name=pipeline_pipeline-isanteplus2) \
+  curl -s -X POST http://localhost:8080/run -F "runMode=INCREMENTAL"
+```
+
+### Check pipeline logs for errors
+
+```bash
+# Check for errors in a specific pipeline
+docker service logs pipeline_pipeline-isanteplus1 2>&1 | grep -i "error\|fail\|409" | tail -20
+
+# Check SHR mediator for MPI resolution activity
+docker service logs shared-health-record_shr 2>&1 | grep -i "MPI resolved" | tail -10
+```
+
+### Restart a pipeline
+
+```bash
+docker service update --force pipeline_pipeline-isanteplus1
+```
+
+### Adding a pipeline for a new iSantePlus instance
+
+1. Create `packages/data-pipeline-isanteplus/config/application-isanteplusN.yaml` — copy from an existing config and change `fhirServerUrl` to point at the new instance
+2. Add the new service to `packages/data-pipeline-isanteplus/docker-compose.yml`
+3. Stagger the `incrementalSchedule` to avoid overlap with other pipelines
 
 ---
 
@@ -673,6 +735,10 @@ sedish/
 │   │   ├── Dockerfile            # Custom image with post-start.sh
 │   │   ├── config/post-start.sh  # Auto-configures xds-sender on boot
 │   │   └── docker-compose.yml    # Service definitions for all instances
+│   ├── data-pipeline-isanteplus/  # FHIR data pipelines (one per instance)
+│   │   ├── config/application-isanteplus1.yaml  # Pipeline 1 → isanteplus
+│   │   ├── config/application-isanteplus2.yaml  # Pipeline 2 → isanteplus2
+│   │   └── docker-compose.yml
 │   ├── client-registry-opencr/   # OpenCR
 │   ├── database-postgres/        # PostgreSQL
 │   ├── database-mysql/           # MySQL

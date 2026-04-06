@@ -15,10 +15,8 @@ services:
       - pipeline-dwh-1:/dwh
     networks:
       - openhim
-      - shr
       - isanteplus
       - hapi-fhir
-      - reverse-proxy
 
   pipeline-isanteplus2:
     image: us-docker.pkg.dev/cloud-build-fhir/fhir-analytics/main:latest
@@ -34,10 +32,8 @@ services:
       - pipeline-dwh-2:/dwh
     networks:
       - openhim
-      - shr
       - isanteplus
       - hapi-fhir
-      - reverse-proxy
 
 configs:
   application_isanteplus1_yaml:
@@ -55,18 +51,9 @@ networks:
   openhim:
     name: openhim_public
     external: true
-  shr:
-    name: shr
-    external: true
-  mysql:
-    name: mysql_public
-    external: true
   isanteplus:
     name: isanteplus_public
     external: true
   hapi-fhir:
     name: hapi-fhir_public
-    external: true
-  reverse-proxy:
-    name: reverse-proxy_public
     external: true
