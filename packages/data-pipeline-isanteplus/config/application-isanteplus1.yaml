@@ -1,16 +1,10 @@
 fhirdata:
   fhirFetchMode: "FHIR_SEARCH"
 
-  # DEMO/TEST: Uses the FHIR Aggregator to read from multiple iSantePlus instances.
-  # PRODUCTION: Point directly at the local iSantePlus instance instead:
-  #   fhirServerUrl: "http://isanteplus:8080/openmrs/ws/fhir2/R4"
-  #   fhirServerUserName: "admin"
-  #   fhirServerPassword: "Admin123"
-  fhirServerUrl: "http://fhir-aggregator_fhir-aggregator:3000/fhir"
-  fhirServerUserName: ""
-  fhirServerPassword: ""
+  fhirServerUrl: "http://isanteplus:8080/openmrs/ws/fhir2/R4"
+  fhirServerUserName: "admin"
+  fhirServerPassword: "Admin123"
 
-  # This is where you set where the Data is sent to.
   sinkFhirServerUrl: "http://openhim-core:5001/SHR/fhir"
   sinkUserName: "shr-pipeline"
   sinkPassword: "instant101"
@@ -19,20 +13,17 @@ fhirdata:
   dwhRootPrefix: "/dwh/pipeline_DWH"
   generateParquetFiles: false
 
-  # Incremental pipeline schedule — "0 0 * * * *" = every hour
   incrementalSchedule: "0 0 * * * *"
   purgeSchedule: "0 30 * * * *"
   numOfDwhSnapshotsToRetain: 2
 
-  # Order matters: referenced resources (Practitioner, Location) must sync
-  # before resources that reference them (Encounter, Observation)
   resourceList: "Practitioner,Location,Patient,Encounter,Observation,Condition,AllergyIntolerance,MedicationRequest,Group"
 
   fhirVersion: "R4"
   numThreads: 1
 
   autoGenerateFlinkConfiguration: true
-  rowGroupSizeForParquetFiles: 33554432  # 32mb
+  rowGroupSizeForParquetFiles: 33554432
   recursiveDepth: 1
   structureDefinitionsPath: "classpath:/r4-us-core-definitions"
   createHiveResourceTables: false

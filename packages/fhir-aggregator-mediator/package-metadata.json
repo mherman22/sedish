@@ -1,9 +1,0 @@
-{
-  "id": "fhir-aggregator-mediator",
-  "name": "FHIR Aggregator Mediator",
-  "description": "OpenHIM mediator that aggregates FHIR R4 search results from multiple iSantePlus instances into a single endpoint for the data pipeline",
-  "type": "infrastructure",
-  "version": "1.0.0",
-  "dependencies": ["interoperability-layer-openhim", "emr-isanteplus"],
-  "environmentVariables": {}
-}
