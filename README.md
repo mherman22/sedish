@@ -146,7 +146,53 @@ Both are configured automatically by `projects/isanteplus-db/initdb/20-configure
 
 ---
 
-## Package Management
+## Manual Deployment (docker stack)
+
+Deploy packages in order — later packages depend on earlier ones:
+
+```bash
+# 1. Databases (no dependencies)
+docker stack deploy -c packages/database-postgres/docker-compose.yml postgres
+docker stack deploy -c packages/database-mysql/docker-compose.yml mysql
+
+# 2. Interoperability layer (bundles its own MongoDB)
+docker stack deploy -c packages/interoperability-layer-openhim/docker-compose.yml \
+  -c packages/interoperability-layer-openhim/docker-compose.config.yml openhim
+
+# 3. Reverse proxy
+docker stack deploy -c packages/reverse-proxy-nginx/docker-compose.yml reverse-proxy
+
+# 4. FHIR datastore (needs postgres)
+docker stack deploy -c packages/fhir-datastore-hapi-fhir/docker-compose.yml hapi-fhir
+./packages/fhir-datastore-hapi-fhir/post-deploy.sh
+
+# 5. Client Registry (needs its own ES + HAPI FHIR + postgres)
+docker stack deploy \
+  -c packages/client-registry-opencr/docker-compose-es.yml \
+  -c packages/client-registry-opencr/docker-compose-postgres.yml \
+  -c packages/client-registry-opencr/docker-compose-hapi.yml \
+  -c packages/client-registry-opencr/docker-compose.yml \
+  client-registry-opencr
+
+# 6. SHR Mediator (needs openhim + hapi-fhir)
+docker stack deploy -c packages/shared-health-record-fhir/docker-compose.yml shared-health-record
+
+# 7. iSantePlus EMR (needs mysql + openhim — takes 10-15 min to boot)
+docker stack deploy -c packages/emr-isanteplus/docker-compose.yml isanteplus
+
+# 8. FHIR Data Pipelines (needs isanteplus + openhim + hapi-fhir — deploy LAST)
+docker stack deploy -c packages/data-pipeline-isanteplus/docker-compose.yml pipeline
+
+# 9. Verify all services are up
+docker service ls --format 'table {{.Name}}\t{{.Replicas}}'
+```
+
+> **Note:** OpenCR may need a force restart after first deploy if ES wasn't ready:
+> `docker service update --force client-registry-opencr_opencr`
+
+---
+
+## Package Management (Instant CLI)
 
 Each HIE component is deployed as a package. Use the `instant` CLI to manage them:
 
