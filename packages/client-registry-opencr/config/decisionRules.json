@@ -42,7 +42,7 @@
         "code_national": {
           "algorithm": "exact",
           "fhirpath": "identifier.where(system='http://isanteplus.org/openmrs/fhir2/5-code-national').value",
-          "espath": "code_national",
+          "espath": "codeNational",
           "null_handling": "conservative",
           "null_handling_both": "conservative"
         }
@@ -58,7 +58,7 @@
         "code_national": {
           "algorithm": "exact",
           "fhirpath": "identifier.where(system='http://isanteplus.org/openmrs/fhir2/5-code-national').value",
-          "espath": "code_national",
+          "espath": "codeNational",
           "null_handling": "conservative",
           "null_handling_both": "conservative"
         },
@@ -102,7 +102,7 @@
         "isanteplus_id": {
           "algorithm": "exact",
           "fhirpath": "identifier.where(system='http://isanteplus.org/openmrs/fhir2/3-isanteplus-id').value",
-          "espath": "isanteplus_id",
+          "espath": "isanteplusId",
           "null_handling": "conservative",
           "null_handling_both": "conservative"
         },
@@ -298,7 +298,7 @@
         "code_national": {
           "algorithm": "exact",
           "fhirpath": "identifier.where(system='http://isanteplus.org/openmrs/fhir2/5-code-national').value",
-          "espath": "code_national",
+          "espath": "codeNational",
           "null_handling": "conservative",
           "null_handling_both": "conservative"
         },
