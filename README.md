@@ -146,9 +146,44 @@ Both are configured automatically by `projects/isanteplus-db/initdb/20-configure
 
 ---
 
-## Manual Deployment (docker stack)
+## Deployment
 
-Deploy packages in order — later packages depend on earlier ones:
+There are two ways to deploy: the **Instant CLI** (recommended) or **manual `docker stack deploy`** (for development or when you need direct control).
+
+### Option A: Instant CLI (recommended)
+
+The Instant CLI reads `package-metadata.json` for env var injection and handles Docker config management. **You must rebuild the management image after any local changes:**
+
+```bash
+# Build the management image (required after any local file changes)
+./build-image.sh
+
+# Deploy everything at once
+./instant project init --env-file .env
+
+# Post-deploy fixes (Instant CLI doesn't handle these)
+./packages/fhir-datastore-hapi-fhir/post-deploy.sh
+```
+
+Or deploy per-package in dependency order:
+
+```bash
+./instant package init -n database-postgres --env-file .env
+./instant package init -n database-mysql --env-file .env
+./instant package init -n interoperability-layer-openhim --env-file .env
+./instant package init -n reverse-proxy-nginx --env-file .env
+./instant package init -n fhir-datastore-hapi-fhir --env-file .env
+./packages/fhir-datastore-hapi-fhir/post-deploy.sh
+./instant package init -n client-registry-opencr --env-file .env
+./instant package init -n shared-health-record-fhir --env-file .env
+./instant package init -n emr-isanteplus --env-file .env
+# Wait 10-15 min for iSantePlus to boot before deploying pipelines
+./instant package init -n data-pipeline-isanteplus --env-file .env
+```
+
+### Option B: Manual deployment (docker stack)
+
+Uses local files directly — no `./build-image.sh` needed. However, env vars from `package-metadata.json` won't be substituted (use for packages that don't depend on them, or set the vars in `.env`).
 
 ```bash
 # 1. Databases (no dependencies)
@@ -192,7 +227,7 @@ docker service ls --format 'table {{.Name}}\t{{.Replicas}}'
 
 ---
 
-## Package Management (Instant CLI)
+## Package Management
 
 Each HIE component is deployed as a package. Use the `instant` CLI to manage them:
 
