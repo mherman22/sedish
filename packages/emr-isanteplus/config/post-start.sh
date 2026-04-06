@@ -56,4 +56,9 @@ set_property "xdssender.mpiEndpoint" "https://${DOMAIN}/CR/fhir"
 set_property "xdssender.oshr.username" "${FACILITY}"
 set_property "xdssender.oshr.password" "${FACILITY}"
 
+# MPI client credentials — uses the same per-facility OpenHIM client
+# FhirMpiClientServiceImpl uses sendingApplication as username, authtoken as password
+set_property "mpi-client.msg.sendingApplication" "${FACILITY}"
+set_property "mpi-client.security.authtoken" "${FACILITY}"
+
 echo "[post-start] Configuration complete."
