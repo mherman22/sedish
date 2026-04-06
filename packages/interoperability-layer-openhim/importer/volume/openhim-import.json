@@ -38,8 +38,8 @@
       "clientID": "openshr",
       "name": "OpenSHR",
       "passwordAlgorithm": "sha512",
-      "passwordSalt": "66f54ecd6a522cb9e97fc1326aecfe9b",
-      "passwordHash": "f44a42fdcb07c1f8c4fd3b4cf54981d6588a46d972adbfaa8da11d20f7e1695b037d12bd6ab6580bd9c2d65c1672a9b57d677d6f93595cc91e9dc25c39d6ebbb"
+      "passwordSalt": "8bababd96b60931ce2e2401731158c76",
+      "passwordHash": "1073a76be9eb72706b0c3fb1ee1bcb7f1f904723be1342ac9dc1fbea9ee8cb2230c55378bc18453964f523c4e9f9bf6d849218a676cd7755afd94ebc975f1929"
     },
     {
       "roles": [
@@ -79,8 +79,8 @@
       "clientID": "hueh",
       "name": "HUEH",
       "passwordAlgorithm": "sha512",
-      "passwordHash": "39a10dbf841f9c2afecb296d14411564cd712a35145d276efd87f36251abf84893867f9d04bc12190c078bb1f5266f5ae89f8c2104630413b4c71c500ed665f6",
-      "passwordSalt": "85708eea824186270867b6355e5b9072"
+      "passwordHash": "a3f5f268b23b12d9a429b841cf9c8b177b130df40dbbbfe360edbd66aebe7287f3c540964564c16e10938bc5746bbe89a9b6b0f3f1467c4c258c31fbfc99b2e1",
+      "passwordSalt": "fb2548dd2b7e6450b6db3078d838eba4"
     },
     {
       "roles": [
@@ -89,8 +89,8 @@
       "clientID": "lapaix",
       "name": "La Paix",
       "passwordAlgorithm": "sha512",
-      "passwordHash": "b03325e2927c25f3fe91f37d8b8e66b454664038365bfda518d116c2add069457e7f4834f135bb4fc0647e01df730dba22903cbbd669deabeab100149e54d881",
-      "passwordSalt": "ded7d261ef7f7dfac2a51f410bd5e172"
+      "passwordHash": "5f5d3c79c113daac7f55f5a6e37c75985d40b51889d1e20a1675b6af17a4cb9b5f8794be99dabf7e71e148eafb43cababb1ebbbefcfedb3fbfa5c74cc71344fc",
+      "passwordSalt": "887068790868827cf10aee18cdb5d6ea"
     },
     {
       "roles": [
@@ -99,8 +99,8 @@
       "clientID": "ofatma",
       "name": "OFATMA",
       "passwordAlgorithm": "sha512",
-      "passwordHash": "9c0dea7b687cf4008f77de7c7e79eab30124b92eb1e825f1219cb8638fba81a399ae94f5a4f94103895ff463b21eab75233417072b9ec26bdce43a7baa62255a",
-      "passwordSalt": "3bcaff20a9ef2fe2bc48fa24eecdab32"
+      "passwordHash": "271d2211e83c4b74a71f8f0cf870bb2fd3a12a987c28c6ac351ed9e4876987dc34950647d3c20ce4393c1238ac73e585f04820fff5d839acfc2d16cbf8b0da46",
+      "passwordSalt": "e5413bea88e10a9a5b1d6388af37a91e"
     },
     {
       "roles": [
@@ -109,8 +109,8 @@
       "clientID": "foyer-saint-camille",
       "name": "Foyer Saint Camille",
       "passwordAlgorithm": "sha512",
-      "passwordHash": "9fb918ce68e8384102e22bc854b54b384c1d757274f89ddd8e5c7c2c04d8f3300021f4e1d2c9fba7eff4a958500849b4cd25a701bf0c6e2a91e067e0e1a558a1",
-      "passwordSalt": "405e400ef62b103ec93bb19a720b7f27"
+      "passwordHash": "280cd46ed31807d8abd37c4b429170c1e32b814126c7afece508006e2a733a7c874df346d7f2c42945d395ff75f2970224435ac3711485574164ef1a3cda90c0",
+      "passwordSalt": "50f2e45702ecea750abc9f4db2b5724b"
     },
     {
       "roles": [
@@ -119,8 +119,8 @@
       "clientID": "klinik-eritaj",
       "name": "Klinik Eritaj",
       "passwordAlgorithm": "sha512",
-      "passwordHash": "530a43c0a763cd3e8e898230ddcd162a1514e5b3f1730e97051920e17727c23a81793f55d63f17c5177c92145f707941680466bb0cc4e68d0904e6962cad3fc1",
-      "passwordSalt": "e2c3a338357875df5933b65677c1789b"
+      "passwordHash": "d62fa64c276d7f9341bff72ea2c168f1bf2c39b718a4de7af9e433343173e635fa93e73ee77333783b59778918830ff1a9e3838dabd43cb80fec1ade1b87330d",
+      "passwordSalt": "4c4f2fa70e14d430c4490166c5210dfa"
     },
     {
       "roles": [
@@ -129,8 +129,8 @@
       "clientID": "ofatma-sonapi",
       "name": "OFATMA SONAPI",
       "passwordAlgorithm": "sha512",
-      "passwordHash": "957bf6d212833ebacbff47692931f1b8e0ebd82deddffded6309112be10b56cde09685d47b0f5c7f25aad2e6c9d510ece1199709798495bb61ffc05e6a3bc3c4",
-      "passwordSalt": "0e30cc696b663419dd9bec771d840db4"
+      "passwordHash": "2a11c4dcd56e9cfd4b02926dbd69d8e2f8c888b8ec5e7d2b135e90a3c4fcca6f234923d8e36db1994171c6ae0b7520c6d2abe19081d3846d28bc36f3aa39869d",
+      "passwordSalt": "89c592b55ec3193ac3018046b593be23"
     },
     {
       "roles": [
@@ -139,8 +139,8 @@
       "clientID": "gressierms",
       "name": "Gressier MS",
       "passwordAlgorithm": "sha512",
-      "passwordHash": "91a04527f1d7ca8fd25b2f9aae970b1ce570cf2a24879ed7275c9b545d690eeb7b12cebac26fc72a4d7d3cdcb854021f8bf396fadea1e2fbf6e866d762678daf",
-      "passwordSalt": "ad6e75386b01408974189b4b657ed29c"
+      "passwordHash": "e391eaa14451bb3cb44e8d4990c6be71e016324d94c6d68e7a3b33b8510da11bfaf42cba744974c16e65eeb2cdc21edc38d2776aec55693afef4d2d349bf06de",
+      "passwordSalt": "ad9f7a104e10dae9332bfd3ba21d770f"
     },
     {
       "roles": [
@@ -149,8 +149,8 @@
       "clientID": "pestel",
       "name": "Pestel",
       "passwordAlgorithm": "sha512",
-      "passwordHash": "9ec1265f1658b2d00fc1fd2c337df71616479c1403f5052efac74ef582fa7d0322d00c3ca509f9000b84de69369445e70ebe1f9ab51453572a8448ca98d23431",
-      "passwordSalt": "531ce7b2e85c3c041d7ec7d8f42f641f"
+      "passwordHash": "3032cf77f7daf7f9629f4f406662c0e26033219325243753d6214b939acc24ae60617cc034983a09ba975b418cdc3668d76e2b8bb17319730a7eeff5b45add5f",
+      "passwordSalt": "60121791d73ba436150076274eaed567"
     },
     {
       "roles": [
@@ -159,8 +159,8 @@
       "clientID": "stdemiragoane",
       "name": "St Demir Agoane",
       "passwordAlgorithm": "sha512",
-      "passwordHash": "a0f4e0e1d7f35d863fdccc161fb1c965c712672222afb65ff60e67f34a493ad5a4ac5b746f3e1722d9fa5c4f14de6eab23d23b193917563b69a48c5ba008450e",
-      "passwordSalt": "d09bfd9cc3d811bd4b1c109905d9390e"
+      "passwordHash": "80ffcb0f3fce5265b57e05762a13a675b56dd2a9fb1d5335c3c6acefb6ac174517a3c7f96c082197b6170dc1474ea61dd96ef01d5e4802a0f9071039541772c5",
+      "passwordSalt": "8b64e687bf9dd456f8fbf7c51e7c5b7e"
     },
     {
       "roles": [
@@ -169,8 +169,8 @@
       "clientID": "bethel-fdn",
       "name": "Bethel FDN",
       "passwordAlgorithm": "sha512",
-      "passwordHash": "5ef5f62a445dac7384b880cea78ed6c0900d318d59fd80e2176b12a61ea962f942a8e40fbf69be8d38ea838d8ddef902596f4b6d8db1e1c084c8b7293820b2ec",
-      "passwordSalt": "dcd6a9810ae8a21064eb2cf80972b52f"
+      "passwordHash": "936acdaeb595ede30d38925ed8ffe97ef6510f8546d39c05be41148ac7a1b11d01e78dc97caf35197b88395538b12840781ba3a4ca95dbd9920ae7916435c28b",
+      "passwordSalt": "b22a9c5d7acb3f5268f38e4bc98b8c2d"
     }
   ],
   "Channels": [
