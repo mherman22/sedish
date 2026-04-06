@@ -20,6 +20,8 @@
     "baseURL": "http://hapi-fhir:8080/fhir"
   },
   "clientRegistryUrl": "http://openhim-core:5001/CR/fhir",
+  "clientRegistryUsername": "isanteplus",
+  "clientRegistryPassword": "isanteplus",
   "fhirConverterUrl": "http://openhim-core:5001/72f",
   "taskRunner": {
     "brokers": null
