@@ -32,13 +32,14 @@
   "Clients": [
     {
       "roles": [
-        "shr"
+        "shr",
+        "emr"
       ],
       "clientID": "openshr",
       "name": "OpenSHR",
       "passwordAlgorithm": "sha512",
-      "passwordSalt": "4173d0a1bba4e2fcdc3bd0cc7aa60a96",
-      "passwordHash": "a5b09684e7f2e9356912b725f3d739dd102049f7fdec94ab8170d24c0d11e612c6da303c263bce7446a8673aa79d927e7bc17d47522ea7fabd57dda63ad557f0"
+      "passwordSalt": "66f54ecd6a522cb9e97fc1326aecfe9b",
+      "passwordHash": "f44a42fdcb07c1f8c4fd3b4cf54981d6588a46d972adbfaa8da11d20f7e1695b037d12bd6ab6580bd9c2d65c1672a9b57d677d6f93595cc91e9dc25c39d6ebbb"
     },
     {
       "roles": [
@@ -61,16 +62,6 @@
       "passwordHash": "36a496767339fe41c1766213aa8ead610aa07874a6a9b20d84f36df555c48b29d5f84933821d3d3e1675155effe6eb06d9ada0af430990f5bc6ad93c80da9c10"
     },
     {
-      "roles": [
-        "emr"
-      ],
-      "clientID": "isanteplus",
-      "name": "isanteplus",
-      "passwordAlgorithm": "sha512",
-      "passwordSalt": "a20514810f3a16068b04a39ae21f93c0",
-      "passwordHash": "5e57dc8fa047b7822b7248c7a1be3770aebf5041a779eaabd334906dc9d7017f995927a5d5fbd99b27325f98426b3a50830e8d4abec118276fa4b232fdd28127"
-    },
-    {
       "clientID": "lnsp",
       "name": "lnsp",
       "roles": [
@@ -80,6 +71,106 @@
       "passwordHash": "7718884c4274d86c6a2f31e9d567157d88f3f79d86554a98cee105eaf489c2348470de008dda10290007165c17c73a0c86bc0fb43baa7a2f5e0f72a81fe14de9",
       "passwordSalt": "6e70fc2a836bf68a8956449f8dbe77a8",
       "customTokenID": "root@openhim.org"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "hueh",
+      "name": "HUEH",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "39a10dbf841f9c2afecb296d14411564cd712a35145d276efd87f36251abf84893867f9d04bc12190c078bb1f5266f5ae89f8c2104630413b4c71c500ed665f6",
+      "passwordSalt": "85708eea824186270867b6355e5b9072"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "lapaix",
+      "name": "La Paix",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "b03325e2927c25f3fe91f37d8b8e66b454664038365bfda518d116c2add069457e7f4834f135bb4fc0647e01df730dba22903cbbd669deabeab100149e54d881",
+      "passwordSalt": "ded7d261ef7f7dfac2a51f410bd5e172"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "ofatma",
+      "name": "OFATMA",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "9c0dea7b687cf4008f77de7c7e79eab30124b92eb1e825f1219cb8638fba81a399ae94f5a4f94103895ff463b21eab75233417072b9ec26bdce43a7baa62255a",
+      "passwordSalt": "3bcaff20a9ef2fe2bc48fa24eecdab32"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "foyer-saint-camille",
+      "name": "Foyer Saint Camille",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "9fb918ce68e8384102e22bc854b54b384c1d757274f89ddd8e5c7c2c04d8f3300021f4e1d2c9fba7eff4a958500849b4cd25a701bf0c6e2a91e067e0e1a558a1",
+      "passwordSalt": "405e400ef62b103ec93bb19a720b7f27"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "klinik-eritaj",
+      "name": "Klinik Eritaj",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "530a43c0a763cd3e8e898230ddcd162a1514e5b3f1730e97051920e17727c23a81793f55d63f17c5177c92145f707941680466bb0cc4e68d0904e6962cad3fc1",
+      "passwordSalt": "e2c3a338357875df5933b65677c1789b"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "ofatma-sonapi",
+      "name": "OFATMA SONAPI",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "957bf6d212833ebacbff47692931f1b8e0ebd82deddffded6309112be10b56cde09685d47b0f5c7f25aad2e6c9d510ece1199709798495bb61ffc05e6a3bc3c4",
+      "passwordSalt": "0e30cc696b663419dd9bec771d840db4"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "gressierms",
+      "name": "Gressier MS",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "91a04527f1d7ca8fd25b2f9aae970b1ce570cf2a24879ed7275c9b545d690eeb7b12cebac26fc72a4d7d3cdcb854021f8bf396fadea1e2fbf6e866d762678daf",
+      "passwordSalt": "ad6e75386b01408974189b4b657ed29c"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "pestel",
+      "name": "Pestel",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "9ec1265f1658b2d00fc1fd2c337df71616479c1403f5052efac74ef582fa7d0322d00c3ca509f9000b84de69369445e70ebe1f9ab51453572a8448ca98d23431",
+      "passwordSalt": "531ce7b2e85c3c041d7ec7d8f42f641f"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "stdemiragoane",
+      "name": "St Demir Agoane",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "a0f4e0e1d7f35d863fdccc161fb1c965c712672222afb65ff60e67f34a493ad5a4ac5b746f3e1722d9fa5c4f14de6eab23d23b193917563b69a48c5ba008450e",
+      "passwordSalt": "d09bfd9cc3d811bd4b1c109905d9390e"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "bethel-fdn",
+      "name": "Bethel FDN",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "5ef5f62a445dac7384b880cea78ed6c0900d318d59fd80e2176b12a61ea962f942a8e40fbf69be8d38ea838d8ddef902596f4b6d8db1e1c084c8b7293820b2ec",
+      "passwordSalt": "dcd6a9810ae8a21064eb2cf80972b52f"
     }
   ],
   "Channels": [
