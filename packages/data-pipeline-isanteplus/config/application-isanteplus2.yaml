@@ -13,8 +13,9 @@ fhirdata:
   dwhRootPrefix: "/dwh/pipeline_DWH"
   generateParquetFiles: false
 
-  incrementalSchedule: "0 0 * * * *"
-  purgeSchedule: "0 30 * * * *"
+  # Offset by 30 min from pipeline-1 to avoid concurrent writes to SHR
+  incrementalSchedule: "0 30 * * * *"
+  purgeSchedule: "0 0 * * * *"
   numOfDwhSnapshotsToRetain: 2
 
   resourceList: "Practitioner,Location,Patient,Encounter,Observation,Condition,AllergyIntolerance,MedicationRequest,Group"
