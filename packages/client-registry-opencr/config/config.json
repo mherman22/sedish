@@ -41,8 +41,20 @@
   },
   "clients": [
     {
+      "id": "isanteplus",
+      "displayName": "iSantePlus"
+    },
+    {
       "id": "openmrs",
       "displayName": "OpenMRS"
+    },
+    {
+      "id": "shr-pipeline",
+      "displayName": "SHR Pipeline"
+    },
+    {
+      "id": "openshr",
+      "displayName": "Shared Health Record"
     },
     {
       "id": "dhis2",
@@ -97,6 +109,13 @@
         "http://isanteplus.hueh.com/openmrs/fhir2/6-code-st"
       ],
       "displayName": "ART Number"
+    },
+    "codepc": {
+      "uri": [
+        "http://isanteplus.org/openmrs/fhir2/9-code-pc",
+        "http://isanteplus.sedish-haiti.org/openmrs/fhir2/9-code-pc"
+      ],
+      "displayName": "Code PC"
     },
     "biometricnational": {
       "uri": [
