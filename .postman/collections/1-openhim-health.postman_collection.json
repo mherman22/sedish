@@ -1,0 +1,120 @@
+{
+  "info": {
+    "name": "1 - OpenHIM Health",
+    "description": "Smoke tests to verify OpenHIM routing, authentication, and that SHR + OpenCR are reachable.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{clientId}}", "type": "string" },
+      { "key": "password", "value": "{{clientPassword}}", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "SHR FHIR metadata",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/fhir+json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/SHR/fhir/metadata",
+          "host": ["{{baseUrl}}"],
+          "path": ["SHR", "fhir", "metadata"]
+        },
+        "description": "Verifies OpenHIM routes to SHR and HAPI FHIR responds with a CapabilityStatement."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is a FHIR CapabilityStatement', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.resourceType).to.eql('CapabilityStatement');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth rejection (wrong password)",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{clientId}}", "type": "string" },
+            { "key": "password", "value": "wrong-password", "type": "string" }
+          ]
+        },
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/fhir+json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/SHR/fhir/metadata",
+          "host": ["{{baseUrl}}"],
+          "path": ["SHR", "fhir", "metadata"]
+        },
+        "description": "Verifies OpenHIM rejects requests with invalid credentials."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 401', function () {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "OpenCR reachable",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/fhir+json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/CR/fhir/Patient?_count=0",
+          "host": ["{{baseUrl}}"],
+          "path": ["CR", "fhir", "Patient"],
+          "query": [
+            { "key": "_count", "value": "0" }
+          ]
+        },
+        "description": "Verifies OpenHIM routes to OpenCR and the client registry responds."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is a FHIR Bundle', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.resourceType).to.eql('Bundle');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

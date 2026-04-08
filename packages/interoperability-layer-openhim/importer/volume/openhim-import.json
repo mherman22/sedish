@@ -171,6 +171,20 @@
       "passwordAlgorithm": "sha512",
       "passwordHash": "936acdaeb595ede30d38925ed8ffe97ef6510f8546d39c05be41148ac7a1b11d01e78dc97caf35197b88395538b12840781ba3a4ca95dbd9920ae7916435c28b",
       "passwordSalt": "b22a9c5d7acb3f5268f38e4bc98b8c2d"
+    },
+    {
+      "roles": [
+        "shr",
+        "emr",
+        "xds",
+        "test",
+        "pipeline"
+      ],
+      "clientID": "postman-test",
+      "name": "Postman Integration Tests",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "1588dc5a34de47184527d837c9f26a04195e984af4d092b8ec2e5a3eb22435117fb8d68a67889ffc7242073ef7fa2902d26aa3cf6b94acf8cb04f5e3768ef34a",
+      "passwordSalt": "be79240bf020e07d3358a3f25bfc101e"
     }
   ],
   "Channels": [

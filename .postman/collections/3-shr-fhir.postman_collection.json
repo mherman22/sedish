@@ -1,0 +1,205 @@
+{
+  "info": {
+    "name": "3 - SHR FHIR Exchange",
+    "description": "Tests clinical data exchange through the Shared Health Record (SHR) which proxies to HAPI FHIR.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{clientId}}", "type": "string" },
+      { "key": "password", "value": "{{clientPassword}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "shrPatientId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Create patient in SHR",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/fhir+json" },
+          { "key": "Accept", "value": "application/fhir+json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"resourceType\": \"Patient\",\n  \"identifier\": [\n    {\n      \"system\": \"http://sedish.org/test\",\n      \"value\": \"POSTMAN-SHR-{{$timestamp}}\"\n    }\n  ],\n  \"name\": [\n    {\n      \"family\": \"TestSHR\",\n      \"given\": [\"Postman\"]\n    }\n  ],\n  \"gender\": \"male\",\n  \"birthDate\": \"1985-06-20\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/SHR/fhir/Patient",
+          "host": ["{{baseUrl}}"],
+          "path": ["SHR", "fhir", "Patient"]
+        },
+        "description": "Creates a test patient in the SHR (stored in HAPI FHIR)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Patient created successfully', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Extract patient ID', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.resourceType).to.eql('Patient');",
+              "    pm.collectionVariables.set('shrPatientId', json.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Read patient by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/fhir+json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/SHR/fhir/Patient/{{shrPatientId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["SHR", "fhir", "Patient", "{{shrPatientId}}"]
+        },
+        "description": "Reads back the patient created in the previous step."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is the same Patient', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.resourceType).to.eql('Patient');",
+              "    pm.expect(json.id).to.eql(pm.collectionVariables.get('shrPatientId'));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create observation",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/fhir+json" },
+          { "key": "Accept", "value": "application/fhir+json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"resourceType\": \"Observation\",\n  \"status\": \"final\",\n  \"code\": {\n    \"coding\": [\n      {\n        \"system\": \"http://loinc.org\",\n        \"code\": \"8867-4\",\n        \"display\": \"Heart rate\"\n      }\n    ]\n  },\n  \"subject\": {\n    \"reference\": \"Patient/{{shrPatientId}}\"\n  },\n  \"valueQuantity\": {\n    \"value\": 72,\n    \"unit\": \"beats/minute\",\n    \"system\": \"http://unitsofmeasure.org\",\n    \"code\": \"/min\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/SHR/fhir/Observation",
+          "host": ["{{baseUrl}}"],
+          "path": ["SHR", "fhir", "Observation"]
+        },
+        "description": "Creates a heart rate observation linked to the test patient."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Observation created successfully', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Response is an Observation', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.resourceType).to.eql('Observation');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search observations by patient",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/fhir+json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/SHR/fhir/Observation?patient=Patient/{{shrPatientId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["SHR", "fhir", "Observation"],
+          "query": [
+            { "key": "patient", "value": "Patient/{{shrPatientId}}" }
+          ]
+        },
+        "description": "Searches for observations belonging to the test patient."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is a Bundle with entries', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.resourceType).to.eql('Bundle');",
+              "    pm.expect(json.entry).to.be.an('array').that.is.not.empty;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create condition",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/fhir+json" },
+          { "key": "Accept", "value": "application/fhir+json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"resourceType\": \"Condition\",\n  \"clinicalStatus\": {\n    \"coding\": [\n      {\n        \"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\",\n        \"code\": \"active\"\n      }\n    ]\n  },\n  \"code\": {\n    \"coding\": [\n      {\n        \"system\": \"http://snomed.info/sct\",\n        \"code\": \"38341003\",\n        \"display\": \"Hypertensive disorder\"\n      }\n    ]\n  },\n  \"subject\": {\n    \"reference\": \"Patient/{{shrPatientId}}\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/SHR/fhir/Condition",
+          "host": ["{{baseUrl}}"],
+          "path": ["SHR", "fhir", "Condition"]
+        },
+        "description": "Creates a hypertension condition linked to the test patient."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Condition created successfully', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Response is a Condition', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.resourceType).to.eql('Condition');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

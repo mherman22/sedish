@@ -1,0 +1,136 @@
+{
+  "info": {
+    "name": "2 - Patient Registration (OpenCR)",
+    "description": "Tests patient identity management through the OpenCR client registry via OpenHIM.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{clientId}}", "type": "string" },
+      { "key": "password", "value": "{{clientPassword}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "crPatientId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Create patient",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/fhir+json" },
+          { "key": "Accept", "value": "application/fhir+json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"resourceType\": \"Patient\",\n  \"identifier\": [\n    {\n      \"system\": \"http://sedish.org/test\",\n      \"value\": \"POSTMAN-CR-{{$timestamp}}\"\n    }\n  ],\n  \"name\": [\n    {\n      \"family\": \"TestCR\",\n      \"given\": [\"Postman\"]\n    }\n  ],\n  \"gender\": \"female\",\n  \"birthDate\": \"1990-01-15\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/CR/fhir/Patient",
+          "host": ["{{baseUrl}}"],
+          "path": ["CR", "fhir", "Patient"]
+        },
+        "description": "Creates a test patient in the OpenCR client registry."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Patient created successfully', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "});",
+              "",
+              "pm.test('Response contains Patient resource', function () {",
+              "    var json = pm.response.json();",
+              "    // OpenCR may return a Bundle or the Patient directly",
+              "    if (json.resourceType === 'Bundle' && json.entry && json.entry.length > 0) {",
+              "        var patient = json.entry[0].resource;",
+              "        pm.expect(patient.resourceType).to.eql('Patient');",
+              "        pm.collectionVariables.set('crPatientId', patient.id);",
+              "    } else if (json.resourceType === 'Patient') {",
+              "        pm.collectionVariables.set('crPatientId', json.id);",
+              "    } else {",
+              "        pm.expect.fail('Expected Patient or Bundle with Patient entry');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Read patient by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/fhir+json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/CR/fhir/Patient/{{crPatientId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["CR", "fhir", "Patient", "{{crPatientId}}"]
+        },
+        "description": "Reads back the patient created in the previous step by ID."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is a Patient resource', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.resourceType).to.eql('Patient');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search patient by identifier",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/fhir+json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/CR/fhir/Patient?identifier=http://sedish.org/test|",
+          "host": ["{{baseUrl}}"],
+          "path": ["CR", "fhir", "Patient"],
+          "query": [
+            { "key": "identifier", "value": "http://sedish.org/test|" }
+          ]
+        },
+        "description": "Searches for patients by the test identifier system."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is a Bundle with at least one entry', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.resourceType).to.eql('Bundle');",
+              "    pm.expect(json.total).to.be.above(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
