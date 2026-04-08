@@ -25,7 +25,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"resourceType\": \"Patient\",\n  \"identifier\": [\n    {\n      \"system\": \"http://sedish.org/test\",\n      \"value\": \"POSTMAN-CR-{{$timestamp}}\"\n    }\n  ],\n  \"name\": [\n    {\n      \"family\": \"TestCR\",\n      \"given\": [\"Postman\"]\n    }\n  ],\n  \"gender\": \"female\",\n  \"birthDate\": \"1990-01-15\"\n}"
+          "raw": "{\n  \"resourceType\": \"Patient\",\n  \"identifier\": [\n    {\n      \"system\": \"http://isanteplus.org/openmrs/fhir2/3-isanteplus-id\",\n      \"value\": \"POSTMAN-CR-{{$timestamp}}\"\n    }\n  ],\n  \"name\": [\n    {\n      \"family\": \"TestCR\",\n      \"given\": [\"Postman\"]\n    }\n  ],\n  \"gender\": \"female\",\n  \"birthDate\": \"1990-01-15\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/CR/fhir/Patient",
@@ -44,18 +44,14 @@
               "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
               "});",
               "",
-              "pm.test('Response contains Patient resource', function () {",
+              "pm.test('Response contains patient references', function () {",
               "    var json = pm.response.json();",
-              "    // OpenCR may return a Bundle or the Patient directly",
-              "    if (json.resourceType === 'Bundle' && json.entry && json.entry.length > 0) {",
-              "        var patient = json.entry[0].resource;",
-              "        pm.expect(patient.resourceType).to.eql('Patient');",
-              "        pm.collectionVariables.set('crPatientId', patient.id);",
-              "    } else if (json.resourceType === 'Patient') {",
-              "        pm.collectionVariables.set('crPatientId', json.id);",
-              "    } else {",
-              "        pm.expect.fail('Expected Patient or Bundle with Patient entry');",
-              "    }",
+              "    // OpenCR returns an array of {response} objects with Patient locations",
+              "    pm.expect(json).to.be.an('array').that.is.not.empty;",
+              "    var loc = json[0].response.location;",
+              "    // location looks like: Patient/<id>/_history/<version>",
+              "    var patientId = loc.split('/')[1];",
+              "    pm.collectionVariables.set('crPatientId', patientId);",
               "});"
             ]
           }
@@ -103,11 +99,11 @@
           { "key": "Accept", "value": "application/fhir+json" }
         ],
         "url": {
-          "raw": "{{baseUrl}}/CR/fhir/Patient?identifier=http://sedish.org/test|",
+          "raw": "{{baseUrl}}/CR/fhir/Patient?identifier=http://isanteplus.org/openmrs/fhir2/3-isanteplus-id|",
           "host": ["{{baseUrl}}"],
           "path": ["CR", "fhir", "Patient"],
           "query": [
-            { "key": "identifier", "value": "http://sedish.org/test|" }
+            { "key": "identifier", "value": "http://isanteplus.org/openmrs/fhir2/3-isanteplus-id|" }
           ]
         },
         "description": "Searches for patients by the test identifier system."
