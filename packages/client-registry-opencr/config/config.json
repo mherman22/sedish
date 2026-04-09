@@ -41,16 +41,56 @@
   },
   "clients": [
     {
+      "id": "hueh",
+      "displayName": "HUEH"
+    },
+    {
+      "id": "lapaix",
+      "displayName": "La Paix"
+    },
+    {
+      "id": "ofatma",
+      "displayName": "OFATMA"
+    },
+    {
+      "id": "foyer-saint-camille",
+      "displayName": "Foyer Saint Camille"
+    },
+    {
+      "id": "klinik-eritaj",
+      "displayName": "Klinik Eritaj"
+    },
+    {
+      "id": "ofatma-sonapi",
+      "displayName": "OFATMA SONAPI"
+    },
+    {
+      "id": "gressierms",
+      "displayName": "Gressier MS"
+    },
+    {
+      "id": "pestel",
+      "displayName": "Pestel"
+    },
+    {
+      "id": "stdemiragoane",
+      "displayName": "St Demir Agoane"
+    },
+    {
+      "id": "bethel-fdn",
+      "displayName": "Bethel FDN"
+    },
+    {
+      "id": "openshr",
+      "displayName": "Shared Health Record"
+    },
+    {
+      "id": "shr-pipeline",
+      "displayName": "SHR Pipeline"
+    },
+    {
       "id": "openmrs",
       "displayName": "OpenMRS"
-    },
-    {
-      "id": "dhis2",
-      "displayName": "DHIS2"
-    },
-    {
-      "id": "lims",
-      "displayName": "Lab Info Management System"
     },
     {
       "id": "cr",
@@ -97,6 +137,13 @@
         "http://isanteplus.hueh.com/openmrs/fhir2/6-code-st"
       ],
       "displayName": "ART Number"
+    },
+    "codepc": {
+      "uri": [
+        "http://isanteplus.org/openmrs/fhir2/9-code-pc",
+        "http://isanteplus.sedish-haiti.org/openmrs/fhir2/9-code-pc"
+      ],
+      "displayName": "Code PC"
     },
     "biometricnational": {
       "uri": [

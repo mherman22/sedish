@@ -5,64 +5,15 @@ logPath: /tmp/logs
 packages:
   - interoperability-layer-openhim
   - reverse-proxy-nginx
-  - fhir-datastore-hapi-fhir
-  - monitoring
   - database-postgres
   - database-mysql
-  - identity-access-manager-keycloak
-  - client-registry-opencr
-  - analytics-datastore-elastic-search
+  - fhir-datastore-hapi-fhir
   - shared-health-record-fhir
-  # Sedish Haiti packages
+  - client-registry-opencr
   - emr-isanteplus
-  - data-pipeline-isanteplus
-  - lnsp-mediator
-
-
-
-profiles:
-  - name: dev
-    packages:
-      - interoperability-layer-openhim
-      - reverse-proxy-nginx
-      - fhir-datastore-hapi-fhir
-      - monitoring
-      - database-postgres
-      - identity-access-manager-keycloak
-      - client-registry-opencr
-      - analytics-datastore-elastic-search
-      - shared-health-record-fhir
-      - dashboard-visualiser-kibana
-      # Sedish Haiti packages
-      - emr-isanteplus
-      - data-pipeline-isanteplus
-      - document-data-store-xds
-      - shared-health-record-openshr
-      - openhim-mediator-openxds
-    envFiles:
-      - .env
-    dev: true
-    only: false
-
-  - name: prod
-    packages:
-      - interoperability-layer-openhim
-      - reverse-proxy-nginx
-      - fhir-datastore-hapi-fhir
-      - monitoring
-      - database-postgres
-      - identity-access-manager-keycloak
-      - client-registry-opencr
-      - analytics-datastore-elastic-search
-      - shared-health-record-fhir
-      - dashboard-visualiser-kibana
-      # Sedish Haiti packages
-      - emr-isanteplus
-      - data-pipeline-isanteplus
-      - document-data-store-xds
-      - shared-health-record-openshr
-      - openhim-mediator-openxds
-    envFiles:
-      - .env.prod
-    dev: false
-    only: false
+  - data-pipeline-isanteplus           # One pipeline per iSantePlus instance
+  # Not needed for core HIE — uncomment to enable:
+  # - monitoring                        # Grafana/Prometheus/Loki (~7 containers, ~3GB RAM)
+  # - identity-access-manager-keycloak  # SSO — OpenHIM works without it (~1GB RAM)
+  # - analytics-datastore-elastic-search # Kibana analytics — OpenCR bundles its own ES (~3GB RAM)
+  - lnsp-mediator                     # Lab integration — not in active use (~500MB RAM)

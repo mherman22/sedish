@@ -1,53 +1,55 @@
 version: "3.9"
 
 services:
-  streaming-pipeline:
+  pipeline-isanteplus1:
     image: us-docker.pkg.dev/cloud-build-fhir/fhir-analytics/main:latest
     environment:
-      - JAVA_OPTS=-Xms2g -Xmx2g
+      - JAVA_OPTS=-Xms1g -Xmx1g
       - FLINK_CONF_DIR=/app/config
     configs:
-      - source: application_yaml
+      - source: application_isanteplus1_yaml
         target: /app/config/application.yaml
       - source: flink_conf_yaml
         target: /app/config/flink-conf.yaml
     volumes:
-      - pipeline-dwh:/dwh
-    ports:
-      - target: 8080
-        published: 8095
-        protocol: tcp
-        mode: host
+      - pipeline-dwh-1:/dwh
     networks:
       - openhim
-      - shr
+      - isanteplus
+      - hapi-fhir
+
+  pipeline-isanteplus2:
+    image: us-docker.pkg.dev/cloud-build-fhir/fhir-analytics/main:latest
+    environment:
+      - JAVA_OPTS=-Xms1g -Xmx1g
+      - FLINK_CONF_DIR=/app/config
+    configs:
+      - source: application_isanteplus2_yaml
+        target: /app/config/application.yaml
+      - source: flink_conf_yaml
+        target: /app/config/flink-conf.yaml
+    volumes:
+      - pipeline-dwh-2:/dwh
+    networks:
+      - openhim
       - isanteplus
       - hapi-fhir
 
 configs:
-  application_yaml:
-    file: ./config/application.yaml
-    name: pipeline_application_yaml
-    labels:
-      name: pipeline_application_yaml
+  application_isanteplus1_yaml:
+    file: ./config/application-isanteplus1.yaml
+  application_isanteplus2_yaml:
+    file: ./config/application-isanteplus2.yaml
   flink_conf_yaml:
     file: ./config/flink-conf.yaml
-    name: pipeline_flink_conf_yaml
-    labels:
-      name: pipeline_flink_conf_yaml
 
 volumes:
-  pipeline-dwh:
+  pipeline-dwh-1:
+  pipeline-dwh-2:
 
 networks:
   openhim:
     name: openhim_public
-    external: true
-  shr:
-    name: shr
-    external: true
-  mysql:
-    name: mysql_public
     external: true
   isanteplus:
     name: isanteplus_public

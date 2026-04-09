@@ -32,33 +32,18 @@ function import_sources() {
 }
 
 function initialize_package() {
-
-
-  # if [ "${MODE}" == "dev" ]; then
-  #   log info "Running package in DEV mode"
-  #   postgres_dev_compose_filename="docker-compose-postgres.dev.yml"
-  #   hapi_fhir_dev_compose_filename="docker-compose.dev.yml"
-  # else
   log info "Running package in PROD mode"
-  #fi
-
-  # if [ "${CLUSTERED_MODE}" == "true" ]; then
-  #   postgres_cluster_compose_filename="docker-compose-postgres.cluster.yml"
-  # fi
 
   (
-    #docker::deploy_service "$STACK" "${COMPOSE_FILE_PATH}" "docker-compose-mysql.yml"
-
-    docker::deploy_service "$STACK" "${COMPOSE_FILE_PATH}" "docker-compose.yml" 
-  ) ||
-    {
-      log error "Failed to deploy package"
-      exit 1
-    }
+    docker::deploy_service "$STACK" "${COMPOSE_FILE_PATH}" "docker-compose.yml"
+  ) || {
+    log error "Failed to deploy package"
+    exit 1
+  }
 }
 
 function destroy_package() {
-  docker::stack_destroy "$STACK"
+  docker::stack_destroy $STACK
 
   if [[ "${CLUSTERED_MODE}" == "true" ]]; then
     log warn "Volumes are only deleted on the host on which the command is run. Postgres volumes on other nodes are not deleted"
@@ -70,8 +55,6 @@ function destroy_package() {
 main() {
   init_vars "$@"
   import_sources
-  # chmod +x "${COMPOSE_FILE_PATH}/docker-compose.sh"
-  # source "${COMPOSE_FILE_PATH}/docker-compose.sh"
 
   if [[ "${ACTION}" == "init" ]] || [[ "${ACTION}" == "up" ]]; then
     if [[ "${CLUSTERED_MODE}" == "true" ]]; then

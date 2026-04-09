@@ -11,7 +11,8 @@
       "expiry": null,
       "locked": false,
       "token": null,
-      "tokenType": null
+      "tokenType": null,
+      "password": "$2b$10$p4P.WSJEKJJzIfJoM147ReSIZ0lzmQXN/vndiyyJLY82WawY9FHfS"
     }
   ],
   "Passports": [
@@ -31,13 +32,14 @@
   "Clients": [
     {
       "roles": [
-        "shr"
+        "shr",
+        "emr"
       ],
       "clientID": "openshr",
       "name": "OpenSHR",
       "passwordAlgorithm": "sha512",
-      "passwordSalt": "4173d0a1bba4e2fcdc3bd0cc7aa60a96",
-      "passwordHash": "a5b09684e7f2e9356912b725f3d739dd102049f7fdec94ab8170d24c0d11e612c6da303c263bce7446a8673aa79d927e7bc17d47522ea7fabd57dda63ad557f0"
+      "passwordSalt": "8bababd96b60931ce2e2401731158c76",
+      "passwordHash": "1073a76be9eb72706b0c3fb1ee1bcb7f1f904723be1342ac9dc1fbea9ee8cb2230c55378bc18453964f523c4e9f9bf6d849218a676cd7755afd94ebc975f1929"
     },
     {
       "roles": [
@@ -46,8 +48,8 @@
       "clientID": "shr-pipeline",
       "name": "shr-pipeline",
       "passwordAlgorithm": "sha512",
-      "passwordSalt": "e538f4a341915058a00dd342b362349c",
-      "passwordHash": "0e2160d1a6be5bccd28181d0301a72e16d65424e86ee4a07a5227519423e8c3c5316e5feb459977d535a112c3a97c77fd466b835d2354ef9b6275822b2b279e8"
+      "passwordSalt": "a3d28f95fa476a64ab72a60db496845e",
+      "passwordHash": "5c1e5cc3f3ea5e4590a681de9253e11defc8053c1ebf8dd8881f5b92eef997d826236304a3f4b3a0f9c4977ec466db80b5dc54b034b4bf26ceba3a66d8647776"
     },
     {
       "roles": [
@@ -60,16 +62,6 @@
       "passwordHash": "36a496767339fe41c1766213aa8ead610aa07874a6a9b20d84f36df555c48b29d5f84933821d3d3e1675155effe6eb06d9ada0af430990f5bc6ad93c80da9c10"
     },
     {
-      "roles": [
-        "emr"
-      ],
-      "clientID": "isanteplus",
-      "name": "isanteplus",
-      "passwordAlgorithm": "sha512",
-      "passwordSalt": "a20514810f3a16068b04a39ae21f93c0",
-      "passwordHash": "5e57dc8fa047b7822b7248c7a1be3770aebf5041a779eaabd334906dc9d7017f995927a5d5fbd99b27325f98426b3a50830e8d4abec118276fa4b232fdd28127"
-    },
-    {
       "clientID": "lnsp",
       "name": "lnsp",
       "roles": [
@@ -79,6 +71,106 @@
       "passwordHash": "7718884c4274d86c6a2f31e9d567157d88f3f79d86554a98cee105eaf489c2348470de008dda10290007165c17c73a0c86bc0fb43baa7a2f5e0f72a81fe14de9",
       "passwordSalt": "6e70fc2a836bf68a8956449f8dbe77a8",
       "customTokenID": "root@openhim.org"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "hueh",
+      "name": "HUEH",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "a3f5f268b23b12d9a429b841cf9c8b177b130df40dbbbfe360edbd66aebe7287f3c540964564c16e10938bc5746bbe89a9b6b0f3f1467c4c258c31fbfc99b2e1",
+      "passwordSalt": "fb2548dd2b7e6450b6db3078d838eba4"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "lapaix",
+      "name": "La Paix",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "5f5d3c79c113daac7f55f5a6e37c75985d40b51889d1e20a1675b6af17a4cb9b5f8794be99dabf7e71e148eafb43cababb1ebbbefcfedb3fbfa5c74cc71344fc",
+      "passwordSalt": "887068790868827cf10aee18cdb5d6ea"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "ofatma",
+      "name": "OFATMA",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "271d2211e83c4b74a71f8f0cf870bb2fd3a12a987c28c6ac351ed9e4876987dc34950647d3c20ce4393c1238ac73e585f04820fff5d839acfc2d16cbf8b0da46",
+      "passwordSalt": "e5413bea88e10a9a5b1d6388af37a91e"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "foyer-saint-camille",
+      "name": "Foyer Saint Camille",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "280cd46ed31807d8abd37c4b429170c1e32b814126c7afece508006e2a733a7c874df346d7f2c42945d395ff75f2970224435ac3711485574164ef1a3cda90c0",
+      "passwordSalt": "50f2e45702ecea750abc9f4db2b5724b"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "klinik-eritaj",
+      "name": "Klinik Eritaj",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "d62fa64c276d7f9341bff72ea2c168f1bf2c39b718a4de7af9e433343173e635fa93e73ee77333783b59778918830ff1a9e3838dabd43cb80fec1ade1b87330d",
+      "passwordSalt": "4c4f2fa70e14d430c4490166c5210dfa"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "ofatma-sonapi",
+      "name": "OFATMA SONAPI",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "2a11c4dcd56e9cfd4b02926dbd69d8e2f8c888b8ec5e7d2b135e90a3c4fcca6f234923d8e36db1994171c6ae0b7520c6d2abe19081d3846d28bc36f3aa39869d",
+      "passwordSalt": "89c592b55ec3193ac3018046b593be23"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "gressierms",
+      "name": "Gressier MS",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "e391eaa14451bb3cb44e8d4990c6be71e016324d94c6d68e7a3b33b8510da11bfaf42cba744974c16e65eeb2cdc21edc38d2776aec55693afef4d2d349bf06de",
+      "passwordSalt": "ad9f7a104e10dae9332bfd3ba21d770f"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "pestel",
+      "name": "Pestel",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "3032cf77f7daf7f9629f4f406662c0e26033219325243753d6214b939acc24ae60617cc034983a09ba975b418cdc3668d76e2b8bb17319730a7eeff5b45add5f",
+      "passwordSalt": "60121791d73ba436150076274eaed567"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "stdemiragoane",
+      "name": "St Demir Agoane",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "80ffcb0f3fce5265b57e05762a13a675b56dd2a9fb1d5335c3c6acefb6ac174517a3c7f96c082197b6170dc1474ea61dd96ef01d5e4802a0f9071039541772c5",
+      "passwordSalt": "8b64e687bf9dd456f8fbf7c51e7c5b7e"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "bethel-fdn",
+      "name": "Bethel FDN",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "936acdaeb595ede30d38925ed8ffe97ef6510f8546d39c05be41148ac7a1b11d01e78dc97caf35197b88395538b12840781ba3a4ca95dbd9920ae7916435c28b",
+      "passwordSalt": "b22a9c5d7acb3f5268f38e4bc98b8c2d"
     }
   ],
   "Channels": [
@@ -90,7 +182,6 @@
       "methods": [
         "GET",
         "POST",
-        "DELETE",
         "PUT"
       ],
       "type": "http",
@@ -452,7 +543,7 @@
         "test"
       ],
       "whitelist": [],
-      "authType": "public",
+      "authType": "private",
       "routes": [
         {
           "name": "LNSP passthrough",

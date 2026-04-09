@@ -1,94 +1,368 @@
 {
   "__comments": {
-    "path": "Its a fhir path, for syntax refer to https://www.hl7.org/fhir/fhirpath.html",
-    "matchingType": "Must be specified, it can either",
+    "path": "FHIR path syntax: https://www.hl7.org/fhir/fhirpath.html",
     "threshold": {
-      "levenshtein": "Lower the number, the closer the match, 0 being exact match, max threshold is 2",
-      "jaro-winkler": "number between 0 and 1, where 0 for no match and 1 for exact match"
+      "jaro-winkler": "0 = no match, 1 = exact match",
+      "DateDamerau": "0 = no match, 1 = exact match (handles date typos)"
     },
-    "supported_algorithms": {
-      "elasticsearch": [
-        "https://github.com/intrahealth/similarity-scoring"
-      ]
+    "null_handling": {
+      "conservative": "not a match if null",
+      "moderate": "doesn't affect the score",
+      "greedy": "treated as a match"
     },
-    "nullHandling": {
-      "nullHandling": "by itself means it is used with either one value or both are null.",
-      "nullHandlingBothFields": "it means both values are null",
-      "descriptions": "if you have nullHandling and nullHandlingBothFields, then nullHandling is for when only 1 value is null and nullHandlingBothFields is for when both are null.",
-      "possible_values_for_nullHandling": {
-        "conservative": "means it's not a match",
-        "moderate": "means it doesn't affect the score",
-        "greedy": "means it is a match"
-      },
-      "example": [
-        "if you have nullHandling = 'conservative' and that's it, and one or both are null, then it won't be considered a match.",
-        "if you have nullHandling = 'conservative' and nullHandlingBothFields = 'greedy' then if only 1 is null, then it won't be a match, but if both are null then it will be."
-      ]
+    "haiti_identifier_systems": {
+      "biometric": "http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code",
+      "code_national": "http://isanteplus.org/openmrs/fhir2/5-code-national",
+      "isanteplus_id": "http://isanteplus.org/openmrs/fhir2/3-isanteplus-id",
+      "code_st": "http://isanteplus.org/openmrs/fhir2/6-code-st"
     }
   },
   "rules": [
-
     {
+      "__description": "Rule 1: Biometric exact match — strongest identifier",
       "matchingType": "deterministic",
+      "rule": "1",
       "fields": {
         "biometric": {
-          "algorithm": "jaro-winkler-similarity",
-          "threshold": 1,
+          "algorithm": "exact",
           "fhirpath": "identifier.where(system='http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code').value",
           "espath": "biometric",
           "null_handling": "conservative",
           "null_handling_both": "conservative"
         }
       },
+      "potentialMatchThreshold": 2,
       "autoMatchThreshold": 2
     },
-   
     {
+      "__description": "Rule 2: Code National exact match — national ID",
       "matchingType": "deterministic",
+      "rule": "2",
       "fields": {
-        "given": {
-          "algorithm": "jaro-winkler-similarity",
-          "threshold": 1,
-          "fhirpath": "name.where(use='official').given",
-          "espath": "given",
-          "null_handling": "conservative",
-          "null_handling_both": "conservative"
-        },
-        "family": {
-          "algorithm": "jaro-winkler-similarity",
-          "threshold": 1,
-          "fhirpath": "name.where(use='official').family",
-          "espath": "family",
-          "null_handling": "conservative",
-          "null_handling_both": "conservative"
-        },
-        "birthDate": {
-          "algorithm": "jaro-winkler-similarity",
-          "threshold": 1,
-          "fhirpath": "birthDate",
-          "espath": "birthDate",
-          "null_handling": "conservative",
-          "null_handling_both": "conservative"
-        },
-        "gender": {
-          "algorithm": "jaro-winkler-similarity",
-          "threshold": 1,
-          "fhirpath": "gender",
-          "espath": "gender",
-          "null_handling": "conservative",
-          "null_handling_both": "conservative"
-        },
-        "phone": {
-          "algorithm": "jaro-winkler-similarity",
-          "threshold": 1,
-          "fhirpath": "telecom.where(system='phone').value",
-          "espath": "phone",
+        "code_national": {
+          "algorithm": "exact",
+          "fhirpath": "identifier.where(system='http://isanteplus.org/openmrs/fhir2/5-code-national').value",
+          "espath": "codeNational",
           "null_handling": "conservative",
           "null_handling_both": "conservative"
         }
       },
       "potentialMatchThreshold": 2,
-      "autoMatchThreshold": 5
+      "autoMatchThreshold": 2
+    },
+    {
+      "__description": "Rule 3: Code National + full demographics — national ID with demographic confirmation",
+      "matchingType": "deterministic",
+      "rule": "3",
+      "fields": {
+        "code_national": {
+          "algorithm": "exact",
+          "fhirpath": "identifier.where(system='http://isanteplus.org/openmrs/fhir2/5-code-national').value",
+          "espath": "codeNational",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "family": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').family",
+          "espath": "family",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "given": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').first().given",
+          "espath": "given",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "gender": {
+          "algorithm": "exact",
+          "fhirpath": "gender",
+          "espath": "gender",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "birthDate": {
+          "algorithm": "exact",
+          "fhirpath": "birthDate",
+          "espath": "birthDate",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        }
+      },
+      "potentialMatchThreshold": 6,
+      "autoMatchThreshold": 6
+    },
+    {
+      "__description": "Rule 4: iSantePlus ID + full demographics — facility ID with demographic confirmation",
+      "matchingType": "deterministic",
+      "rule": "4",
+      "fields": {
+        "isanteplus_id": {
+          "algorithm": "exact",
+          "fhirpath": "identifier.where(system='http://isanteplus.org/openmrs/fhir2/3-isanteplus-id').value",
+          "espath": "isanteplusId",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "family": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').family",
+          "espath": "family",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "given": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').first().given",
+          "espath": "given",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "gender": {
+          "algorithm": "exact",
+          "fhirpath": "gender",
+          "espath": "gender",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "birthDate": {
+          "algorithm": "exact",
+          "fhirpath": "birthDate",
+          "espath": "birthDate",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        }
+      },
+      "potentialMatchThreshold": 6,
+      "autoMatchThreshold": 6
+    },
+    {
+      "__description": "Rule 5: Exact demographics — given + family + gender + birthdate (no identifier needed)",
+      "matchingType": "deterministic",
+      "rule": "5",
+      "fields": {
+        "given": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').first().given",
+          "espath": "given",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "family": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').family",
+          "espath": "family",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "gender": {
+          "algorithm": "exact",
+          "fhirpath": "gender",
+          "espath": "gender",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "birthDate": {
+          "algorithm": "exact",
+          "fhirpath": "birthDate",
+          "espath": "birthDate",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        }
+      },
+      "potentialMatchThreshold": 5,
+      "autoMatchThreshold": 6
+    },
+    {
+      "__description": "Rule 6: Swapped name detection — catches given/family entered in wrong order",
+      "matchingType": "deterministic",
+      "rule": "6",
+      "fields": {
+        "given": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').first().given",
+          "espath": "family",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "family": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').family",
+          "espath": "given",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "gender": {
+          "algorithm": "exact",
+          "fhirpath": "gender",
+          "espath": "gender",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "birthDate": {
+          "algorithm": "exact",
+          "fhirpath": "birthDate",
+          "espath": "birthDate",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        }
+      },
+      "potentialMatchThreshold": 5,
+      "autoMatchThreshold": 6
+    },
+    {
+      "__description": "Rule 7: Fuzzy demographics — catches minor typos in names and birthdates",
+      "matchingType": "deterministic",
+      "rule": "7",
+      "fields": {
+        "family": {
+          "algorithm": "jaro-winkler-similarity",
+          "threshold": 0.8,
+          "fhirpath": "name.where(use='official').family",
+          "espath": "family",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "given": {
+          "algorithm": "jaro-winkler-similarity",
+          "threshold": 0.8,
+          "fhirpath": "name.where(use='official').first().given",
+          "espath": "given",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "gender": {
+          "algorithm": "exact",
+          "fhirpath": "gender",
+          "espath": "gender",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "birthDate": {
+          "algorithm": "DateDamerau",
+          "threshold": 0.8,
+          "fhirpath": "birthDate",
+          "espath": "birthDate",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        }
+      },
+      "potentialMatchThreshold": 5,
+      "autoMatchThreshold": 6
+    },
+    {
+      "__description": "Rule 8: Exact names + fuzzy birthdate — catches birthdate typos with exact name match",
+      "matchingType": "deterministic",
+      "rule": "8",
+      "fields": {
+        "given": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').first().given",
+          "espath": "given",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "family": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').family",
+          "espath": "family",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "gender": {
+          "algorithm": "exact",
+          "fhirpath": "gender",
+          "espath": "gender",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "birthDate": {
+          "algorithm": "DateDamerau",
+          "threshold": 0.8,
+          "fhirpath": "birthDate",
+          "espath": "birthDate",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        }
+      },
+      "potentialMatchThreshold": 5,
+      "autoMatchThreshold": 6
+    },
+    {
+      "__description": "Rule 9: Code National + demographics without birthdate — for patients with missing DOB",
+      "matchingType": "deterministic",
+      "rule": "9",
+      "fields": {
+        "code_national": {
+          "algorithm": "exact",
+          "fhirpath": "identifier.where(system='http://isanteplus.org/openmrs/fhir2/5-code-national').value",
+          "espath": "codeNational",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "family": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').family",
+          "espath": "family",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "given": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').first().given",
+          "espath": "given",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "gender": {
+          "algorithm": "exact",
+          "fhirpath": "gender",
+          "espath": "gender",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        }
+      },
+      "potentialMatchThreshold": 5,
+      "autoMatchThreshold": 6
+    },
+    {
+      "__description": "Rule 10: Phone + demographics — for patients without identifiers",
+      "matchingType": "deterministic",
+      "rule": "10",
+      "fields": {
+        "phone": {
+          "algorithm": "exact",
+          "fhirpath": "telecom.where(system='phone').value",
+          "espath": "phone",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "family": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').family",
+          "espath": "family",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "given": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').first().given",
+          "espath": "given",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "gender": {
+          "algorithm": "exact",
+          "fhirpath": "gender",
+          "espath": "gender",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        }
+      },
+      "potentialMatchThreshold": 5,
+      "autoMatchThreshold": 6
     }
   ]
 }
