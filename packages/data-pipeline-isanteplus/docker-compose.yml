@@ -17,6 +17,7 @@ services:
       - openhim
       - isanteplus
       - hapi-fhir
+      - reverse-proxy
 
   pipeline-isanteplus2:
     image: us-docker.pkg.dev/cloud-build-fhir/fhir-analytics/main:latest
@@ -34,6 +35,7 @@ services:
       - openhim
       - isanteplus
       - hapi-fhir
+      - reverse-proxy
 
 configs:
   application_isanteplus1_yaml:
@@ -56,4 +58,7 @@ networks:
     external: true
   hapi-fhir:
     name: hapi-fhir_public
+    external: true
+  reverse-proxy:
+    name: reverse-proxy_public
     external: true
