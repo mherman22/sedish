@@ -1,0 +1,125 @@
+{
+  "info": {
+    "name": "4 - LNSP Lab Workflow",
+    "description": "Tests the LNSP mediator lab order, result, and subscription endpoints through OpenHIM.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{clientId}}", "type": "string" },
+      { "key": "password", "value": "{{clientPassword}}", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "Lab Orders",
+      "item": [
+        {
+          "name": "List lab orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/lnsp/lab-orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["lnsp", "lab-orders"]
+            },
+            "description": "Lists all lab orders via the /lnsp/ passthrough channel."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Subscriptions",
+      "item": [
+        {
+          "name": "List subscriptions (via /lnsp/)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/lnsp/subscription",
+              "host": ["{{baseUrl}}"],
+              "path": ["lnsp", "subscription"]
+            },
+            "description": "Lists all subscriptions via the /lnsp/ passthrough channel."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List subscriptions (via /dsub channel)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/dsub",
+              "host": ["{{baseUrl}}"],
+              "path": ["dsub"]
+            },
+            "description": "Lists subscriptions via the dedicated DSUB channel. Verifies the pathTransform (dsub -> subscription) works."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

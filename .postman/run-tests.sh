@@ -1,32 +1,83 @@
 #!/bin/bash
+# ---------------------------------------------------------------------------
+# SEDISH HIE — Newman Integration Test Runner
+#
+# Usage:
+#   .postman/run-tests.sh [environment-file]
+#
+# Assumes the HIE is already running (e.g. via `instant project init`).
+# Defaults to the CI environment if no file is provided.
+# ---------------------------------------------------------------------------
+set -euo pipefail
 
-docker-compose -f docker-compose.ports.yml up certgen
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="${1:-$SCRIPT_DIR/environments/ci.postman_environment.json}"
+RESULTS_DIR="$SCRIPT_DIR/results"
 
-docker-compose -f docker-compose.ports.yml up -d nginx openhim-core openhim-console mongo-db
+mkdir -p "$RESULTS_DIR"
 
-sleep 10
+# --- Pre-flight checks -----------------------------------------------------
 
-docker-compose -f docker-compose.ports.yml up openhim-config
+if ! command -v newman &> /dev/null; then
+    echo "ERROR: Newman is not installed."
+    echo "       Install it with:  npm install -g newman"
+    exit 1
+fi
 
-docker-compose -f docker-compose.ports.yml up -d shr-fhir opencr-fhir opencr-es kafka zookeeper
+if [ ! -f "$ENV_FILE" ]; then
+    echo "ERROR: Environment file not found: $ENV_FILE"
+    exit 1
+fi
 
-sleep 30
+# --- Wait for OpenHIM to be ready (max 120 s) ------------------------------
 
-docker-compose -f docker-compose.ports.yml up -d shr opencr
+BASE_URL=$(node -e "
+  var env = require('$ENV_FILE');
+  var v = env.values.find(function(v){ return v.key === 'baseUrl'; });
+  console.log(v ? v.value : 'http://localhost:5001');
+")
 
-sleep 30
-
-docker-compose -f docker-compose.ports.yml logs shr opencr
-
-collections=(
-  'https://www.getpostman.com/collections/46fd37386092a9f460e4'
-  'https://www.getpostman.com/collections/4d682cbb222bb538d365'
-  'https://www.getpostman.com/collections/4f2328a2ce056ff876e4'
-  'https://www.getpostman.com/collections/0d397620f00804b00d75'
-)
-
-for collection in ${collections[@]}; do
-  echo $collection
-  export POSTMAN_COLLECTION=$collection
-  docker-compose -f docker-compose.ports.yml up newman
+echo "Waiting for OpenHIM at $BASE_URL ..."
+for i in $(seq 1 24); do
+    if curl -sf -o /dev/null "$BASE_URL/" 2>/dev/null; then
+        echo "OpenHIM is responding."
+        break
+    fi
+    if [ "$i" -eq 24 ]; then
+        echo "ERROR: OpenHIM not responding after 120 seconds."
+        exit 1
+    fi
+    sleep 5
 done
+
+# --- Run collections in order -----------------------------------------------
+
+COLLECTIONS_DIR="$SCRIPT_DIR/collections"
+EXIT_CODE=0
+
+for collection in "$COLLECTIONS_DIR"/*.postman_collection.json; do
+    name="$(basename "$collection")"
+    echo ""
+    echo "=========================================="
+    echo "  Running: $name"
+    echo "=========================================="
+
+    newman run "$collection" \
+        --environment "$ENV_FILE" \
+        --insecure \
+        --reporters cli,junit \
+        --reporter-junit-export "$RESULTS_DIR/${name%.json}-results.xml" \
+        || EXIT_CODE=$?
+done
+
+# --- Summary -----------------------------------------------------------------
+
+echo ""
+if [ "$EXIT_CODE" -eq 0 ]; then
+    echo "All collections passed."
+else
+    echo "Some collections failed (exit code $EXIT_CODE)."
+fi
+
+echo "JUnit results saved to: $RESULTS_DIR/"
+exit $EXIT_CODE
