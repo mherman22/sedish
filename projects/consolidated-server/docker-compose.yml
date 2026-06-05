@@ -81,6 +81,7 @@ services:
       KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:9092}
       KAFKA_TOPIC: ${KAFKA_TOPIC:-fhir.patient.changed}
       KAFKA_GROUP: ${KAFKA_GROUP:-consolidated-shr}
+      WRITE_URL: ${WRITE_URL:-http://hapi-proxy:18080/fhir}
       DST_HOST: consolidated-db
       DST_PORT: "3306"
       DST_USER: root

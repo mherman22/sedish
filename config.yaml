@@ -17,3 +17,7 @@ packages:
   # - identity-access-manager-keycloak  # SSO — OpenHIM works without it (~1GB RAM)
   # - analytics-datastore-elastic-search # Kibana analytics — OpenCR bundles its own ES (~3GB RAM)
   - lnsp-mediator                     # Lab integration — not in active use (~500MB RAM)
+  # Jembi platform Kafka message bus (async FHIR ingestion backbone)
+  - message-bus-kafka                  # broker kafka-01 on kafka_public (+ Kafdrop/kminion)
+  - kafka-unbundler-consumer           # splits FHIR bundles into per-resource topics
+  - message-bus-helper-hapi-proxy      # consumes resource topics -> writes to SHR/HAPI

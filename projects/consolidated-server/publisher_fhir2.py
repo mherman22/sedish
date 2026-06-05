@@ -39,6 +39,13 @@ def env(name, default=None):
     return os.environ.get(name, default)
 
 
+# WRITE path: the Jembi platform's hapi-proxy — writes to the SHR's HAPI AND
+# emits the bundle to Kafka 2xx -> unbundler -> patient/observation topics for
+# downstream MPI/analytics/reprocess consumers. (No auth; internal service.)
+WRITE_URL = env("WRITE_URL", "http://hapi-proxy:18080/fhir").rstrip("/")
+WRITE_USER = env("WRITE_USER", "")
+WRITE_PASS = env("WRITE_PASS", "")
+# READ path (parity harness / lookups): SHR passthrough via OpenHIM.
 SHR_URL = env("SHR_URL", "http://openhim-core:5001/SHR/fhir").rstrip("/")
 SHR_USER = env("SHR_USER", "shr-pipeline")
 SHR_PASS = env("SHR_PASS", "instant101")
@@ -71,6 +78,7 @@ ENROLL_MPI = env("ENROLL_MPI", "1").lower() in ("1", "true", "yes")
 SYNC_GLOBALS = env("SYNC_GLOBALS", "1").lower() in ("1", "true", "yes")
 GLOBAL_RESOURCES = [r.strip() for r in env(
     "GLOBAL_RESOURCES", "Practitioner,Location").split(",") if r.strip()]
+GLOBAL_CHUNK = int(env("GLOBAL_CHUNK", "100"))  # hapi-proxy rejects very large bundles
 
 
 def schema_to_fhir_base(schema):
@@ -146,12 +154,13 @@ def to_transaction(resources):
 
 
 def post_to_shr(bundle):
+    """POST a transaction bundle to the platform write proxy (hapi-proxy):
+    lands in the SHR's HAPI and fans out to Kafka."""
     data = json.dumps(bundle).encode("utf-8")
-    req = urllib.request.Request(SHR_URL, data=data, method="POST", headers={
-        "Content-Type": "application/fhir+json",
-        "Accept": "application/fhir+json",
-        "Authorization": _auth(SHR_USER, SHR_PASS),
-    })
+    headers = {"Content-Type": "application/fhir+json", "Accept": "application/fhir+json"}
+    if WRITE_USER:  # hapi-proxy needs no auth; kept optional for a mediator fallback
+        headers["Authorization"] = _auth(WRITE_USER, WRITE_PASS)
+    req = urllib.request.Request(WRITE_URL, data=data, method="POST", headers=headers)
     with urllib.request.urlopen(req, timeout=120) as resp:
         return resp.status
 
@@ -192,11 +201,15 @@ def sync_globals(conn):
                 continue
             if not res:
                 continue
-            try:
-                status = post_to_shr(to_transaction(res))
-                log.info("[%s] global %s x%d -> SHR %s", schema, rtype, len(res), status)
-            except urllib.error.HTTPError as e:
-                log.error("[%s] global %s -> SHR FAILED %s", schema, rtype, e.code)
+            sent = 0
+            for i in range(0, len(res), GLOBAL_CHUNK):
+                chunk = res[i:i + GLOBAL_CHUNK]
+                try:
+                    post_to_shr(to_transaction(chunk))
+                    sent += len(chunk)
+                except urllib.error.HTTPError as e:
+                    log.error("[%s] global %s chunk@%d FAILED %s", schema, rtype, i, e.code)
+            log.info("[%s] global %s %d/%d -> SHR", schema, rtype, sent, len(res))
 
 
 def publish_patient(conn, src, person_id):
