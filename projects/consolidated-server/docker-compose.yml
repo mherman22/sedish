@@ -1,0 +1,47 @@
+# Deployed as a Docker Swarm stack:  docker stack deploy -c docker-compose.yml consolidated
+# (swarm services may join the non-attachable `mysql_public` overlay; standalone
+#  `docker compose` containers cannot, which is why this is a stack.)
+version: "3.8"
+
+services:
+  consolidated-db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: ${CONSOLIDATED_ROOT_PW:-consolidated}
+      MYSQL_DATABASE: ${CONSOLIDATED_DB:-consolidated}
+    volumes:
+      - consolidated-data:/var/lib/mysql
+    networks:
+      - mysql_public
+    deploy:
+      replicas: 1
+
+  cdc-reader:
+    image: consolidated-cdc-reader:local
+    environment:
+      SRC_HOST: ${SRC_HOST:-mysql}
+      SRC_PORT: "3306"
+      SRC_USER: ${SRC_USER:-consolidated}
+      SRC_PASS: ${SRC_PASS:-consolidated}
+      SOURCE_SCHEMAS: ${SOURCE_SCHEMAS:-openmrs,openmrs2}
+      SERVER_ID: "100001"
+      DST_HOST: consolidated-db
+      DST_PORT: "3306"
+      DST_USER: root
+      DST_PASS: ${CONSOLIDATED_ROOT_PW:-consolidated}
+      DST_DB: ${CONSOLIDATED_DB:-consolidated}
+    networks:
+      - mysql_public
+    depends_on:
+      - consolidated-db
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+networks:
+  mysql_public:
+    external: true
+
+volumes:
+  consolidated-data:
