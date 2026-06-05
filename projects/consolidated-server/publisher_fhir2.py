@@ -55,6 +55,23 @@ PATIENT_RESOURCES = [r.strip() for r in env(
     "Encounter,Observation,Condition,AllergyIntolerance,MedicationRequest",
 ).split(",") if r.strip()]
 
+# --- MPI (OpenCR) enrollment: the fingerprint/identity -> MPI path ---
+# Pushing the Patient (which carries ALL its identifiers, including the biometric
+# national reference code, type 6) to OpenCR enrolls it and triggers matching:
+# OpenCR decision rule 1 (Biometric) and rule 2 (Code National) dedup into golden
+# records. This is also what closes the "consolidated route doesn't reach OpenCR"
+# gap. (In prod the EMRs also push to /CR/fhir with their facility client; this
+# makes the consolidated server able to do it too.)
+CR_URL = env("CR_URL", "http://openhim-core:5001/CR/fhir").rstrip("/")
+CR_USER = env("CR_USER", "openshr")
+CR_PASS = env("CR_PASS", "openshr")
+ENROLL_MPI = env("ENROLL_MPI", "1").lower() in ("1", "true", "yes")
+
+# --- global (non-patient-scoped) resources the EMR pipeline also ships ---
+SYNC_GLOBALS = env("SYNC_GLOBALS", "1").lower() in ("1", "true", "yes")
+GLOBAL_RESOURCES = [r.strip() for r in env(
+    "GLOBAL_RESOURCES", "Practitioner,Location").split(",") if r.strip()]
+
 
 def schema_to_fhir_base(schema):
     # openmrs -> isanteplus ; openmrs2 -> isanteplus2 ; etc.
@@ -146,13 +163,49 @@ def counts_by_type(resources):
     return c
 
 
+def enroll_in_mpi(patient):
+    """PUT the Patient (with all its identifiers, incl. biometric) to OpenCR,
+    which enrolls it and runs matching/dedup into golden records."""
+    url = f"{CR_URL}/Patient/{patient['id']}"
+    data = json.dumps(patient).encode("utf-8")
+    req = urllib.request.Request(url, data=data, method="PUT", headers={
+        "Content-Type": "application/fhir+json",
+        "Accept": "application/fhir+json",
+        "Authorization": _auth(CR_USER, CR_PASS),
+    })
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        return resp.status
+
+
+def sync_globals(conn):
+    """Push non-patient-scoped resources (Practitioner, Location, ...) from each
+    facility's fhir2 to the SHR, matching the EMR pipeline's global coverage."""
+    schemas = [r["_source_db"] for r in rows(conn, "SELECT DISTINCT _source_db FROM person")]
+    for schema in schemas:
+        base = schema_to_fhir_base(schema)
+        for rtype in GLOBAL_RESOURCES:
+            try:
+                b = http_get_json(f"{base}/{rtype}?_count={PAGE_SIZE}", EMR_USER, EMR_PASS)
+                res = collect_search_bundle(base, b)
+            except urllib.error.HTTPError as e:
+                log.warning("[%s] %s global fetch failed %s", schema, rtype, e.code)
+                continue
+            if not res:
+                continue
+            try:
+                status = post_to_shr(to_transaction(res))
+                log.info("[%s] global %s x%d -> SHR %s", schema, rtype, len(res), status)
+            except urllib.error.HTTPError as e:
+                log.error("[%s] global %s -> SHR FAILED %s", schema, rtype, e.code)
+
+
 def publish_once(conn):
     ensure_publish_state(conn)
     run_started = rows(conn, "SELECT NOW() AS now")[0]["now"]
     high_water = load_high_water(conn)
     keys = changed_patient_keys(conn, high_water)
     log.info("CDC-triggered fhir2 publish: %d changed patient(s) since %s", len(keys), high_water)
-    ok = fail = 0
+    ok = fail = enrolled = 0
     for k in keys:
         src, pid = k["_source_db"], k["person_id"]
         person = rows(conn, "SELECT uuid FROM person WHERE _source_db=%s AND person_id=%s", (src, pid))
@@ -167,7 +220,19 @@ def publish_once(conn):
                 continue
             status = post_to_shr(to_transaction(resources))
             ok += 1
-            log.info("[%s] Patient/%s -> SHR %s | %s", src, uuid, status, counts_by_type(resources))
+            # fingerprint/identity -> MPI: enroll the Patient in OpenCR for dedup
+            mpi = ""
+            if ENROLL_MPI:
+                patient_res = next((r for r in resources if r.get("resourceType") == "Patient"), None)
+                # OpenCR needs at least one identifier to match on
+                if patient_res and patient_res.get("identifier"):
+                    try:
+                        cr_status = enroll_in_mpi(patient_res)
+                        enrolled += 1
+                        mpi = f" | MPI {cr_status}"
+                    except Exception as e:  # noqa: BLE001
+                        mpi = f" | MPI FAILED: {e}"
+            log.info("[%s] Patient/%s -> SHR %s | %s%s", src, uuid, status, counts_by_type(resources), mpi)
         except urllib.error.HTTPError as e:
             fail += 1
             log.error("[%s] Patient/%s FAILED %s: %s", src, uuid, e.code,
@@ -175,6 +240,13 @@ def publish_once(conn):
         except Exception as e:  # noqa: BLE001
             fail += 1
             log.error("[%s] Patient/%s FAILED: %s", src, uuid, e)
+    if SYNC_GLOBALS:
+        try:
+            sync_globals(conn)
+        except Exception as e:  # noqa: BLE001
+            log.error("global sync failed: %s", e)
+    if ENROLL_MPI:
+        log.info("MPI enrollment: %d patient(s) pushed to OpenCR", enrolled)
     if fail == 0:
         save_high_water(conn, run_started)
         log.info("publish run complete: %d ok, 0 failed; high-water -> %s", ok, run_started)
