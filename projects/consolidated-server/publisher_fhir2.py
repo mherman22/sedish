@@ -199,54 +199,58 @@ def sync_globals(conn):
                 log.error("[%s] global %s -> SHR FAILED %s", schema, rtype, e.code)
 
 
+def publish_patient(conn, src, person_id):
+    """Fetch one patient's FHIR from its EMR fhir2, POST to the SHR, and enroll
+    in the MPI. Returns True on success (or nothing-to-do), False on failure.
+    Shared by the poll-mode loop and the Kafka consumer."""
+    person = rows(conn, "SELECT uuid FROM person WHERE _source_db=%s AND person_id=%s", (src, person_id))
+    if not person:
+        return True
+    uuid = person[0]["uuid"]
+    base = schema_to_fhir_base(src)
+    try:
+        resources = fetch_patient_fhir(base, uuid)
+        if not resources:
+            log.warning("[%s] Patient/%s: nothing fetched from %s", src, uuid, base)
+            return True
+        status = post_to_shr(to_transaction(resources))
+        # fingerprint/identity -> MPI: enroll the Patient in OpenCR for dedup
+        mpi = ""
+        if ENROLL_MPI:
+            patient_res = next((r for r in resources if r.get("resourceType") == "Patient"), None)
+            if patient_res and patient_res.get("identifier"):  # OpenCR needs an identifier
+                try:
+                    mpi = f" | MPI {enroll_in_mpi(patient_res)}"
+                except Exception as e:  # noqa: BLE001
+                    mpi = f" | MPI FAILED: {e}"
+        log.info("[%s] Patient/%s -> SHR %s | %s%s", src, uuid, status, counts_by_type(resources), mpi)
+        return True
+    except urllib.error.HTTPError as e:
+        log.error("[%s] Patient/%s FAILED %s: %s", src, uuid, e.code,
+                  e.read().decode("utf-8", "replace")[:400])
+        return False
+    except Exception as e:  # noqa: BLE001
+        log.error("[%s] Patient/%s FAILED: %s", src, uuid, e)
+        return False
+
+
 def publish_once(conn):
     ensure_publish_state(conn)
     run_started = rows(conn, "SELECT NOW() AS now")[0]["now"]
     high_water = load_high_water(conn)
     keys = changed_patient_keys(conn, high_water)
     log.info("CDC-triggered fhir2 publish: %d changed patient(s) since %s", len(keys), high_water)
-    ok = fail = enrolled = 0
+    ok = fail = 0
     for k in keys:
-        src, pid = k["_source_db"], k["person_id"]
-        person = rows(conn, "SELECT uuid FROM person WHERE _source_db=%s AND person_id=%s", (src, pid))
-        if not person:
-            continue
-        uuid = person[0]["uuid"]
-        base = schema_to_fhir_base(src)
-        try:
-            resources = fetch_patient_fhir(base, uuid)
-            if not resources:
-                log.warning("[%s] Patient/%s: nothing fetched from %s", src, uuid, base)
-                continue
-            status = post_to_shr(to_transaction(resources))
+        if publish_patient(conn, k["_source_db"], k["person_id"]):
             ok += 1
-            # fingerprint/identity -> MPI: enroll the Patient in OpenCR for dedup
-            mpi = ""
-            if ENROLL_MPI:
-                patient_res = next((r for r in resources if r.get("resourceType") == "Patient"), None)
-                # OpenCR needs at least one identifier to match on
-                if patient_res and patient_res.get("identifier"):
-                    try:
-                        cr_status = enroll_in_mpi(patient_res)
-                        enrolled += 1
-                        mpi = f" | MPI {cr_status}"
-                    except Exception as e:  # noqa: BLE001
-                        mpi = f" | MPI FAILED: {e}"
-            log.info("[%s] Patient/%s -> SHR %s | %s%s", src, uuid, status, counts_by_type(resources), mpi)
-        except urllib.error.HTTPError as e:
+        else:
             fail += 1
-            log.error("[%s] Patient/%s FAILED %s: %s", src, uuid, e.code,
-                      e.read().decode("utf-8", "replace")[:400])
-        except Exception as e:  # noqa: BLE001
-            fail += 1
-            log.error("[%s] Patient/%s FAILED: %s", src, uuid, e)
     if SYNC_GLOBALS:
         try:
             sync_globals(conn)
         except Exception as e:  # noqa: BLE001
             log.error("global sync failed: %s", e)
-    if ENROLL_MPI:
-        log.info("MPI enrollment: %d patient(s) pushed to OpenCR", enrolled)
     if fail == 0:
         save_high_water(conn, run_started)
         log.info("publish run complete: %d ok, 0 failed; high-water -> %s", ok, run_started)

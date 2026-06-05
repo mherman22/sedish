@@ -30,24 +30,57 @@ services:
       DST_USER: root
       DST_PASS: ${CONSOLIDATED_ROOT_PW:-consolidated}
       DST_DB: ${CONSOLIDATED_DB:-consolidated}
+      ENABLE_KAFKA: ${ENABLE_KAFKA:-1}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:9092}
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-fhir.patient.changed}
     networks:
       - mysql_public
+      - cnet
     depends_on:
       - consolidated-db
+      - kafka
     deploy:
       replicas: 1
       restart_policy:
         condition: any
 
-  # Phase 2: CDC-triggered fhir2 publisher. The binlog high-water mark tells us
-  # which patients changed; for each we pull its FHIR from the owning EMR's
-  # fhir2 API and forward to the SHR. Needs mysql_public (read consolidated-db),
-  # openhim_public (reach openhim-core:5001 SHR channel) and isanteplus_public
-  # (reach the EMR fhir2 APIs isanteplus:8080 / isanteplus2:8080 / ...).
+  # Kafka backbone (Pattern A): decouples the CDC reader from the SHR write.
+  # Single-node KRaft broker; events buffer here if the SHR is down.
+  kafka:
+    image: apache/kafka:3.7.0
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - cnet
+    deploy:
+      replicas: 1
+
+  # CDC-triggered fhir2 publisher, Kafka-consumer variant. Consumes patient-changed
+  # events, pulls each patient's FHIR from the owning EMR's fhir2 API and forwards
+  # to the SHR (+ MPI enroll). Needs cnet (Kafka), mysql_public (read
+  # consolidated-db), openhim_public (openhim-core:5001 SHR+CR channels) and
+  # isanteplus_public (EMR fhir2 APIs isanteplus:8080 / isanteplus2:8080 / ...).
   publisher:
     image: consolidated-cdc-reader:local
-    command: ["python", "-u", "publisher_fhir2.py"]
+    command: ["python", "-u", "publisher_kafka.py"]
     environment:
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:9092}
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-fhir.patient.changed}
+      KAFKA_GROUP: ${KAFKA_GROUP:-consolidated-shr}
       DST_HOST: consolidated-db
       DST_PORT: "3306"
       DST_USER: root
@@ -68,8 +101,10 @@ services:
       - mysql_public
       - openhim_public
       - isanteplus_public
+      - cnet
     depends_on:
       - consolidated-db
+      - kafka
     deploy:
       replicas: 1
       restart_policy:
@@ -82,6 +117,8 @@ networks:
     external: true
   isanteplus_public:
     external: true
+  cnet:        # stack-internal overlay: reader <-> kafka <-> publisher
 
 volumes:
   consolidated-data:
+  kafka-data:

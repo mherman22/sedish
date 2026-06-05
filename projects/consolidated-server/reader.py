@@ -57,6 +57,18 @@ DST = {
     "db": env("DST_DB", "consolidated"),
 }
 SERVER_ID = int(env("SERVER_ID", "100001"))  # MUST differ from source server-id (223344)
+# Kafka backbone (Pattern A): emit a patient-changed event per binlog row so the
+# publisher can stream changes (resilient/replayable) instead of polling.
+ENABLE_KAFKA = env("ENABLE_KAFKA", "").lower() in ("1", "true", "yes")
+KAFKA_BROKERS = [b.strip() for b in env("KAFKA_BROKERS", "kafka:9092").split(",") if b.strip()]
+KAFKA_TOPIC = env("KAFKA_TOPIC", "fhir.patient.changed")
+# table -> the column that identifies the owning patient (person_id)
+PATIENT_KEY_COL = {
+    "person": "person_id", "person_name": "person_id", "person_address": "person_id",
+    "patient": "patient_id", "patient_identifier": "patient_id",
+    "encounter": "patient_id", "obs": "person_id",
+}
+_producer = None
 SCHEMAS = [s.strip() for s in env("SOURCE_SCHEMAS", "openmrs,openmrs2").split(",") if s.strip()]
 TABLES = [t.strip() for t in env(
     "SOURCE_TABLES",
@@ -78,6 +90,46 @@ def connect_src(with_db=None):
 
 def connect_dst():
     return pymysql.connect(charset="utf8mb4", autocommit=True, cursorclass=DictCursor, **DST)
+
+
+def get_producer():
+    """Lazily create a best-effort Kafka producer (None if disabled/unavailable)."""
+    global _producer
+    if not ENABLE_KAFKA:
+        return None
+    if _producer is None:
+        try:
+            import json as _json
+            from kafka import KafkaProducer
+            _producer = KafkaProducer(
+                bootstrap_servers=KAFKA_BROKERS,
+                value_serializer=lambda v: _json.dumps(v).encode("utf-8"),
+                key_serializer=lambda k: k.encode("utf-8"),
+                acks="all", retries=5, linger_ms=50,
+            )
+            log.info("kafka producer connected to %s", KAFKA_BROKERS)
+        except Exception as e:  # noqa: BLE001
+            log.warning("kafka producer unavailable (%s); will retry", e)
+            _producer = None
+    return _producer
+
+
+def emit_change(schema, table, values):
+    """Emit a patient-changed event for the row's owning patient (best-effort)."""
+    col = PATIENT_KEY_COL.get(table)
+    if not col:
+        return
+    pid = values.get(col)
+    if pid is None:
+        return
+    p = get_producer()
+    if not p:
+        return
+    try:
+        p.send(KAFKA_TOPIC, key=f"{schema}:{pid}",
+               value={"source_db": schema, "person_id": int(pid)})
+    except Exception as e:  # noqa: BLE001
+        log.warning("kafka emit failed (%s.%s): %s", schema, table, e)
 
 
 def wait_for(make_conn, label):
@@ -242,6 +294,7 @@ def initial_snapshot(dst, src):
                     rows = cur.fetchall()
                     for row in rows:
                         upsert(dst, table, col_names, schema, row)
+                        emit_change(schema, table, row)
                     total += len(rows)
                     log.info("snapshot %s.%s: %d rows", schema, table, len(rows))
             finally:
@@ -274,11 +327,15 @@ def stream(dst):
             dst.ping(reconnect=True)
             for row in event.rows:
                 if isinstance(event, WriteRowsEvent):
-                    upsert(dst, table, col_names, schema, normalize_values(row["values"], col_names))
+                    vals = normalize_values(row["values"], col_names)
+                    upsert(dst, table, col_names, schema, vals)
                 elif isinstance(event, UpdateRowsEvent):
-                    upsert(dst, table, col_names, schema, normalize_values(row["after_values"], col_names))
-                elif isinstance(event, DeleteRowsEvent):
-                    delete(dst, table, pk, schema, normalize_values(row["values"], col_names))
+                    vals = normalize_values(row["after_values"], col_names)
+                    upsert(dst, table, col_names, schema, vals)
+                else:  # DeleteRowsEvent
+                    vals = normalize_values(row["values"], col_names)
+                    delete(dst, table, pk, schema, vals)
+                emit_change(schema, table, vals)
             kind = type(event).__name__.replace("RowsEvent", "")
             log.info("%s %s.%s (%d row[s])", kind, schema, table, len(event.rows))
             save_state(dst, reader.log_file, reader.log_pos)
