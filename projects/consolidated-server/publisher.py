@@ -40,7 +40,7 @@ DST = {
     "port": int(env("DST_PORT", "3306")),
     "user": env("DST_USER", "root"),
     "password": env("DST_PASS", "consolidated"),
-    "db": env("DST_DB", "consolidated"),
+    "database": env("DST_DB", "consolidated"),
 }
 SHR_URL = env("SHR_URL", "http://openhim-core:5001/SHR/fhir").rstrip("/")
 SHR_USER = env("SHR_USER", "shr-pipeline")
