@@ -46,6 +46,8 @@ SHR_URL = env("SHR_URL", "http://openhim-core:5001/SHR/fhir").rstrip("/")
 SHR_USER = env("SHR_USER", "shr-pipeline")
 SHR_PASS = env("SHR_PASS", "instant101")
 PUBLISH_INTERVAL = int(env("PUBLISH_INTERVAL", "0"))  # 0 = run once and exit
+FORCE_FULL = env("FORCE_FULL", "").lower() in ("1", "true", "yes")  # ignore high-water mark
+EPOCH = "1970-01-01 00:00:00"
 
 # OpenMRS patient_identifier_type id -> (FHIR system URI, display). From the
 # iSantePlus fhir_patient_identifier_system table (see debugging memory). The
@@ -62,6 +64,64 @@ GENDER = {"M": "male", "F": "female", "O": "other"}
 
 def connect_dst():
     return pymysql.connect(charset="utf8mb4", autocommit=True, cursorclass=DictCursor, **DST)
+
+
+def ensure_publish_state(conn):
+    with conn.cursor() as cur:
+        cur.execute(
+            "CREATE TABLE IF NOT EXISTS `_publish_state` ("
+            "id TINYINT NOT NULL PRIMARY KEY, "
+            "high_water DATETIME, "
+            "updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+            ") ENGINE=InnoDB"
+        )
+
+
+def load_high_water(conn):
+    if FORCE_FULL:
+        return EPOCH
+    with conn.cursor() as cur:
+        cur.execute("SELECT high_water FROM `_publish_state` WHERE id=1")
+        row = cur.fetchone()
+    if row and row["high_water"]:
+        return row["high_water"]
+    return EPOCH
+
+
+def save_high_water(conn, ts):
+    with conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO `_publish_state` (id, high_water) VALUES (1, %s) "
+            "ON DUPLICATE KEY UPDATE high_water=VALUES(high_water)", (ts,))
+
+
+# every consolidated table that contributes to a patient's bundle, mapped to the
+# column that identifies the owning patient (= person_id). A patient is "changed"
+# if any of these rows changed (_synced_at) since the last high-water mark.
+_PATIENT_SOURCES = [
+    ("person", "person_id"),
+    ("person_name", "person_id"),
+    ("person_address", "person_id"),
+    ("patient", "patient_id"),
+    ("patient_identifier", "patient_id"),
+    ("encounter", "patient_id"),
+    ("obs", "person_id"),
+]
+
+
+def changed_patient_keys(conn, high_water):
+    """Return [(_source_db, person_id), ...] for patients with any row changed
+    since high_water. Restricted to rows that are actually patients."""
+    union = " UNION ALL ".join(
+        f"SELECT _source_db, {col} AS person_id, _synced_at FROM `{tbl}`"
+        for tbl, col in _PATIENT_SOURCES
+    )
+    sql = (
+        f"SELECT DISTINCT c._source_db, c.person_id FROM ({union}) c "
+        "JOIN patient pt ON pt._source_db=c._source_db AND pt.patient_id=c.person_id "
+        "WHERE c._synced_at > %s"
+    )
+    return rows(conn, sql, (high_water,))
 
 
 def fhir_dt(v):
@@ -242,13 +302,21 @@ def post_bundle(bundle):
 
 
 def publish_once(conn):
-    patients = rows(conn,
-        "SELECT p.* FROM person p JOIN patient pt "
-        "ON pt._source_db=p._source_db AND pt.patient_id=p.person_id")
-    log.info("publishing %d patients to %s", len(patients), SHR_URL)
+    ensure_publish_state(conn)
+    # capture the cutoff BEFORE reading, so rows changed mid-run are caught next
+    # time (re-publishing them is harmless — PUT is idempotent).
+    run_started = rows(conn, "SELECT NOW() AS now")[0]["now"]
+    high_water = load_high_water(conn)
+    keys = changed_patient_keys(conn, high_water)
+    log.info("incremental publish: %d changed patient(s) since %s -> %s%s",
+             len(keys), high_water, SHR_URL, " [FORCE_FULL]" if FORCE_FULL else "")
     ok = fail = 0
-    for person in patients:
-        src = person["_source_db"]
+    for k in keys:
+        src, pid = k["_source_db"], k["person_id"]
+        person = rows(conn, "SELECT * FROM person WHERE _source_db=%s AND person_id=%s", (src, pid))
+        if not person:
+            continue
+        person = person[0]
         bundle, n_enc, n_obs = bundle_for_patient(conn, src, person)
         try:
             status, _ = post_bundle(bundle)
@@ -262,7 +330,13 @@ def publish_once(conn):
         except Exception as e:  # noqa: BLE001
             fail += 1
             log.error("[%s] Patient/%s FAILED: %s", src, person["uuid"], e)
-    log.info("publish run complete: %d ok, %d failed", ok, fail)
+    # only advance the high-water mark if everything succeeded, so failures are
+    # retried on the next run instead of being skipped.
+    if fail == 0:
+        save_high_water(conn, run_started)
+        log.info("publish run complete: %d ok, 0 failed; high-water -> %s", ok, run_started)
+    else:
+        log.info("publish run complete: %d ok, %d failed; high-water UNCHANGED (will retry)", ok, fail)
     return ok, fail
 
 
