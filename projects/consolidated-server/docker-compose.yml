@@ -39,8 +39,36 @@ services:
       restart_policy:
         condition: any
 
+  # Phase 2: translate consolidated rows -> FHIR R4 and push to the SHR.
+  # Needs mysql_public (to read consolidated-db) and openhim_public (to reach
+  # openhim-core:5001, the SHR passthrough channel).
+  publisher:
+    image: consolidated-cdc-reader:local
+    command: ["python", "-u", "publisher.py"]
+    environment:
+      DST_HOST: consolidated-db
+      DST_PORT: "3306"
+      DST_USER: root
+      DST_PASS: ${CONSOLIDATED_ROOT_PW:-consolidated}
+      DST_DB: ${CONSOLIDATED_DB:-consolidated}
+      SHR_URL: ${SHR_URL:-http://openhim-core:5001/SHR/fhir}
+      SHR_USER: ${SHR_USER:-shr-pipeline}
+      SHR_PASS: ${SHR_PASS:-instant101}
+      PUBLISH_INTERVAL: ${PUBLISH_INTERVAL:-3600}
+    networks:
+      - mysql_public
+      - openhim_public
+    depends_on:
+      - consolidated-db
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
 networks:
   mysql_public:
+    external: true
+  openhim_public:
     external: true
 
 volumes:
