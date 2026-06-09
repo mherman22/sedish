@@ -1,0 +1,41 @@
+# Swarm stack:  docker stack deploy -c docker-compose.yml consolidated-etl
+# Reaches OpenHIM (OpenCR + SHR channels) on openhim_public; reaches the CHARESS
+# consolidated_db over the internet/VPN (SRC_HOST in .env).
+version: "3.8"
+
+services:
+  etl:
+    image: consolidated-etl:local
+    environment:
+      SRC_HOST: ${SRC_HOST}
+      SRC_PORT: ${SRC_PORT:-3310}
+      SRC_USER: ${SRC_USER}
+      SRC_PASS: ${SRC_PASS}
+      SRC_DB: ${SRC_DB:-consolidated_db}
+      OPENCR_URL: ${OPENCR_URL:-http://openhim-core:5001/CR/fhir}
+      OPENCR_USER: ${OPENCR_USER:-openshr}
+      OPENCR_PASS: ${OPENCR_PASS:-openshr}
+      SHR_URL: ${SHR_URL:-http://openhim-core:5001/SHR/fhir}
+      SHR_USER: ${SHR_USER:-shr-pipeline}
+      SHR_PASS: ${SHR_PASS:-instant101}
+      MRN_SYSTEM_BASE: ${MRN_SYSTEM_BASE:-http://sedish.sedishtest.live}
+      NATIONAL_ID_SYSTEM: ${NATIONAL_ID_SYSTEM:-http://sedish.sedishtest.live/national-fp-id}
+      SITE_FILTER: ${SITE_FILTER:-}
+      RUN_INTERVAL: ${RUN_INTERVAL:-0}
+      DRY_RUN: ${DRY_RUN:-}
+      STATE_PATH: /data/etl_state.json
+    volumes:
+      - etl-state:/data
+    networks:
+      - openhim_public
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+networks:
+  openhim_public:
+    external: true
+
+volumes:
+  etl-state:
