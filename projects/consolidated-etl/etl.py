@@ -38,9 +38,20 @@ OPENCR_PASS = env("OPENCR_PASS", "openshr")
 SHR_URL = env("SHR_URL", "http://openhim-core:5001/SHR/fhir").rstrip("/")
 SHR_USER = env("SHR_USER", "shr-pipeline")
 SHR_PASS = env("SHR_PASS", "instant101")
-# FHIR system URIs — CHARESS to provide canonical namespaces (§9, §11)
+# FHIR system URIs — CHARESS to provide canonical namespaces (§9, §11), and they
+# MUST match OpenCR's config.json (systems.internalid / decisionRules) or OpenCR
+# rejects the patient ("no identifier for internalid"). Defaults below align with
+# the SEDISH OpenCR config: identifier_type -> system, and the national_id routed
+# into the biometrics-national-reference-code system so OpenCR's biometric rule
+# (rule 1) dedups the DOUBLON cross-site.
 MRN_SYSTEM_BASE = env("MRN_SYSTEM_BASE", "http://sedish.sedishtest.live")
-NATIONAL_ID_SYSTEM = env("NATIONAL_ID_SYSTEM", "http://sedish.sedishtest.live/national-fp-id")
+IDENTIFIER_TYPE_SYSTEMS = json.loads(env("IDENTIFIER_TYPE_SYSTEMS", json.dumps({
+    "3": "http://isanteplus.org/openmrs/fhir2/3-isanteplus-id",      # iSantePlus ID (internalid)
+    "5": "http://isanteplus.org/openmrs/fhir2/5-code-national",      # Code National
+    "6": "http://isanteplus.org/openmrs/fhir2/6-code-st",            # Code ST
+})))
+NATIONAL_ID_SYSTEM = env("NATIONAL_ID_SYSTEM",
+                         "http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code")
 # scoping / cadence
 SITE_FILTER = [s.strip() for s in env("SITE_FILTER", "").split(",") if s.strip()]  # empty = all sites
 RUN_INTERVAL = int(env("RUN_INTERVAL", "0"))  # 0 = run once and exit
@@ -81,7 +92,8 @@ def publish_patient(conn, resolver, mspp_code, patient_id):
     patient = mapping.build_patient(
         resolved["person"], resolved["names"], resolved["addresses"],
         resolved["identifiers"], resolved["mapping"],
-        mrn_system_base=MRN_SYSTEM_BASE, national_id_system=NATIONAL_ID_SYSTEM)
+        mrn_system_base=MRN_SYSTEM_BASE, national_id_system=NATIONAL_ID_SYSTEM,
+        identifier_systems=IDENTIFIER_TYPE_SYSTEMS)
 
     # IDENTITY -> OpenCR (all patients; national_id overlay handled in build_patient)
     cr = put(OPENCR_URL, OPENCR_USER, OPENCR_PASS, patient)
@@ -125,8 +137,9 @@ def run_once(conn):
             except Exception as e:  # noqa: BLE001
                 fail += 1
                 log.error("[%s/%s] FAILED: %s", mspp_code, pid, e)
-        # advance the site watermark only on a clean batch (else retry next run)
-        if fail == 0:
+        # advance the site watermark only on a clean batch (else retry next run);
+        # never advance on a dry run (nothing was actually pushed)
+        if fail == 0 and not DRY_RUN:
             state.advance_watermark(conn, mspp_code)
         total_ok += ok
         total_fail += fail

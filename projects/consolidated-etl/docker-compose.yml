@@ -28,6 +28,7 @@ services:
       - etl-state:/data
     networks:
       - openhim_public
+      - mysql_public      # only needed when SRC_HOST is a local stand-in; harmless otherwise
     deploy:
       replicas: 1
       restart_policy:
@@ -35,6 +36,8 @@ services:
 
 networks:
   openhim_public:
+    external: true
+  mysql_public:
     external: true
 
 volumes:

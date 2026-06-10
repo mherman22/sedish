@@ -45,9 +45,15 @@ def mrn_system(mrn_system_base, mspp_code, identifier_type):
 
 
 def build_patient(person, names, addresses, identifiers, mapping, *,
-                  mrn_system_base, national_id_system):
+                  mrn_system_base, national_id_system, identifier_systems=None):
     """person/names/addresses/identifiers are rows from *_openmrs; mapping is the
-    national_fingerprint_mapping row (or None). Join key handled by caller (§8.1)."""
+    national_fingerprint_mapping row (or None). Join key handled by caller (§8.1).
+
+    identifier_systems maps an OpenMRS identifier_type id (as str) -> FHIR system
+    URI. These MUST match what OpenCR is configured to accept as `internalid`
+    (see client-registry-opencr config.json) or OpenCR rejects the patient.
+    Unknown types fall back to a synthetic per-site system."""
+    identifier_systems = identifier_systems or {}
     res = {
         "resourceType": "Patient",
         "id": person["uuid"],
@@ -107,9 +113,11 @@ def build_patient(person, names, addresses, identifiers, mapping, *,
     # identifiers: per-site MRNs (§6.4) + national_id overlay (§3, §7)
     fhir_idents = []
     for i in identifiers:
+        system = identifier_systems.get(str(i.get("identifier_type"))) \
+            or mrn_system(mrn_system_base, person["mspp_code"], i.get("identifier_type"))
         fhir_idents.append({
             "use": "official" if i.get("preferred") else "usual",
-            "system": mrn_system(mrn_system_base, person["mspp_code"], i.get("identifier_type")),
+            "system": system,
             "value": i.get("identifier"),
         })
     if mapping and mapping.get("national_id") and mapping.get("statut") in NATIONAL_ID_STATUSES:
