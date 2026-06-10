@@ -62,27 +62,35 @@ def _auth(u, p):
     return "Basic " + base64.b64encode(f"{u}:{p}".encode()).decode()
 
 
-def post(url, user, pw, payload):
+# HAPI/OpenHIM transient errors worth a retry (e.g. HAPI-0825 client-assigned-id
+# conflicts under concurrent writes, gateway hiccups).
+TRANSIENT = {409, 429, 500, 502, 503, 504}
+
+
+def _send(url, method, user, pw, body, timeout=120, retries=3):
     if DRY_RUN:
         return 0
-    data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(url, data=data, method="POST", headers={
-        "Content-Type": "application/fhir+json", "Accept": "application/fhir+json",
-        "Authorization": _auth(user, pw)})
-    with urllib.request.urlopen(req, timeout=120) as resp:
-        return resp.status
+    data = json.dumps(body).encode("utf-8")
+    for attempt in range(retries):
+        req = urllib.request.Request(url, data=data, method=method, headers={
+            "Content-Type": "application/fhir+json", "Accept": "application/fhir+json",
+            "Authorization": _auth(user, pw)})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return resp.status
+        except urllib.error.HTTPError as e:
+            if e.code in TRANSIENT and attempt < retries - 1:
+                time.sleep(1.5 * (attempt + 1))
+                continue
+            raise
+
+
+def post(url, user, pw, payload):
+    return _send(url, "POST", user, pw, payload)
 
 
 def put(url, user, pw, resource):
-    if DRY_RUN:
-        return 0
-    data = json.dumps(resource).encode("utf-8")
-    req = urllib.request.Request(f"{url}/{resource['resourceType']}/{resource['id']}",
-                                 data=data, method="PUT", headers={
-        "Content-Type": "application/fhir+json", "Accept": "application/fhir+json",
-        "Authorization": _auth(user, pw)})
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        return resp.status
+    return _send(f"{url}/{resource['resourceType']}/{resource['id']}", "PUT", user, pw, resource, timeout=60)
 
 
 def publish_patient(conn, resolver, mspp_code, patient_id):
