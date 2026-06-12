@@ -1,0 +1,120 @@
+# SEDISH "hie" stack — the consolidated-server ingest + the SQLMesh FHIR pipeline,
+# wired together with Kafka. Deploy with ./deploy.sh (builds the two local images
+# first, since `docker stack deploy` does not build).
+#
+#   EMRs ─CDC reader─▶ consolidated_db ─┐ (reader also emits patient-changed → Kafka)
+#           └──────────────────────────▶ Kafka ─▶ fhir-pipeline ┬─ sqlmesh run (→ fhir.*)
+#                                                                └─ loader (Δ → OpenCR + SHR)
+version: "3.8"
+
+services:
+  # consolidated MySQL, built on the REAL production schema (44 tables, MySQL 8,
+  # loaded on first boot). Also hosts the SQLMesh output (fhir/ref) + state schemas.
+  consolidated-db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${CONSOLIDATED_ROOT_PW:-consolidated}
+      MYSQL_DATABASE: ${CONSOLIDATED_DB:-consolidated_db}
+    volumes:
+      - consolidated-data:/var/lib/mysql
+    configs:
+      - source: consolidated_schema
+        target: /docker-entrypoint-initdb.d/01-consolidated_db_schema.sql
+    networks: [mysql_public]
+    deploy:
+      replicas: 1
+
+  # ingest: binlog CDC of the iSantePlus EMRs -> consolidated_db (*_openmrs, mspp_code,
+  # date_updated stamped), and emits a patient-changed event per row to Kafka.
+  cdc-reader:
+    image: consolidated-cdc-reader:local
+    environment:
+      SRC_HOST: ${SRC_HOST:-mysql}
+      SRC_PORT: "3306"
+      SRC_USER: ${SRC_USER:-consolidated}
+      SRC_PASS: ${SRC_PASS:-consolidated}
+      SOURCE_SCHEMAS: ${SOURCE_SCHEMAS:-openmrs,openmrs2}
+      SCHEMA_MSPP: ${SCHEMA_MSPP:-openmrs=11106,openmrs2=22207}
+      SERVER_ID: "100001"
+      DST_HOST: consolidated-db
+      DST_PORT: "3306"
+      DST_USER: root
+      DST_PASS: ${CONSOLIDATED_ROOT_PW:-consolidated}
+      DST_DB: ${CONSOLIDATED_DB:-consolidated_db}
+      ENABLE_KAFKA: "1"
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:9092}
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-fhir.patient.changed}
+    networks: [mysql_public, cnet]
+    depends_on: [consolidated-db, kafka]
+    deploy:
+      replicas: 1
+      restart_policy: { condition: any }
+
+  # Kafka backbone: the reader produces patient-changed events, fhir-pipeline consumes
+  # them as a trigger (buffers/replays if the pipeline or OpenHIM is down).
+  kafka:
+    image: apache/kafka:3.7.0
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks: [cnet]
+    deploy:
+      replicas: 1
+
+  # phase 2: SQLMesh maps consolidated_db -> FHIR and the loader pushes the delta to
+  # OpenCR (identity) + SHR (clinical). Kafka-triggered (RUN_MODE=kafka); set RUN_MODE=poll
+  # to fall back to the timer. Replaces the old fhir2 `publisher`.
+  fhir-pipeline:
+    image: openmrs-fhir-sqlmesh:local
+    environment:
+      RUN_MODE: ${RUN_MODE:-kafka}
+      FHIR_DB_HOST: consolidated-db
+      FHIR_DB_PORT: "3306"
+      FHIR_DB_USER: root
+      FHIR_DB_PASS: ${CONSOLIDATED_ROOT_PW:-consolidated}
+      FHIR_DB_NAME: ${FHIR_DB_NAME:-fhir}
+      NATIONAL_ID_SYSTEM: ${NATIONAL_ID_SYSTEM:-http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:9092}
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-fhir.patient.changed}
+      KAFKA_GROUP: ${KAFKA_GROUP:-fhir-pipeline}
+      DEBOUNCE_SECONDS: ${DEBOUNCE_SECONDS:-5}
+      OPENCR_URL: ${OPENCR_URL:-http://openhim-core:5001/CR/fhir}
+      OPENCR_USER: ${OPENCR_USER:-openshr}
+      OPENCR_PASS: ${OPENCR_PASS:-openshr}
+      SHR_URL: ${SHR_URL:-http://openhim-core:5001/SHR/fhir}
+      SHR_USER: ${SHR_USER:-shr-pipeline}
+      SHR_PASS: ${SHR_PASS:-instant101}
+    networks: [mysql_public, openhim_public, cnet]
+    depends_on: [consolidated-db, kafka]
+    deploy:
+      replicas: 1
+      restart_policy: { condition: any }
+
+networks:
+  mysql_public:
+    external: true
+  openhim_public:
+    external: true
+  cnet:   # stack-internal overlay: reader <-> kafka <-> fhir-pipeline
+
+configs:
+  # the real production schema, loaded into consolidated-db on first boot
+  consolidated_schema:
+    file: ../projects/consolidated-server/schema/consolidated_db_schema.sql
+
+volumes:
+  consolidated-data:
+  kafka-data:

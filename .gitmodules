@@ -1,0 +1,3 @@
+[submodule "projects/openmrs-fhir-sqlmesh"]
+	path = projects/openmrs-fhir-sqlmesh
+	url = https://github.com/mherman22/openmrs-fhir-sqlmesh
