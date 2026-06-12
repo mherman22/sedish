@@ -94,13 +94,13 @@ KAFKA_TOPIC = env("KAFKA_TOPIC", "fhir.patient.changed")
 PATIENT_KEY_COL = {
     "person": "person_id", "person_name": "person_id", "person_address": "person_id",
     "patient": "patient_id", "patient_identifier": "patient_id",
-    "encounter": "patient_id", "obs": "person_id",
+    "encounter": "patient_id", "obs": "person_id", "allergy": "patient_id",
 }
 _producer = None
 SCHEMAS = [s.strip() for s in env("SOURCE_SCHEMAS", "openmrs,openmrs2").split(",") if s.strip()]
 TABLES = [t.strip() for t in env(
     "SOURCE_TABLES",
-    "person,person_name,person_address,patient,patient_identifier,encounter,visit,obs",
+    "person,person_name,person_address,patient,patient_identifier,encounter,visit,obs,allergy,allergy_reaction",
 ).split(",") if t.strip()]
 
 # caches so we introspect each table once
