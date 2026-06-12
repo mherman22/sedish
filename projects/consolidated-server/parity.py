@@ -2,14 +2,14 @@
 Parity-diff harness: consolidated route vs the EMR fhir2 gold standard.
 
 For every consolidated patient it asks two questions:
-  1. What does the owning EMR's fhir2 API hold for this patient? (= what
-     fhir-data-pipes would deliver — the gold standard.)
+  1. What does the owning EMR's fhir2 API hold for this patient? (= the
+     source-of-truth FHIR — the gold standard.)
   2. Is each of those resources present in the SHR? (= what our consolidated
      route actually delivered.)
 
 It reports, per resource type, matched / missing-in-SHR counts. A clean run
-(zero missing) is the evidence needed to retire fhir-data-pipes: the consolidated
-route populates the SHR with the same resources as the source of truth.
+(zero missing) confirms the consolidated route populates the SHR with the same
+resources as the source of truth.
 
 Resources are matched by id (OpenMRS uuid, preserved end-to-end), so the SHR
 mediator's golden-record subject rewrite doesn't affect the comparison.

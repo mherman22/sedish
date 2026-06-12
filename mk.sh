@@ -51,11 +51,8 @@
 # ./instant package down -n monitoring --env-file .env
 # ./instant package up -n monitoring --env-file .env -d
 
-#data pipeline
-# ./instant package remove -n data-pipeline-isanteplus --env-file .env
-#./instant package init -n data-pipeline-isanteplus --env-file .env
-#./instant package down -n data-pipeline-isanteplus --env-file .env
-#./instant package up -n data-pipeline-isanteplus --env-file .env
+# EMR → SHR: the consolidated pipeline (separate stack)
+# cd hie && ./deploy.sh
 
 
 

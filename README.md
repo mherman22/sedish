@@ -177,8 +177,7 @@ Or deploy per-package in dependency order:
 ./instant package init -n client-registry-opencr --env-file .env
 ./instant package init -n shared-health-record-fhir --env-file .env
 ./instant package init -n emr-isanteplus --env-file .env
-# Wait 10-15 min for iSantePlus to boot before deploying pipelines
-./instant package init -n data-pipeline-isanteplus --env-file .env
+# EMR → SHR is the consolidated pipeline (separate `hie` stack): cd hie && ./deploy.sh
 ```
 
 ### Option B: Manual deployment (docker stack)
@@ -215,8 +214,8 @@ docker stack deploy -c packages/shared-health-record-fhir/docker-compose.yml sha
 # 7. iSantePlus EMR (needs mysql + openhim — takes 10-15 min to boot)
 docker stack deploy -c packages/emr-isanteplus/docker-compose.yml isanteplus
 
-# 8. FHIR Data Pipelines (needs isanteplus + openhim + hapi-fhir — deploy LAST)
-docker stack deploy -c packages/data-pipeline-isanteplus/docker-compose.yml pipeline
+# 8. EMR → SHR: the consolidated → FHIR pipeline (separate `hie` stack — see hie/README.md)
+cd hie && ./deploy.sh && cd ..
 
 # 9. Verify all services are up
 docker service ls --format 'table {{.Name}}\t{{.Replicas}}'
@@ -262,69 +261,22 @@ Each HIE component is deployed as a package. Use the `instant` CLI to manage the
 - **`init` vs `up`**: Use `init` only for first-time deployment or after wiping data. Use `up` for restarts.
 - **HAPI FHIR**: Always run `./packages/fhir-datastore-hapi-fhir/post-deploy.sh` after deploying or updating HAPI FHIR. This adds the `reverse-proxy_public` network (for SHR browser access) and sets referential integrity + placeholder target settings. The instant CLI reads compose files from the jembi/platform base image, which doesn't include our HAPI FHIR overrides — this script applies them.
 - **OpenHIM**: If MongoDB was wiped, use `init` (not `up`) to re-run the config importer.
-- **Pipeline resource order**: The data pipeline syncs resources in the order defined in `resourceList` in `application-isanteplus*.yaml`. Referenced resources (Practitioner, Location) must come before resources that reference them (Encounter, Observation) to avoid referential integrity errors.
 
 ---
 
-## FHIR Data Pipeline Management
+## EMR → SHR pipeline
 
-Each iSantePlus instance has its own dedicated pipeline that syncs FHIR resources to the SHR. Pipelines run on a schedule (incremental sync every hour) and can be managed from the terminal.
-
-### Architecture
-
-```
-pipeline-isanteplus1 → http://isanteplus:8080/openmrs/ws/fhir2/R4   → SHR (via OpenHIM)
-pipeline-isanteplus2 → http://isanteplus2:8080/openmrs/ws/fhir2/R4  → SHR (via OpenHIM)
-```
-
-Schedules are staggered to avoid concurrent writes:
-- Pipeline 1: runs at `:00` (top of hour)
-- Pipeline 2: runs at `:30` (half hour)
-
-### Check pipeline status
+The EMR → SHR path is the **consolidated → FHIR pipeline** — the `hie` stack (consolidated
+server + `openmrs-fhir-sqlmesh`): the consolidated server ingests the iSantePlus EMRs (CDC),
+SQLMesh maps `consolidated_db` to FHIR, and a loader pushes to OpenCR (identity) + SHR
+(clinical). See [`hie/README.md`](hie/README.md). It replaced the earlier per-instance
+pipeline that mirrored the EMR FHIR API directly to the SHR.
 
 ```bash
-# List pipeline services
-docker service ls -f name=pipeline
-
-# Check last run time and next scheduled run
-docker service logs pipeline_pipeline-isanteplus1 --tail 5
-docker service logs pipeline_pipeline-isanteplus2 --tail 5
+cd hie && ./deploy.sh
+docker stack services hie
+docker service logs -f hie_fhir-pipeline
 ```
-
-### Trigger a pipeline run manually
-
-```bash
-# Full run (re-syncs all resources)
-docker exec $(docker ps -q -f name=pipeline_pipeline-isanteplus1) \
-  curl -s -X POST http://localhost:8080/run -F "runMode=FULL"
-
-# Incremental run (only changed resources since last run)
-docker exec $(docker ps -q -f name=pipeline_pipeline-isanteplus2) \
-  curl -s -X POST http://localhost:8080/run -F "runMode=INCREMENTAL"
-```
-
-### Check pipeline logs for errors
-
-```bash
-# Check for errors in a specific pipeline
-docker service logs pipeline_pipeline-isanteplus1 2>&1 | grep -i "error\|fail\|409" | tail -20
-
-# Check SHR mediator for MPI resolution activity
-docker service logs shared-health-record_shr 2>&1 | grep -i "MPI resolved" | tail -10
-```
-
-### Restart a pipeline
-
-```bash
-docker service update --force pipeline_pipeline-isanteplus1
-```
-
-### Adding a pipeline for a new iSantePlus instance
-
-1. Create `packages/data-pipeline-isanteplus/config/application-isanteplusN.yaml` — copy from an existing config and change `fhirServerUrl` to point at the new instance
-2. Add the new service to `packages/data-pipeline-isanteplus/docker-compose.yml`
-3. Stagger the `incrementalSchedule` to avoid overlap with other pipelines
 
 ---
 
@@ -782,8 +734,8 @@ print(f'passwordHash: {hash_val}')
 
 | File | Field |
 |------|-------|
-| `packages/data-pipeline-isanteplus/config/application.yaml` | `sinkUserName` / `sinkPassword` |
 | `packages/interoperability-layer-openhim/importer/volume/openhim-import.json` | Client `passwordHash` / `passwordSalt` |
+| `hie/.env` (loader creds) | `OPENCR_*` / `SHR_*` for the consolidated pipeline |
 
 ---
 
@@ -816,22 +768,18 @@ sedish/
 │   │   ├── Dockerfile            # Custom image with post-start.sh
 │   │   ├── config/post-start.sh  # Auto-configures xds-sender on boot
 │   │   └── docker-compose.yml    # Service definitions for all instances
-│   ├── data-pipeline-isanteplus/  # FHIR data pipelines (one per instance)
-│   │   ├── config/application-isanteplus1.yaml  # Pipeline 1 → isanteplus
-│   │   ├── config/application-isanteplus2.yaml  # Pipeline 2 → isanteplus2
-│   │   └── docker-compose.yml
 │   ├── client-registry-opencr/   # OpenCR
 │   ├── database-postgres/        # PostgreSQL
 │   ├── database-mysql/           # MySQL
 │   ├── identity-access-manager-keycloak/ # Keycloak
 │   └── monitoring/               # Grafana + Prometheus + Loki
+├── hie/                         # EMR → SHR consolidated → FHIR pipeline stack
+│   ├── docker-compose.yml       # consolidated-db + cdc-reader + kafka + fhir-pipeline
+│   └── deploy.sh
 └── projects/
-    └── isanteplus-db/            # MySQL seed data for iSantePlus
-        ├── Dockerfile            # Custom MySQL image
-        └── initdb/
-            ├── 10-create-dbs.sh  # Creates openmrs, openmrs2, ... databases
-            ├── 20-configure-per-instance.sh  # Sets sequence offsets + unique URIs
-            └── isanteplus-db.sql # Base SQL dump (Git LFS)
+    ├── isanteplus-db/           # MySQL seed data for iSantePlus
+    ├── consolidated-server/     # CDC reader → consolidated_db (production schema)
+    └── openmrs-fhir-sqlmesh/    # submodule: SQLMesh consolidated_db→FHIR + loader
 ```
 
 ---

@@ -11,11 +11,10 @@ packages:
   - shared-health-record-fhir
   - client-registry-opencr
   - emr-isanteplus
-  # data-pipeline-isanteplus REMOVED — superseded by the consolidated→FHIR pipeline
-  # (the `hie` stack: consolidated-server + openmrs-fhir-sqlmesh, which owns Patient/
-  # Encounter/Observation/AllergyIntolerance/Condition/MedicationRequest + Location).
-  # NOTE: Practitioner & Group are no longer pushed to the SHR (no source in
-  # consolidated_db) — revisit if the SHR needs them.
+  # EMR → SHR is the consolidated → FHIR pipeline (the separate `hie` stack:
+  # consolidated-server + openmrs-fhir-sqlmesh), not an instant package — see hie/README.md.
+  # (It owns Patient/Encounter/Observation/AllergyIntolerance/Condition/MedicationRequest
+  # + Location. Practitioner & Group are not pushed to the SHR — no source in consolidated_db.)
   # Not needed for core HIE — uncomment to enable:
   # - monitoring                        # Grafana/Prometheus/Loki (~7 containers, ~3GB RAM)
   # - identity-access-manager-keycloak  # SSO — OpenHIM works without it (~1GB RAM)
