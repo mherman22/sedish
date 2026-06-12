@@ -1,9 +1,0 @@
-{
-  "id": "data-pipeline-isanteplus",
-  "name": "data-pipeline for iSantePlus",
-  "description": "data-pipeline for isanteplus",
-  "type": "infrastructure",
-  "version": "0.0.0",
-  "dependencies": [],
-  "environmentVariables": {}
-}
