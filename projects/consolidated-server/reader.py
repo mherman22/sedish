@@ -85,6 +85,10 @@ def _parse_map(raw):
 # Each facility database -> its site code (mspp_code), e.g. "openmrs=11106,openmrs2=22207"
 SCHEMA_MSPP = _parse_map(env("SCHEMA_MSPP", "openmrs=11106,openmrs2=22207"))
 
+# Source-table -> target-table overrides for tables that don't follow the `_openmrs`
+# suffix (iSantePlus derived tables keep their own name in consolidated_db).
+TABLE_TARGET = _parse_map(env("TABLE_TARGET", "patient_diagnosis=patient_diagnosis"))
+
 # Kafka backbone (Pattern A): emit a patient-changed event per binlog row so the
 # publisher can stream changes (resilient/replayable) instead of polling.
 ENABLE_KAFKA = env("ENABLE_KAFKA", "").lower() in ("1", "true", "yes")
@@ -95,12 +99,13 @@ PATIENT_KEY_COL = {
     "person": "person_id", "person_name": "person_id", "person_address": "person_id",
     "patient": "patient_id", "patient_identifier": "patient_id",
     "encounter": "patient_id", "obs": "person_id", "allergy": "patient_id",
+    "patient_diagnosis": "patient_id",
 }
 _producer = None
 SCHEMAS = [s.strip() for s in env("SOURCE_SCHEMAS", "openmrs,openmrs2").split(",") if s.strip()]
 TABLES = [t.strip() for t in env(
     "SOURCE_TABLES",
-    "person,person_name,person_address,patient,patient_identifier,encounter,visit,obs,allergy,allergy_reaction",
+    "person,person_name,person_address,patient,patient_identifier,encounter,visit,obs,allergy,allergy_reaction,patient_diagnosis",
 ).split(",") if t.strip()]
 
 # caches so we introspect each table once
@@ -122,7 +127,7 @@ def connect_dst():
 
 
 def target_of(table):
-    return f"{table}{TABLE_SUFFIX}"
+    return TABLE_TARGET.get(table, f"{table}{TABLE_SUFFIX}")
 
 
 def mspp_for(schema):
