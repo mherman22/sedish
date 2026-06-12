@@ -93,14 +93,14 @@ services:
       KAFKA_TOPIC: ${KAFKA_TOPIC:-fhir.patient.changed}
       KAFKA_GROUP: ${KAFKA_GROUP:-fhir-pipeline}
       DEBOUNCE_SECONDS: ${DEBOUNCE_SECONDS:-5}
+      # one dedicated client for both channels (OpenCR attributes to "Consolidated Server";
+      # the SHR push no longer reuses the retired fhir-data-pipes `shr-pipeline` client)
       OPENCR_URL: ${OPENCR_URL:-http://openhim-core:5001/CR/fhir}
-      # enroll as our own client so OpenCR attributes patients to "Consolidated Server"
-      # (not the SHR's reused openshr credential)
       OPENCR_USER: ${OPENCR_USER:-consolidated}
       OPENCR_PASS: ${OPENCR_PASS:-consolidated}
       SHR_URL: ${SHR_URL:-http://openhim-core:5001/SHR/fhir}
-      SHR_USER: ${SHR_USER:-shr-pipeline}
-      SHR_PASS: ${SHR_PASS:-instant101}
+      SHR_USER: ${SHR_USER:-consolidated}
+      SHR_PASS: ${SHR_PASS:-consolidated}
     networks: [mysql_public, openhim_public, cnet]
     depends_on: [consolidated-db, kafka]
     deploy:

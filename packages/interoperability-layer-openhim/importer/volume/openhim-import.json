@@ -53,16 +53,6 @@
     },
     {
       "roles": [
-        "pipeline"
-      ],
-      "clientID": "shr-pipeline",
-      "name": "shr-pipeline",
-      "passwordAlgorithm": "sha512",
-      "passwordSalt": "a3d28f95fa476a64ab72a60db496845e",
-      "passwordHash": "5c1e5cc3f3ea5e4590a681de9253e11defc8053c1ebf8dd8881f5b92eef997d826236304a3f4b3a0f9c4977ec466db80b5dc54b034b4bf26ceba3a66d8647776"
-    },
-    {
-      "roles": [
         "xds"
       ],
       "clientID": "xds_client",
