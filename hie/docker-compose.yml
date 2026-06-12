@@ -20,6 +20,8 @@ services:
     configs:
       - source: consolidated_schema
         target: /docker-entrypoint-initdb.d/01-consolidated_db_schema.sql
+      - source: nfp_mapping_schema
+        target: /docker-entrypoint-initdb.d/02-national_fingerprint_mapping.sql
     networks: [mysql_public]
     deploy:
       replicas: 1
@@ -92,8 +94,10 @@ services:
       KAFKA_GROUP: ${KAFKA_GROUP:-fhir-pipeline}
       DEBOUNCE_SECONDS: ${DEBOUNCE_SECONDS:-5}
       OPENCR_URL: ${OPENCR_URL:-http://openhim-core:5001/CR/fhir}
-      OPENCR_USER: ${OPENCR_USER:-openshr}
-      OPENCR_PASS: ${OPENCR_PASS:-openshr}
+      # enroll as our own client so OpenCR attributes patients to "Consolidated Server"
+      # (not the SHR's reused openshr credential)
+      OPENCR_USER: ${OPENCR_USER:-consolidated}
+      OPENCR_PASS: ${OPENCR_PASS:-consolidated}
       SHR_URL: ${SHR_URL:-http://openhim-core:5001/SHR/fhir}
       SHR_USER: ${SHR_USER:-shr-pipeline}
       SHR_PASS: ${SHR_PASS:-instant101}
@@ -114,6 +118,9 @@ configs:
   # the real production schema, loaded into consolidated-db on first boot
   consolidated_schema:
     file: ../projects/consolidated-server/schema/consolidated_db_schema.sql
+  # the biometric identity table (absent from the dump; created empty)
+  nfp_mapping_schema:
+    file: ../projects/consolidated-server/schema/02-national_fingerprint_mapping.sql
 
 volumes:
   consolidated-data:

@@ -85,6 +85,10 @@
       "displayName": "Shared Health Record"
     },
     {
+      "id": "consolidated",
+      "displayName": "Consolidated Server"
+    },
+    {
       "id": "shr-pipeline",
       "displayName": "SHR Pipeline"
     },

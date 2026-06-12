@@ -43,6 +43,16 @@
     },
     {
       "roles": [
+        "emr"
+      ],
+      "clientID": "consolidated",
+      "name": "Consolidated Server",
+      "passwordAlgorithm": "sha512",
+      "passwordSalt": "2398982b18690731d1ea0ca49777d545",
+      "passwordHash": "b6ada88d0c8e3042ec5697da6762b7efeecfa9c6961f78e0a3e88b4f1659c5872223365d068dc629850ce94b950551c2b80f12bf96d548ac45b956caa816ae79"
+    },
+    {
+      "roles": [
         "pipeline"
       ],
       "clientID": "shr-pipeline",
