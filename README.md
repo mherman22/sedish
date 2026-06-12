@@ -267,7 +267,7 @@ Each HIE component is deployed as a package. Use the `instant` CLI to manage the
 ## EMR → SHR pipeline
 
 The EMR → SHR path is the **consolidated → FHIR pipeline** — the `hie` stack (consolidated
-server + `openmrs-fhir-sqlmesh`): the consolidated server ingests the iSantePlus EMRs (CDC),
+server + `consolidated-fhir-mapper`): the consolidated server ingests the iSantePlus EMRs (CDC),
 SQLMesh maps `consolidated_db` to FHIR, and a loader pushes to OpenCR (identity) + SHR
 (clinical). See [`hie/README.md`](hie/README.md). It replaced the earlier per-instance
 pipeline that mirrored the EMR FHIR API directly to the SHR.
@@ -779,7 +779,7 @@ sedish/
 └── projects/
     ├── isanteplus-db/           # MySQL seed data for iSantePlus
     ├── consolidated-server/     # CDC reader → consolidated_db (production schema)
-    └── openmrs-fhir-sqlmesh/    # submodule: SQLMesh consolidated_db→FHIR + loader
+    └── consolidated-fhir-mapper/    # submodule: SQLMesh consolidated_db→FHIR + loader
 ```
 
 ---

@@ -20,7 +20,7 @@ consolidated_db  (MySQL 8, real production schema, *_openmrs keyed on mspp_code,
 ## Components
 - **`projects/consolidated-server/`** — the CDC reader + the production-schema dump it
   loads into `consolidated_db`. The "Consolidé" ingest stand-in.
-- **`projects/openmrs-fhir-sqlmesh/`** — git submodule (the authoritative repo). SQLMesh
+- **`projects/consolidated-fhir-mapper/`** — git submodule (the authoritative repo). SQLMesh
   models map `consolidated_db` → FHIR; the loader pushes; `loader/run_kafka.py` is the
   Kafka-triggered driver.
 - **`hie/`** — this orchestration: the unified stack + `deploy.sh`.

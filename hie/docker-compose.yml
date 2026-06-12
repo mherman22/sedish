@@ -80,7 +80,7 @@ services:
   # OpenCR (identity) + SHR (clinical). Kafka-triggered (RUN_MODE=kafka); set RUN_MODE=poll
   # to fall back to the timer. Replaces the old fhir2 `publisher`.
   fhir-pipeline:
-    image: openmrs-fhir-sqlmesh:local
+    image: consolidated-fhir-mapper:local
     environment:
       RUN_MODE: ${RUN_MODE:-kafka}
       FHIR_DB_HOST: consolidated-db

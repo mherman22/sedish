@@ -5,13 +5,13 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 echo "==> ensuring submodule is checked out"
-git -C .. submodule update --init projects/openmrs-fhir-sqlmesh
+git -C .. submodule update --init projects/consolidated-fhir-mapper
 
 echo "==> building cdc-reader image"
 docker build -t consolidated-cdc-reader:local ../projects/consolidated-server
 
 echo "==> building fhir-pipeline image (SQLMesh + loader, from the submodule)"
-docker build -t openmrs-fhir-sqlmesh:local ../projects/openmrs-fhir-sqlmesh
+docker build -t consolidated-fhir-mapper:local ../projects/consolidated-fhir-mapper
 
 echo "==> deploying stack 'hie'"
 # shellcheck disable=SC1091

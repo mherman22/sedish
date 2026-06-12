@@ -12,7 +12,7 @@ packages:
   - client-registry-opencr
   - emr-isanteplus
   # EMR → SHR is the consolidated → FHIR pipeline (the separate `hie` stack:
-  # consolidated-server + openmrs-fhir-sqlmesh), not an instant package — see hie/README.md.
+  # consolidated-server + consolidated-fhir-mapper), not an instant package — see hie/README.md.
   # (It owns Patient/Encounter/Observation/AllergyIntolerance/Condition/MedicationRequest
   # + Location. Practitioner & Group are not pushed to the SHR — no source in consolidated_db.)
   # Not needed for core HIE — uncomment to enable:

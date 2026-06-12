@@ -7,7 +7,7 @@ storing a merged copy in its own MySQL.
 
 This is **phase 1** (CDC ingest into the production schema). Phase 2 — mapping
 the consolidated data to FHIR and pushing it to **OpenCR + SHR** — is the
-separate **`openmrs-fhir-sqlmesh`** pipeline, which reads this `consolidated_db`
+separate **`consolidated-fhir-mapper`** pipeline, which reads this `consolidated_db`
 (that's why this now uses the real schema). See *Next steps*.
 
 The consolidated MySQL is **built on the real production schema** — the dump
@@ -88,7 +88,7 @@ docker volume rm consolidated_consolidated-data   # wipes data AND re-inits the 
 
 ## Next steps (phase 2 — to OpenCR + SHR)
 
-Phase 2 is the **`openmrs-fhir-sqlmesh`** pipeline (SQLMesh maps `consolidated_db`
+Phase 2 is the **`consolidated-fhir-mapper`** pipeline (SQLMesh maps `consolidated_db`
 → FHIR; a loader pushes Patients to OpenCR `/CR/fhir` and clinical transaction
 bundles to the SHR `/SHR/fhir`). Because this server now uses the real
 `consolidated_db` schema, that pipeline runs against it directly — incrementally,
