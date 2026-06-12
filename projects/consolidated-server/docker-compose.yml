@@ -4,13 +4,20 @@
 version: "3.8"
 
 services:
+  # Built on the REAL production schema (schema/consolidated_db_schema.sql, the
+  # consolidated_db dump). MySQL 8 to match production; the schema is loaded on
+  # first boot via /docker-entrypoint-initdb.d. Wipe the `consolidated-data`
+  # volume to re-init from a changed schema.
   consolidated-db:
-    image: mysql:5.7
+    image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: ${CONSOLIDATED_ROOT_PW:-consolidated}
-      MYSQL_DATABASE: ${CONSOLIDATED_DB:-consolidated}
+      MYSQL_DATABASE: ${CONSOLIDATED_DB:-consolidated_db}
     volumes:
       - consolidated-data:/var/lib/mysql
+    configs:
+      - source: consolidated_schema
+        target: /docker-entrypoint-initdb.d/01-consolidated_db_schema.sql
     networks:
       - mysql_public
     deploy:
@@ -24,12 +31,14 @@ services:
       SRC_USER: ${SRC_USER:-consolidated}
       SRC_PASS: ${SRC_PASS:-consolidated}
       SOURCE_SCHEMAS: ${SOURCE_SCHEMAS:-openmrs,openmrs2}
+      # facility database -> production site code (mspp_code)
+      SCHEMA_MSPP: ${SCHEMA_MSPP:-openmrs=11106,openmrs2=22207}
       SERVER_ID: "100001"
       DST_HOST: consolidated-db
       DST_PORT: "3306"
       DST_USER: root
       DST_PASS: ${CONSOLIDATED_ROOT_PW:-consolidated}
-      DST_DB: ${CONSOLIDATED_DB:-consolidated}
+      DST_DB: ${CONSOLIDATED_DB:-consolidated_db}
       ENABLE_KAFKA: ${ENABLE_KAFKA:-1}
       KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:9092}
       KAFKA_TOPIC: ${KAFKA_TOPIC:-fhir.patient.changed}
@@ -86,7 +95,7 @@ services:
       DST_PORT: "3306"
       DST_USER: root
       DST_PASS: ${CONSOLIDATED_ROOT_PW:-consolidated}
-      DST_DB: ${CONSOLIDATED_DB:-consolidated}
+      DST_DB: ${CONSOLIDATED_DB:-consolidated_db}
       SHR_URL: ${SHR_URL:-http://openhim-core:5001/SHR/fhir}
       SHR_USER: ${SHR_USER:-shr-pipeline}
       SHR_PASS: ${SHR_PASS:-instant101}
@@ -119,6 +128,11 @@ networks:
   isanteplus_public:
     external: true
   cnet:        # stack-internal overlay: reader <-> kafka <-> publisher
+
+configs:
+  # the real production schema, loaded into consolidated-db on first boot
+  consolidated_schema:
+    file: ./schema/consolidated_db_schema.sql
 
 volumes:
   consolidated-data:

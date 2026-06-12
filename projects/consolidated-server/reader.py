@@ -1,19 +1,29 @@
 """
-Consolidated-server CDC reader (prototype).
+Consolidated-server CDC reader (prototype, production-schema edition).
 
 A faithful stand-in for the production "Consolidé" ingest: it connects to the
 iSantePlus MySQL as a replication client, reads the ROW-format binlog, and
 upserts the clinical-core tables of every facility database into a single
-"consolidated" MySQL.
+"consolidated" MySQL **whose schema is the real production dump**
+(`schema/consolidated_db_schema.sql`).
 
-Because multiple facility DBs (openmrs, openmrs2, ...) share the same primary
-keys (patient_id=1 exists in each), every consolidated table is keyed on a
-composite PK: (_source_db, <original primary key>).
+Unlike the earlier prototype (which invented its own tables keyed on
+`(_source_db, <pk>)`), this writes into the production tables:
+
+    source `person`  ->  `person_openmrs`   (+ mspp_code, date_updated)
+    source `obs`     ->  `obs_openmrs`       ...
+
+Each facility database maps to a site code (`mspp_code`) via SCHEMA_MSPP — how
+the real consolidated_db distinguishes facilities (its tables are
+PARTITION BY RANGE(year(date_created)) SUBPARTITION BY KEY(mspp_code), with the
+PRIMARY KEY including mspp_code and date_created). `date_updated` is stamped on
+every write — the column the downstream SQLMesh pipeline uses as its
+incremental watermark.
 
 Flow:
   1. Wait for source + consolidated MySQL to be reachable.
   2. If no saved binlog position: take an initial snapshot (SELECT * of each
-     table in each schema), then record the current master position.
+     source table in each schema), then record the current master position.
   3. Stream binlog events from the saved position forever, applying
      insert/update -> upsert and delete -> delete, persisting the position
      after each event so restarts resume exactly where they left off.
@@ -54,15 +64,33 @@ DST = {
     "port": int(env("DST_PORT", "3306")),
     "user": env("DST_USER", "root"),
     "password": env("DST_PASS", "consolidated"),
-    "db": env("DST_DB", "consolidated"),
+    "db": env("DST_DB", "consolidated_db"),
 }
 SERVER_ID = int(env("SERVER_ID", "100001"))  # MUST differ from source server-id (223344)
+
+# Production table naming: source `person` -> `person_openmrs`, etc.
+TABLE_SUFFIX = env("TABLE_SUFFIX", "_openmrs")
+
+
+def _parse_map(raw):
+    out = {}
+    for pair in (raw or "").split(","):
+        pair = pair.strip()
+        if "=" in pair:
+            k, v = pair.split("=", 1)
+            out[k.strip()] = v.strip()
+    return out
+
+
+# Each facility database -> its site code (mspp_code), e.g. "openmrs=11106,openmrs2=22207"
+SCHEMA_MSPP = _parse_map(env("SCHEMA_MSPP", "openmrs=11106,openmrs2=22207"))
+
 # Kafka backbone (Pattern A): emit a patient-changed event per binlog row so the
 # publisher can stream changes (resilient/replayable) instead of polling.
 ENABLE_KAFKA = env("ENABLE_KAFKA", "").lower() in ("1", "true", "yes")
 KAFKA_BROKERS = [b.strip() for b in env("KAFKA_BROKERS", "kafka:9092").split(",") if b.strip()]
 KAFKA_TOPIC = env("KAFKA_TOPIC", "fhir.patient.changed")
-# table -> the column that identifies the owning patient (person_id)
+# source table -> the column that identifies the owning patient (person_id)
 PATIENT_KEY_COL = {
     "person": "person_id", "person_name": "person_id", "person_address": "person_id",
     "patient": "patient_id", "patient_identifier": "patient_id",
@@ -75,8 +103,9 @@ TABLES = [t.strip() for t in env(
     "person,person_name,person_address,patient,patient_identifier,encounter,visit,obs",
 ).split(",") if t.strip()]
 
-# cache of {table -> (column_names, pk_columns)} so we introspect each table once
-_schema_cache = {}
+# caches so we introspect each table once
+_src_cache = {}     # source table -> ordinal-ordered column names (binlog name remap)
+_tgt_cache = {}     # target table -> (set(target columns), [target pk columns]) | None if absent
 
 
 def connect_src(with_db=None):
@@ -90,6 +119,18 @@ def connect_src(with_db=None):
 
 def connect_dst():
     return pymysql.connect(charset="utf8mb4", autocommit=True, cursorclass=DictCursor, **DST)
+
+
+def target_of(table):
+    return f"{table}{TABLE_SUFFIX}"
+
+
+def mspp_for(schema):
+    code = SCHEMA_MSPP.get(schema)
+    if not code:
+        raise RuntimeError(f"no mspp_code mapping for source schema {schema!r} "
+                           f"(set SCHEMA_MSPP); known: {SCHEMA_MSPP}")
+    return code
 
 
 def get_producer():
@@ -127,7 +168,7 @@ def emit_change(schema, table, values):
         return
     try:
         p.send(KAFKA_TOPIC, key=f"{schema}:{pid}",
-               value={"source_db": schema, "person_id": int(pid)})
+               value={"source_db": schema, "mspp_code": mspp_for(schema), "person_id": int(pid)})
     except Exception as e:  # noqa: BLE001
         log.warning("kafka emit failed (%s.%s): %s", schema, table, e)
 
@@ -144,58 +185,53 @@ def wait_for(make_conn, label):
             time.sleep(3)
 
 
-def introspect(src, table):
-    """Return (column_names, pk_columns) for the first schema that has the table."""
-    if table in _schema_cache:
-        return _schema_cache[table]
+def src_columns(src, table):
+    """Ordinal-ordered source column names (used to remap positional binlog values)."""
+    if table in _src_cache:
+        return _src_cache[table]
     for schema in SCHEMAS:
         with src.cursor() as cur:
             cur.execute(
-                "SELECT COLUMN_NAME, COLUMN_TYPE FROM information_schema.COLUMNS "
+                "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
                 "WHERE TABLE_SCHEMA=%s AND TABLE_NAME=%s ORDER BY ORDINAL_POSITION",
                 (schema, table),
             )
-            cols = cur.fetchall()
-            if not cols:
-                continue
-            cur.execute(
-                "SELECT COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE "
-                "WHERE TABLE_SCHEMA=%s AND TABLE_NAME=%s AND CONSTRAINT_NAME='PRIMARY' "
-                "ORDER BY ORDINAL_POSITION",
-                (schema, table),
-            )
-            pk = [r["COLUMN_NAME"] for r in cur.fetchall()]
-            result = ([c["COLUMN_NAME"] for c in cols], pk, cols)
-            _schema_cache[table] = result
-            return result
-    raise RuntimeError(f"table {table} not found in any of {SCHEMAS}")
+            cols = [r["COLUMN_NAME"] for r in cur.fetchall()]
+        if cols:
+            _src_cache[table] = cols
+            return cols
+    _src_cache[table] = []
+    return []
 
 
-def ensure_table(dst, src, table):
-    """Create the consolidated table mirroring source columns + composite PK."""
-    col_names, pk, col_meta = introspect(src, table)
-    pk_set = set(pk)
-    defs = ["`_source_db` VARCHAR(64) NOT NULL"]
-    for c in col_meta:
-        # PK columns must stay NOT NULL; all others made nullable to avoid
-        # strict-mode/default friction during upserts
-        nullability = "NOT NULL" if c["COLUMN_NAME"] in pk_set else "NULL"
-        defs.append(f"`{c['COLUMN_NAME']}` {c['COLUMN_TYPE']} {nullability}")
-    defs.append("`_synced_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
-    pk_cols = ", ".join(["`_source_db`"] + [f"`{c}`" for c in pk])
-    ddl = (
-        f"CREATE TABLE IF NOT EXISTS `{table}` ({', '.join(defs)}, "
-        f"PRIMARY KEY ({pk_cols})) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
-    )
+def target_meta(dst, target):
+    """(set(columns), [pk columns]) for the production target table, or None if absent."""
+    if target in _tgt_cache:
+        return _tgt_cache[target]
     with dst.cursor() as cur:
-        cur.execute(ddl)
-    return col_names, pk
+        cur.execute(
+            "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
+            "WHERE TABLE_SCHEMA=%s AND TABLE_NAME=%s",
+            (DST["db"], target),
+        )
+        cols = {r["COLUMN_NAME"] for r in cur.fetchall()}
+        if not cols:
+            _tgt_cache[target] = None
+            return None
+        cur.execute(
+            "SELECT COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE "
+            "WHERE TABLE_SCHEMA=%s AND TABLE_NAME=%s AND CONSTRAINT_NAME='PRIMARY' "
+            "ORDER BY ORDINAL_POSITION",
+            (DST["db"], target),
+        )
+        pk = [r["COLUMN_NAME"] for r in cur.fetchall()]
+    _tgt_cache[target] = (cols, pk)
+    return _tgt_cache[target]
 
 
 def normalize_values(values, col_names):
-    """pymysqlreplication sometimes can't resolve column names and returns
-    positional keys (UNKNOWN_COL0, UNKNOWN_COL1, ...). Remap those to the real
-    column names by ordinal position (col_names is ORDINAL_POSITION-ordered)."""
+    """pymysqlreplication sometimes returns positional keys (UNKNOWN_COL0, ...).
+    Remap those to real column names by ordinal position (col_names is ordered)."""
     if not values:
         return {}
     if any(k in col_names for k in values):  # names already resolved
@@ -212,30 +248,34 @@ def normalize_values(values, col_names):
     return out
 
 
-def upsert(dst, table, col_names, source_db, values):
-    cols = [c for c in col_names if c in values]
-    fields = ["`_source_db`"] + [f"`{c}`" for c in cols]
-    placeholders = ", ".join(["%s"] * len(fields))
-    updates = ", ".join([f"`{c}`=VALUES(`{c}`)" for c in cols])
+def upsert(dst, target, target_cols, mspp_code, values):
+    """Upsert a source row into the production table, stamping mspp_code + date_updated."""
+    cols = [c for c in values if c in target_cols and c not in ("mspp_code", "date_updated")]
+    fields = ["`mspp_code`"] + [f"`{c}`" for c in cols] + ["`date_updated`"]
+    placeholders = ", ".join(["%s"] + ["%s"] * len(cols) + ["NOW()"])
+    updates = ", ".join([f"`{c}`=VALUES(`{c}`)" for c in cols] + ["`date_updated`=NOW()"])
     sql = (
-        f"INSERT INTO `{table}` ({', '.join(fields)}) VALUES ({placeholders}) "
+        f"INSERT INTO `{target}` ({', '.join(fields)}) VALUES ({placeholders}) "
         f"ON DUPLICATE KEY UPDATE {updates}"
     )
-    params = [source_db] + [values[c] for c in cols]
+    params = [mspp_code] + [values[c] for c in cols]
     with dst.cursor() as cur:
         try:
             cur.execute(sql, params)
         except Exception:
-            log.error("upsert failed table=%s cols=%d sql=%r value_keys=%s col_names=%s",
-                      table, len(cols), sql, list(values.keys())[:6], col_names[:6])
+            log.error("upsert failed target=%s cols=%d value_keys=%s",
+                      target, len(cols), list(values.keys())[:6])
             raise
 
 
-def delete(dst, table, pk, source_db, values):
-    where = " AND ".join(["`_source_db`=%s"] + [f"`{c}`=%s" for c in pk])
-    params = [source_db] + [values[c] for c in pk]
+def delete(dst, target, target_pk, mspp_code, values):
+    """Delete by the production primary key (which includes mspp_code)."""
+    conds, params = [], []
+    for c in target_pk:
+        conds.append(f"`{c}`=%s")
+        params.append(mspp_code if c == "mspp_code" else values.get(c))
     with dst.cursor() as cur:
-        cur.execute(f"DELETE FROM `{table}` WHERE {where}", params)
+        cur.execute(f"DELETE FROM `{target}` WHERE {' AND '.join(conds)}", params)
 
 
 def ensure_state_table(dst):
@@ -274,16 +314,17 @@ def initial_snapshot(dst, src):
     log.info("initial snapshot starting; master at %s:%s", master["File"], master["Position"])
     total = 0
     for schema in SCHEMAS:
+        mspp = mspp_for(schema)
         for table in TABLES:
-            try:
-                col_names, pk = ensure_table(dst, src, table)
-            except RuntimeError as e:
-                log.warning("skip %s: %s", table, e)
+            target = target_of(table)
+            meta = target_meta(dst, target)
+            if meta is None:
+                log.warning("skip %s.%s: target %s not in %s", schema, table, target, DST["db"])
                 continue
+            tgt_cols, _ = meta
             sc = connect_src(with_db=schema)
             try:
                 with sc.cursor() as cur:
-                    # confirm table exists in THIS schema before selecting
                     cur.execute(
                         "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA=%s AND TABLE_NAME=%s",
                         (schema, table),
@@ -293,10 +334,11 @@ def initial_snapshot(dst, src):
                     cur.execute(f"SELECT * FROM `{table}`")
                     rows = cur.fetchall()
                     for row in rows:
-                        upsert(dst, table, col_names, schema, row)
+                        upsert(dst, target, tgt_cols, mspp, row)
                         emit_change(schema, table, row)
                     total += len(rows)
-                    log.info("snapshot %s.%s: %d rows", schema, table, len(rows))
+                    log.info("snapshot %s.%s -> %s (mspp=%s): %d rows",
+                             schema, table, target, mspp, len(rows))
             finally:
                 sc.close()
     save_state(dst, master["File"], master["Position"])
@@ -306,7 +348,7 @@ def initial_snapshot(dst, src):
 
 def stream(dst):
     log_file, log_pos = load_state(dst)
-    src = connect_src()  # used only for introspection during streaming
+    src = connect_src()  # used only for source-column introspection during streaming
     reader = BinLogStreamReader(
         connection_settings=dict(SRC),  # copy: the reader mutates this dict
         server_id=SERVER_ID,
@@ -321,23 +363,28 @@ def stream(dst):
     log.info("streaming binlog from %s:%s (schemas=%s)", log_file, log_pos, SCHEMAS)
     try:
         for event in reader:
-            schema = event.schema
-            table = event.table
-            col_names, pk = ensure_table(dst, src, table)
+            schema, table = event.schema, event.table
+            target = target_of(table)
+            meta = target_meta(dst, target)
+            if meta is None:
+                continue
+            tgt_cols, tgt_pk = meta
+            col_names = src_columns(src, table)
+            mspp = mspp_for(schema)
             dst.ping(reconnect=True)
             for row in event.rows:
                 if isinstance(event, WriteRowsEvent):
                     vals = normalize_values(row["values"], col_names)
-                    upsert(dst, table, col_names, schema, vals)
+                    upsert(dst, target, tgt_cols, mspp, vals)
                 elif isinstance(event, UpdateRowsEvent):
                     vals = normalize_values(row["after_values"], col_names)
-                    upsert(dst, table, col_names, schema, vals)
+                    upsert(dst, target, tgt_cols, mspp, vals)
                 else:  # DeleteRowsEvent
                     vals = normalize_values(row["values"], col_names)
-                    delete(dst, table, pk, schema, vals)
+                    delete(dst, target, tgt_pk, mspp, vals)
                 emit_change(schema, table, vals)
             kind = type(event).__name__.replace("RowsEvent", "")
-            log.info("%s %s.%s (%d row[s])", kind, schema, table, len(event.rows))
+            log.info("%s %s.%s -> %s (%d row[s])", kind, schema, table, target, len(event.rows))
             save_state(dst, reader.log_file, reader.log_pos)
     finally:
         reader.close()
