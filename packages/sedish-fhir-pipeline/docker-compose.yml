@@ -23,8 +23,6 @@ services:
       NATIONAL_ID_SYSTEM: ${NATIONAL_ID_SYSTEM}
       OPENCR_URL: ${OPENCR_URL}
       SHR_URL: ${SHR_URL}
-      # one OpenHIM client (the `consolidated` client, role emr) authenticates to both channels
-      # (verified against openhim-import.json: sha512(pass+salt) matches for consolidated/consolidated)
       OPENHIM_USER: ${OPENHIM_USER}
       OPENHIM_PASS: ${OPENHIM_PASS}
     networks: [openhim]
