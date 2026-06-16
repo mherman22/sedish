@@ -23,9 +23,10 @@ services:
       NATIONAL_ID_SYSTEM: ${NATIONAL_ID_SYSTEM}
       OPENCR_URL: ${OPENCR_URL}
       SHR_URL: ${SHR_URL}
-      # one OpenHIM client (the `consolidated` client, role emr) authenticates to both channels
+      # one OpenHIM client (the `consolidated` client, role emr) authenticates to both channels.
+      # OPENHIM_PASS = that client's password from openhim-import.json (a secret — set in .env).
       OPENHIM_USER: ${OPENHIM_USER}
-      OPENHIM_PASS: ${OPENHIM_PASS}
+      OPENHIM_PASS: ${OPENHIM_PASS:?set OPENHIM_PASS to the consolidated client password}
     networks: [openhim]
     deploy:
       replicas: 1
