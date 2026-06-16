@@ -773,12 +773,11 @@ sedish/
 │   ├── database-mysql/           # MySQL
 │   ├── identity-access-manager-keycloak/ # Keycloak
 │   └── monitoring/               # Grafana + Prometheus + Loki
-├── hie/                         # EMR → SHR consolidated → FHIR pipeline stack
-│   ├── docker-compose.yml       # consolidated-db + cdc-reader + kafka + fhir-pipeline
+├── hie/                         # Consolidé → FHIR pipeline stack (external consolidated server)
+│   ├── docker-compose.yml       # fhir-pipeline (points at the external Consolidé MySQL)
 │   └── deploy.sh
 └── projects/
     ├── isanteplus-db/           # MySQL seed data for iSantePlus
-    ├── consolidated-server/     # CDC reader → consolidated_db (production schema)
     └── consolidated-fhir-mapper/    # submodule: SQLMesh consolidated_db→FHIR + loader
 ```
 
