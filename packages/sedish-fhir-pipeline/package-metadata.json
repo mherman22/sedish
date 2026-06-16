@@ -20,6 +20,6 @@
     "OPENCR_URL": "http://openhim-core:5001/CR/fhir",
     "SHR_URL": "http://openhim-core:5001/SHR/fhir",
     "OPENHIM_USER": "consolidated",
-    "OPENHIM_PASS": ""
+    "OPENHIM_PASS": "consolidated"
   }
 }
