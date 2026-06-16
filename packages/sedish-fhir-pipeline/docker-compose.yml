@@ -22,11 +22,10 @@ services:
       SOURCE_KEY_SYSTEM: ${SOURCE_KEY_SYSTEM}
       NATIONAL_ID_SYSTEM: ${NATIONAL_ID_SYSTEM}
       OPENCR_URL: ${OPENCR_URL}
-      OPENCR_USER: ${OPENCR_USER}
-      OPENCR_PASS: ${OPENCR_PASS}
       SHR_URL: ${SHR_URL}
-      SHR_USER: ${SHR_USER}
-      SHR_PASS: ${SHR_PASS}
+      # one OpenHIM client (the `consolidated` client, role emr) authenticates to both channels
+      OPENHIM_USER: ${OPENHIM_USER}
+      OPENHIM_PASS: ${OPENHIM_PASS}
     networks: [openhim]
     deploy:
       replicas: 1

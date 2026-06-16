@@ -18,10 +18,8 @@
     "SOURCE_KEY_SYSTEM": "http://sedish-haiti.org/fhir/source-key",
     "NATIONAL_ID_SYSTEM": "http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code",
     "OPENCR_URL": "http://openhim-core:5001/CR/fhir",
-    "OPENCR_USER": "consolidated",
-    "OPENCR_PASS": "consolidated",
     "SHR_URL": "http://openhim-core:5001/SHR/fhir",
-    "SHR_USER": "consolidated",
-    "SHR_PASS": "consolidated"
+    "OPENHIM_USER": "consolidated",
+    "OPENHIM_PASS": "consolidated"
   }
 }
