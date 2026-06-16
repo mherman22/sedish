@@ -24,9 +24,10 @@ grants only read-only access, point `CONSOLIDATED_HOST` at a **local replica** o
 `consolidated_db` instead — that's the one open question for their access model.
 
 ## Components
-- **`projects/consolidated-fhir-mapper/`** — git submodule (the authoritative repo). SQLMesh
-  models map `consolidated_db` → FHIR; the loader pushes the delta to OpenHIM. Image is built
-  locally by `deploy.sh`.
+- **`sedish-fhir-pipeline`** (separate repo: `github.com/mherman22/sedish-fhir-pipeline`) —
+  SQLMesh models map `consolidated_db` → FHIR; the loader pushes the delta to OpenHIM. Its CI
+  publishes a Docker image as a **GHCR package** (`ghcr.io/mherman22/sedish-fhir-pipeline`). It
+  is **not** vendored here as a submodule — this stack just pulls the image by tag (`PIPELINE_TAG`).
 - **`hie/`** — this orchestration: the single-service stack + `deploy.sh` + `.env`.
 
 ## Service (1)
@@ -36,13 +37,14 @@ grants only read-only access, point `CONSOLIDATED_HOST` at a **local replica** o
 
 ## Deploy
 ```bash
-git clone --recurse-submodules <sedish>        # or: git submodule update --init
 cd hie
 cp .env.example .env        # REQUIRED: set CONSOLIDATED_HOST/USER/PASS (the Consolidé MySQL)
-./deploy.sh                 # builds the image, then docker stack deploy hie
+# the image package is private — authenticate once on the node:
+echo "$GHCR_PAT" | docker login ghcr.io -u <user> --password-stdin
+./deploy.sh                 # pulls ghcr.io/mherman22/sedish-fhir-pipeline:$PIPELINE_TAG, then deploys
 ```
-Prereqs: the `openhim_public` overlay exists, OpenHIM channel `/CR/fhir` is configured, and
-the pipeline can reach the Consolidé MySQL from the swarm.
+Prereqs: the `openhim_public` overlay exists, OpenHIM channel `/CR/fhir` is configured, the
+pipeline can reach the Consolidé MySQL from the swarm, and the node can pull from GHCR.
 
 ## Verify
 ```bash

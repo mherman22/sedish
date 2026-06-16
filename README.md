@@ -777,8 +777,10 @@ sedish/
 │   ├── docker-compose.yml       # fhir-pipeline (points at the external Consolidé MySQL)
 │   └── deploy.sh
 └── projects/
-    ├── isanteplus-db/           # MySQL seed data for iSantePlus
-    └── consolidated-fhir-mapper/    # submodule: SQLMesh consolidated_db→FHIR + loader
+    └── isanteplus-db/           # MySQL seed data for iSantePlus
+
+# The consolidated_db→FHIR pipeline lives in its own repo (github.com/mherman22/sedish-fhir-pipeline)
+# and ships as a GHCR image package the `hie` stack pulls — it is not vendored here as a submodule.
 ```
 
 ---

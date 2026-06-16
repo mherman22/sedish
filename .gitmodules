@@ -1,3 +1,0 @@
-[submodule "projects/consolidated-fhir-mapper"]
-	path = projects/consolidated-fhir-mapper
-	url = https://github.com/mherman22/consolidated-fhir-mapper.git

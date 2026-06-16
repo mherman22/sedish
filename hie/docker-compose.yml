@@ -16,7 +16,8 @@ version: "3.8"
 
 services:
   fhir-pipeline:
-    image: consolidated-fhir-mapper:local
+    # published image (GHCR package) — built/pushed by the pipeline repo's CI, not vendored here
+    image: ghcr.io/mherman22/sedish-fhir-pipeline:${PIPELINE_TAG:-main}
     environment:
       # poll the source on a timer by default; switch to kafka only if Consolidé
       # publishes a patient-changed event stream we can point KAFKA_BROKERS at.

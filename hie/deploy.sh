@@ -1,20 +1,18 @@
 #!/usr/bin/env bash
-# Build the pipeline image and (re)deploy the SEDISH "hie" stack.
-# `docker stack deploy` does not build, so we build first.
+# (Re)deploy the SEDISH "hie" stack. The pipeline image is a published GHCR package
+# (built by the sedish-fhir-pipeline repo's CI) — nothing is built or vendored here.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-echo "==> ensuring submodule is checked out"
-git -C .. submodule update --init projects/consolidated-fhir-mapper
-
-echo "==> building fhir-pipeline image (SQLMesh + loader, from the submodule)"
-docker build -t consolidated-fhir-mapper:local ../projects/consolidated-fhir-mapper
-
-echo "==> deploying stack 'hie'"
 # CONSOLIDATED_HOST/USER/PASS (the EXTERNAL Consolidé MySQL) must be set — see .env.example
 # shellcheck disable=SC1091
 set -a; [ -f .env ] && . ./.env; set +a
-docker stack deploy -c docker-compose.yml hie
+
+# The image package is private (private repo). Authenticate once on this node, e.g.:
+#   echo "$GHCR_PAT" | docker login ghcr.io -u <user> --password-stdin
+# --with-registry-auth forwards that auth to the swarm workers that pull the image.
+echo "==> deploying stack 'hie' (pulls ghcr.io/mherman22/sedish-fhir-pipeline:${PIPELINE_TAG:-main})"
+docker stack deploy --with-registry-auth -c docker-compose.yml hie
 
 echo "==> services:"
 docker stack services hie
