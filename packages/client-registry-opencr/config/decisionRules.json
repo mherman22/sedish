@@ -363,6 +363,44 @@
       },
       "potentialMatchThreshold": 5,
       "autoMatchThreshold": 6
+    },
+    {
+      "__description": "Rule 11: Name + gender + mother's name — mother as the identifying corroborator (CHARESS spec §5.2 demographic cascade). Mother is emitted by the consolidated-fhir-mapper ETL as contact[relationship=MTH].name.text; per §4.4 it never confirms alone, so it is paired with name+gender.",
+      "matchingType": "deterministic",
+      "rule": "11",
+      "fields": {
+        "given": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').first().given",
+          "espath": "given",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "family": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').family",
+          "espath": "family",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "gender": {
+          "algorithm": "exact",
+          "fhirpath": "gender",
+          "espath": "gender",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "mother": {
+          "algorithm": "jaro-winkler-similarity",
+          "threshold": 0.8,
+          "fhirpath": "contact.name.text",
+          "espath": "mother",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        }
+      },
+      "potentialMatchThreshold": 5,
+      "autoMatchThreshold": 6
     }
   ]
 }
