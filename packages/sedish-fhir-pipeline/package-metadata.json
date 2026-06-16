@@ -1,0 +1,27 @@
+{
+  "id": "sedish-fhir-pipeline",
+  "name": "SEDISH FHIR Pipeline",
+  "description": "SQLMesh transform + loader that maps the EXTERNAL Consolidé consolidated_db to FHIR and pushes Patient identities to OpenCR (Phase 1; clinical to the SHR in Phase 2). Runs the published GHCR image package; no source is vendored here.",
+  "type": "infrastructure",
+  "version": "0.1.0",
+  "dependencies": ["interoperability-layer-openhim", "client-registry-opencr"],
+  "environmentVariables": {
+    "PIPELINE_IMAGE": "ghcr.io/mherman22/sedish-fhir-pipeline:main",
+    "CONSOLIDATED_HOST": "",
+    "CONSOLIDATED_PORT": "3306",
+    "CONSOLIDATED_USER": "",
+    "CONSOLIDATED_PASS": "",
+    "FHIR_DB_NAME": "fhir",
+    "RUN_MODE": "poll",
+    "INTERVAL": "30",
+    "MPI_ONLY": "1",
+    "SOURCE_KEY_SYSTEM": "http://sedish-haiti.org/fhir/source-key",
+    "NATIONAL_ID_SYSTEM": "http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code",
+    "OPENCR_URL": "http://openhim-core:5001/CR/fhir",
+    "OPENCR_USER": "consolidated",
+    "OPENCR_PASS": "consolidated",
+    "SHR_URL": "http://openhim-core:5001/SHR/fhir",
+    "SHR_USER": "consolidated",
+    "SHR_PASS": "consolidated"
+  }
+}

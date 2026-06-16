@@ -1,0 +1,38 @@
+version: "3.8"
+
+# SEDISH FHIR pipeline: SQLMesh maps the EXTERNAL Consolidé consolidated_db to FHIR and the
+# loader pushes the delta to OpenCR (identity) + SHR (clinical, Phase 2). The image is a GHCR
+# package built by github.com/mherman22/sedish-fhir-pipeline — not vendored in this repo.
+#
+# Consolidé is CHARESS-hosted: SQLMesh runs against its MySQL (reads consolidated_db, writes its
+# own fhir/ref/state schemas there → needs CREATE/write privileges, else point CONSOLIDATED_HOST
+# at a local replica). Set CONSOLIDATED_HOST/USER/PASS before deploying.
+services:
+  fhir-pipeline:
+    image: ${PIPELINE_IMAGE}
+    environment:
+      RUN_MODE: ${RUN_MODE}
+      INTERVAL: ${INTERVAL}
+      FHIR_DB_HOST: ${CONSOLIDATED_HOST}
+      FHIR_DB_PORT: ${CONSOLIDATED_PORT}
+      FHIR_DB_USER: ${CONSOLIDATED_USER}
+      FHIR_DB_PASS: ${CONSOLIDATED_PASS}
+      FHIR_DB_NAME: ${FHIR_DB_NAME}
+      MPI_ONLY: ${MPI_ONLY}
+      SOURCE_KEY_SYSTEM: ${SOURCE_KEY_SYSTEM}
+      NATIONAL_ID_SYSTEM: ${NATIONAL_ID_SYSTEM}
+      OPENCR_URL: ${OPENCR_URL}
+      OPENCR_USER: ${OPENCR_USER}
+      OPENCR_PASS: ${OPENCR_PASS}
+      SHR_URL: ${SHR_URL}
+      SHR_USER: ${SHR_USER}
+      SHR_PASS: ${SHR_PASS}
+    networks: [openhim]
+    deploy:
+      replicas: 1
+      restart_policy: { condition: any }
+
+networks:
+  openhim:
+    name: openhim_public
+    external: true

@@ -51,8 +51,8 @@
 # ./instant package down -n monitoring --env-file .env
 # ./instant package up -n monitoring --env-file .env -d
 
-# EMR → SHR: the consolidated pipeline (separate stack)
-# cd hie && ./deploy.sh
+# EMR → SHR: the consolidated → FHIR pipeline package
+# ./instant package init -n sedish-fhir-pipeline --env-file .env
 
 
 

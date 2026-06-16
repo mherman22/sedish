@@ -11,10 +11,9 @@ packages:
   - shared-health-record-fhir
   - client-registry-opencr
   - emr-isanteplus
-  # EMR → SHR is the consolidated → FHIR pipeline (the separate `hie` stack:
-  # consolidated-fhir-mapper reading the EXTERNAL Consolidé server), not an instant package — see hie/README.md.
-  # (It owns Patient/Encounter/Observation/AllergyIntolerance/Condition/MedicationRequest
-  # + Location. Practitioner & Group are not pushed to the SHR — no source in consolidated_db.)
+  # consolidated_db (EXTERNAL Consolidé server) → FHIR → OpenCR (Phase 1; SHR clinical in Phase 2).
+  # Runs the GHCR image package ghcr.io/mherman22/sedish-fhir-pipeline; set CONSOLIDATED_HOST/USER/PASS.
+  - sedish-fhir-pipeline
   # Not needed for core HIE — uncomment to enable:
   # - monitoring                        # Grafana/Prometheus/Loki (~7 containers, ~3GB RAM)
   # - identity-access-manager-keycloak  # SSO — OpenHIM works without it (~1GB RAM)
