@@ -1,12 +1,12 @@
 {
   "id": "sedish-fhir-pipeline",
   "name": "SEDISH FHIR Pipeline",
-  "description": "SQLMesh transform + loader that maps the EXTERNAL Consolidé consolidated_db to FHIR and pushes Patient identities to OpenCR (Phase 1; clinical to the SHR in Phase 2). Runs the published GHCR image package; no source is vendored here.",
+  "description": "SQLMesh transform + loader that maps the EXTERNAL Consolidé consolidated_db to FHIR and pushes Patient identities to OpenCR (Phase 1; clinical to the SHR in Phase 2). Runs the sedish-fhir-pipeline image built locally by build-custom-images.sh from the public repo (or set PIPELINE_IMAGE to the GHCR tag to pull instead).",
   "type": "infrastructure",
   "version": "0.1.0",
   "dependencies": [],
   "environmentVariables": {
-    "PIPELINE_IMAGE": "ghcr.io/mherman22/sedish-fhir-pipeline:main",
+    "PIPELINE_IMAGE": "sedish-fhir-pipeline:local",
     "CONSOLIDATED_HOST": "",
     "CONSOLIDATED_PORT": "3306",
     "CONSOLIDATED_USER": "",

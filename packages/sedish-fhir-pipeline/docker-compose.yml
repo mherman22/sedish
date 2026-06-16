@@ -9,6 +9,8 @@ version: "3.8"
 # at a local replica). Set CONSOLIDATED_HOST/USER/PASS before deploying.
 services:
   fhir-pipeline:
+    # built locally as sedish-fhir-pipeline:local by build-custom-images.sh (clones the public
+    # pipeline repo). Override PIPELINE_IMAGE with the GHCR tag to pull instead of build.
     image: ${PIPELINE_IMAGE}
     environment:
       INTERVAL: ${INTERVAL}

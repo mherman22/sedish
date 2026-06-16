@@ -141,4 +141,4 @@ dist
 .tmp
 
 backups
-*.bkp
+*.bkp.build/

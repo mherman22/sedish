@@ -72,3 +72,13 @@ docker build -t isanteplus-mysql:5.7.44 ./projects/isanteplus-db
 # Build custom Elasticsearch image with phonetic + string-similarity-scoring plugins
 docker build -t docker.elastic.co/elasticsearch/elasticsearch:local ./packages/analytics-datastore-elastic-search
 
+
+# Build the SEDISH FHIR pipeline image locally from its (public) repo.
+# The pipeline lives in its own repo (not vendored here); clone/refresh then build.
+PIPELINE_SRC=".build/sedish-fhir-pipeline"
+if [ -d "$PIPELINE_SRC/.git" ]; then
+  git -C "$PIPELINE_SRC" pull --ff-only || true
+else
+  git clone --depth 1 https://github.com/mherman22/sedish-fhir-pipeline.git "$PIPELINE_SRC"
+fi
+docker build -t sedish-fhir-pipeline:local "$PIPELINE_SRC"
