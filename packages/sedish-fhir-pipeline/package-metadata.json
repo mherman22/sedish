@@ -4,7 +4,7 @@
   "description": "SQLMesh transform + loader that maps the EXTERNAL Consolidé consolidated_db to FHIR and pushes Patient identities to OpenCR (Phase 1; clinical to the SHR in Phase 2). Runs the published GHCR image package; no source is vendored here.",
   "type": "infrastructure",
   "version": "0.1.0",
-  "dependencies": ["interoperability-layer-openhim", "client-registry-opencr"],
+  "dependencies": ["interoperability-layer-openhim", "client-registry-opencr", "shared-health-record-fhir"],
   "environmentVariables": {
     "PIPELINE_IMAGE": "ghcr.io/mherman22/sedish-fhir-pipeline:main",
     "CONSOLIDATED_HOST": "",
