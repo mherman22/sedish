@@ -12,7 +12,6 @@
     "CONSOLIDATED_USER": "",
     "CONSOLIDATED_PASS": "",
     "FHIR_DB_NAME": "fhir",
-    "RUN_MODE": "poll",
     "INTERVAL": "30",
     "MPI_ONLY": "1",
     "SOURCE_KEY_SYSTEM": "http://sedish-haiti.org/fhir/source-key",

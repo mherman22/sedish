@@ -11,7 +11,6 @@ services:
   fhir-pipeline:
     image: ${PIPELINE_IMAGE}
     environment:
-      RUN_MODE: ${RUN_MODE}
       INTERVAL: ${INTERVAL}
       FHIR_DB_HOST: ${CONSOLIDATED_HOST}
       FHIR_DB_PORT: ${CONSOLIDATED_PORT}
