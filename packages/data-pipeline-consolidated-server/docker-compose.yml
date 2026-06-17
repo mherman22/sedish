@@ -1,22 +1,45 @@
 version: "3.8"
 
-# Maps the external Consolidé consolidated_db to FHIR and pushes the delta to OpenCR.
-# Set CONSOLIDATED_HOST/USER/PASS (the Consolidé MySQL). Everything else — OpenHIM
-# channel URLs, identifier systems, poll interval — uses the image's built-in defaults.
-# PIPELINE_IMAGE defaults to the GHCR package; set it to sedish-fhir-pipeline:local to use a
-# locally-built image (build-custom-images.sh) instead of pulling.
+# Consolidated-server → FHIR → OpenCR pipeline.
+#
+# Consolidé is external and read-only, and MySQL can't JOIN across servers, so SQLMesh can't
+# run there. Instead a local MySQL (pipeline-db) holds a synced copy of consolidated_db plus the
+# fhir output; the pipeline syncs changed rows from Consolidé each cycle, transforms, and pushes
+# to OpenCR. Set CONSOLIDATED_HOST/USER/PASS (the external Consolidé MySQL, read-only).
 services:
+  # local working DB: synced consolidated_db copy + SQLMesh fhir/state output.
+  # sql-mode='' tolerates iSantePlus legacy zero-date values in the copied data.
+  pipeline-db:
+    image: mysql:8.0
+    command: ["--sql-mode="]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${PIPELINE_DB_PW:-pipeline}
+    volumes:
+      - pipeline-db-data:/var/lib/mysql
+    networks: [pipeline]
+    deploy:
+      replicas: 1
+      restart_policy: { condition: any }
+
   fhir-pipeline:
     image: ${PIPELINE_IMAGE}
     environment:
-      FHIR_DB_HOST: ${CONSOLIDATED_HOST}
-      FHIR_DB_PORT: ${CONSOLIDATED_PORT}
-      FHIR_DB_USER: ${CONSOLIDATED_USER}
-      FHIR_DB_PASS: ${CONSOLIDATED_PASS}
+      # local pipeline MySQL — SQLMesh reads the synced source + writes fhir here
+      FHIR_DB_HOST: pipeline-db
+      FHIR_DB_PORT: "3306"
+      FHIR_DB_USER: root
+      FHIR_DB_PASS: ${PIPELINE_DB_PW:-pipeline}
+      FHIR_DB_NAME: ${FHIR_DB_NAME:-fhir}
+      # external Consolidé (read-only) the sync copies from
+      SRC_HOST: ${CONSOLIDATED_HOST}
+      SRC_PORT: ${CONSOLIDATED_PORT}
+      SRC_USER: ${CONSOLIDATED_USER}
+      SRC_PASS: ${CONSOLIDATED_PASS}
       MPI_ONLY: ${MPI_ONLY:-1}
       OPENHIM_USER: ${OPENHIM_USER:-consolidated}
       OPENHIM_PASS: ${OPENHIM_PASS:-consolidated}
-    networks: [openhim]
+    networks: [openhim, pipeline]
+    depends_on: [pipeline-db]
     deploy:
       replicas: 1
       restart_policy: { condition: any }
@@ -25,3 +48,7 @@ networks:
   openhim:
     name: openhim_public
     external: true
+  pipeline:
+
+volumes:
+  pipeline-db-data:

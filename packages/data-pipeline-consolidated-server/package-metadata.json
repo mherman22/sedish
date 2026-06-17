@@ -1,12 +1,13 @@
 {
   "id": "data-pipeline-consolidated-server",
   "name": "Consolidated Server Data Pipeline",
-  "description": "Maps the external Consolidé consolidated_db to FHIR and pushes Patient identities to OpenCR (Phase 1; clinical to the SHR in Phase 2). Pulls the GHCR image package by default (PIPELINE_IMAGE); set PIPELINE_IMAGE=sedish-fhir-pipeline:local to use a locally-built image instead.",
+  "description": "Syncs the external read-only Consolidé consolidated_db into a local MySQL, maps it to FHIR with SQLMesh, and pushes Patient identities to OpenCR (Phase 1; clinical to the SHR in Phase 2). Set CONSOLIDATED_HOST/USER/PASS. PIPELINE_IMAGE defaults to the GHCR package; set it to sedish-fhir-pipeline:local to build locally.",
   "type": "infrastructure",
   "version": "0.1.0",
   "dependencies": [],
   "environmentVariables": {
     "PIPELINE_IMAGE": "ghcr.io/mherman22/sedish-fhir-pipeline:main",
+    "PIPELINE_DB_PW": "pipeline",
     "CONSOLIDATED_HOST": "",
     "CONSOLIDATED_PORT": "3306",
     "CONSOLIDATED_USER": "",
