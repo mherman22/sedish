@@ -1,0 +1,29 @@
+version: "3.8"
+
+# DIRECT mode — use this ONLY when we have WRITE access to Consolidé.
+# SQLMesh runs directly on Consolidé: reads consolidated_db and writes a `fhir` schema there,
+# on the one server (no local MySQL, no sync). CONSOLIDATED_USER must have SELECT on
+# consolidated_db AND CREATE/write on fhir + fhir_test. SRC_* is intentionally NOT set, so the
+# image skips the sync step. To use: replace docker-compose.yml with this file, then ./build-image.sh.
+services:
+  fhir-pipeline:
+    image: ${PIPELINE_IMAGE}
+    environment:
+      # Consolidé itself is the SQLMesh DB (source + output co-located, writable)
+      FHIR_DB_HOST: ${CONSOLIDATED_HOST}
+      FHIR_DB_PORT: ${CONSOLIDATED_PORT}
+      FHIR_DB_USER: ${CONSOLIDATED_USER}
+      FHIR_DB_PASS: ${CONSOLIDATED_PASS}
+      FHIR_DB_NAME: ${FHIR_DB_NAME:-fhir}
+      MPI_ONLY: ${MPI_ONLY:-1}
+      OPENHIM_USER: ${OPENHIM_USER:-consolidated}
+      OPENHIM_PASS: ${OPENHIM_PASS:-consolidated}
+    networks: [openhim]
+    deploy:
+      replicas: 1
+      restart_policy: { condition: any }
+
+networks:
+  openhim:
+    name: openhim_public
+    external: true
