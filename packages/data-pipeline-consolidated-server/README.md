@@ -42,7 +42,7 @@ CONSOLIDATED_PASS=<password>
 # local pipeline-db root password (optional; default 'pipeline')
 PIPELINE_DB_PW=pipeline
 # optional — sane defaults baked into the image:
-#   FHIR_DB_NAME=fhir   MPI_ONLY=1   OPENHIM_USER=consolidated   OPENHIM_PASS=consolidated
+#   FHIR_DB_NAME=fhir   OPENHIM_USER=consolidated   OPENHIM_PASS=consolidated
 PIPELINE_IMAGE=ghcr.io/mherman22/sedish-fhir-pipeline:main
 ```
 `FHIR_DB_*` and `SRC_*` are wired by the compose (you don't set them) — `pipeline-db` for the
@@ -73,7 +73,7 @@ CONSOLIDATED_PORT=3306
 CONSOLIDATED_USER=<user: SELECT on consolidated_db + write on fhir/fhir_test>
 CONSOLIDATED_PASS=<password>
 FHIR_DB_NAME=fhir
-# MPI_ONLY=1   OPENHIM_USER=consolidated   OPENHIM_PASS=consolidated   (optional)
+# OPENHIM_USER=consolidated   OPENHIM_PASS=consolidated   (optional)
 PIPELINE_IMAGE=ghcr.io/mherman22/sedish-fhir-pipeline:main
 ```
 
@@ -105,19 +105,21 @@ curl -su consolidated:consolidated \
   'http://openhim-core:5001/CR/fhir/Patient?identifier=http://sedish-haiti.org/fhir/source-key|<mspp>-<patient_id>'
 ```
 
-## MPI_ONLY — identity first, clinical later (same deployment)
+## Routing — one deployment, no mode flag
 
 Everything deploys **once** — OpenHIM, `shared-health-record-fhir`, `client-registry-opencr`, and
-this package all come up together from `config.yaml`. The SHR is already running; "Phase 2" does
-**not** add a package.
+this package all come up together from `config.yaml` — and the pipeline then routes by resource
+type, every cycle:
+- **Patient** → OpenCR (`/CR/fhir`) — identity / matching, upserted on the source key.
+- **clinical** (Encounter, Observation, Condition, Allergy, MedicationRequest) → SHR (`/SHR/fhir`),
+  bundled per patient.
+- **globals** (Location, …) → SHR.
 
-`MPI_ONLY` just controls what the already-running pipeline pushes:
-- `MPI_ONLY=1` (default) — push **only Patient → OpenCR** (identity / matching).
-- `MPI_ONLY=0` — the same service *also* pushes clinical bundles to the SHR (`/SHR/fhir`).
+Identity and clinical run off their own watermarks, so demographics flow to OpenCR and clinical to
+the SHR at the same time. There is no `MPI_ONLY` switch and no second deployment — the resource
+type *is* the routing decision.
 
-To turn on clinical, flip the flag and re-run only this package — no redeploy of anything else:
-```bash
-MPI_ONLY=0 ./instant package init -n data-pipeline-consolidated-server --env-file .env
-```
-The phasing is a rollout choice (get identity matching solid before sending clinical data), not a
-separate deployment.
+**Identity-only (optional).** If you want to bring up identity first and hold clinical back (e.g. a
+go-live before the SHR is validated), set `CLINICAL_VIEWS=` (empty) in the pipeline's environment —
+clinical is then neither read nor pushed. It's a config value, not a redeploy of logic; clear it
+later and the clinical backfills from where its watermark left off.

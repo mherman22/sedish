@@ -15,7 +15,6 @@ services:
       FHIR_DB_USER: ${CONSOLIDATED_USER}
       FHIR_DB_PASS: ${CONSOLIDATED_PASS}
       FHIR_DB_NAME: ${FHIR_DB_NAME:-fhir}
-      MPI_ONLY: ${MPI_ONLY:-1}
       OPENHIM_USER: ${OPENHIM_USER:-consolidated}
       OPENHIM_PASS: ${OPENHIM_PASS:-consolidated}
     networks: [openhim]
