@@ -3,9 +3,11 @@ version: "3.8"
 # Maps the external Consolidé consolidated_db to FHIR and pushes the delta to OpenCR.
 # Set CONSOLIDATED_HOST/USER/PASS (the Consolidé MySQL). Everything else — OpenHIM
 # channel URLs, identifier systems, poll interval — uses the image's built-in defaults.
+# PIPELINE_IMAGE defaults to the GHCR package; set it to sedish-fhir-pipeline:local to use a
+# locally-built image (build-custom-images.sh) instead of pulling.
 services:
   fhir-pipeline:
-    image: sedish-fhir-pipeline:local
+    image: ${PIPELINE_IMAGE}
     environment:
       FHIR_DB_HOST: ${CONSOLIDATED_HOST}
       FHIR_DB_PORT: ${CONSOLIDATED_PORT}
