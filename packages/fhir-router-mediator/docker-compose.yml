@@ -1,0 +1,25 @@
+version: "3.9"
+
+# OpenHIM mediator that routes a FHIR transaction Bundle by resource type:
+# Patient -> OpenCR (/CR/fhir), clinical -> SHR (/SHR/fhir). The data pipeline POSTs bundles to
+# the OpenHIM channel /consolidated/fhir, which forwards here (host `fhir-router`, port 3000).
+# The channel itself is defined in the interoperability-layer-openhim importer config.
+services:
+  fhir-router:
+    image: ${FHIR_ROUTER_IMAGE:-ghcr.io/mherman22/fhir-router-mediator:main}
+    environment:
+      PORT: "3000"
+      # downstream channels (through OpenHIM) + the one client (role emr) used for both
+      CR_URL: ${CR_URL:-http://openhim-core:5001/CR/fhir}
+      SHR_URL: ${SHR_URL:-http://openhim-core:5001/SHR/fhir}
+      UPSTREAM_USERNAME: ${OPENHIM_USER:-consolidated}
+      UPSTREAM_PASSWORD: ${OPENHIM_PASS:-consolidated}
+    networks: [openhim]
+    deploy:
+      replicas: 1
+      restart_policy: { condition: any }
+
+networks:
+  openhim:
+    name: openhim_public
+    external: true

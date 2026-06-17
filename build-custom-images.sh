@@ -82,3 +82,14 @@ else
   git clone --depth 1 https://github.com/mherman22/sedish-fhir-pipeline.git "$PIPELINE_SRC"
 fi
 docker build -t sedish-fhir-pipeline:local "$PIPELINE_SRC"
+
+# Build the FHIR Router mediator image locally from its repo (private — clone via gh auth).
+# Only needed when FHIR_ROUTER_IMAGE=fhir-router-mediator:local; the default pulls from GHCR.
+ROUTER_SRC=".build/fhir-router-mediator"
+if [ -d "$ROUTER_SRC/.git" ]; then
+  git -C "$ROUTER_SRC" pull --ff-only || true
+else
+  gh repo clone mherman22/fhir-router-mediator "$ROUTER_SRC" -- --depth 1 \
+    || git clone --depth 1 https://github.com/mherman22/fhir-router-mediator.git "$ROUTER_SRC"
+fi
+docker build -t fhir-router-mediator:local "$ROUTER_SRC"
