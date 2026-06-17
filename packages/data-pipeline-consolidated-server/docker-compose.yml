@@ -13,9 +13,9 @@ services:
       FHIR_DB_PORT: ${CONSOLIDATED_PORT}
       FHIR_DB_USER: ${CONSOLIDATED_USER}
       FHIR_DB_PASS: ${CONSOLIDATED_PASS}
-      MPI_ONLY: ${MPI_ONLY}
-      OPENHIM_USER: ${OPENHIM_USER}
-      OPENHIM_PASS: ${OPENHIM_PASS}
+      MPI_ONLY: ${MPI_ONLY:-1}
+      OPENHIM_USER: ${OPENHIM_USER:-consolidated}
+      OPENHIM_PASS: ${OPENHIM_PASS:-consolidated}
     networks: [openhim]
     deploy:
       replicas: 1
