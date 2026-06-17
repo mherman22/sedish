@@ -266,11 +266,13 @@ Each HIE component is deployed as a package. Use the `instant` CLI to manage the
 
 ## EMR → SHR pipeline
 
-The EMR → SHR path is the **consolidated → FHIR pipeline**, the `data-pipeline-consolidated-server` package:
-SQLMesh maps the **external Consolidé** `consolidated_db` to FHIR and a loader pushes to OpenCR
-(identity, Phase 1) + SHR (clinical, Phase 2). Consolidé is CHARESS-hosted — we only connect to
-it (`CONSOLIDATED_HOST/USER/PASS`). The package runs the GHCR image
-`ghcr.io/mherman22/sedish-fhir-pipeline` built by its own repo. It replaced the earlier
+The EMR → SHR path is the **consolidated → FHIR pipeline**, the `data-pipeline-consolidated-server` package.
+Consolidé is CHARESS-hosted and **read-only**, and MySQL can't JOIN across servers, so the package
+runs a **local MySQL** (`pipeline-db`): it syncs `consolidated_db` from Consolidé into that local DB
+(read-only `SELECT`, incremental by `date_updated`), SQLMesh maps it to FHIR there, and a loader
+pushes to OpenCR (identity, Phase 1) + SHR (clinical, Phase 2). Set `CONSOLIDATED_HOST/USER/PASS`
+(the external source). The pipeline image is `ghcr.io/mherman22/sedish-fhir-pipeline` (its own repo;
+`PIPELINE_IMAGE=sedish-fhir-pipeline:local` to build it locally). It replaced the earlier
 per-instance pipeline that mirrored the EMR FHIR API directly to the SHR.
 
 ```bash
@@ -736,7 +738,7 @@ print(f'passwordHash: {hash_val}')
 | File | Field |
 |------|-------|
 | `packages/interoperability-layer-openhim/importer/volume/openhim-import.json` | Client `passwordHash` / `passwordSalt` |
-| `packages/data-pipeline-consolidated-server` env | `CONSOLIDATED_*` (Consolidé MySQL) + `OPENCR_*` / `SHR_*` for the pipeline |
+| `packages/data-pipeline-consolidated-server` env | `CONSOLIDATED_*` (external read-only Consolidé) + `OPENHIM_USER/PASS` (one client, both channels); a local `pipeline-db` holds the synced copy + `fhir` output |
 
 ---
 
