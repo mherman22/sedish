@@ -1,5 +1,8 @@
 # fhir-router-mediator (package)
 
+> Full end-to-end setup (both packages, configs, deploy, verify, troubleshooting):
+> [`docs/consolidated-pipeline-setup.md`](../../docs/consolidated-pipeline-setup.md)
+
 Deploys the [`fhir-router-mediator`](https://github.com/mherman22/fhir-router-mediator) into the
 SEDISH stack. It receives FHIR transaction Bundles from the data pipeline on the OpenHIM channel
 `/consolidated/fhir` and routes them by resource type:

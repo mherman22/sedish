@@ -1,5 +1,8 @@
 # data-pipeline-consolidated-server
 
+> Full end-to-end setup (both packages, configs, deploy, verify, troubleshooting):
+> [`docs/consolidated-pipeline-setup.md`](../../docs/consolidated-pipeline-setup.md)
+
 Consolidated-server → FHIR → OpenCR pipeline (SEDISH instant package). SQLMesh maps the CHARESS
 **Consolidé** `consolidated_db` to FHIR R4 and a loader pushes Patient identities to **OpenCR**
 (Phase 1; clinical to the **SHR** in Phase 2). The pipeline code/image is the separate repo
