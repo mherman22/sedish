@@ -52,7 +52,7 @@
 # ./instant package up -n monitoring --env-file .env -d
 
 # EMR → SHR: the consolidated → FHIR pipeline package
-# ./instant package init -n sedish-fhir-pipeline --env-file .env
+# ./instant package init -n data-pipeline-consolidated-server --env-file .env
 
 
 

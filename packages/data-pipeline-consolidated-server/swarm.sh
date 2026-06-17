@@ -5,7 +5,7 @@ declare MODE=""
 declare COMPOSE_FILE_PATH=""
 declare UTILS_PATH=""
 declare SERVICE_NAMES=()
-declare STACK="sedish-fhir-pipeline"
+declare STACK="data-pipeline-consolidated-server"
 
 function init_vars() {
   ACTION=$1

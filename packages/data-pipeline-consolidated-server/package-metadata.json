@@ -1,6 +1,6 @@
 {
-  "id": "sedish-fhir-pipeline",
-  "name": "SEDISH FHIR Pipeline",
+  "id": "data-pipeline-consolidated-server",
+  "name": "Consolidated Server Data Pipeline",
   "description": "Maps the external Consolidé consolidated_db to FHIR and pushes Patient identities to OpenCR (Phase 1; clinical to the SHR in Phase 2). Pulls the GHCR image package by default (PIPELINE_IMAGE); set PIPELINE_IMAGE=sedish-fhir-pipeline:local to use a locally-built image instead.",
   "type": "infrastructure",
   "version": "0.1.0",

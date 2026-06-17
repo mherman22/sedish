@@ -177,7 +177,7 @@ Or deploy per-package in dependency order:
 ./instant package init -n client-registry-opencr --env-file .env
 ./instant package init -n shared-health-record-fhir --env-file .env
 ./instant package init -n emr-isanteplus --env-file .env
-./instant package init -n sedish-fhir-pipeline --env-file .env   # consolidated → FHIR → OpenCR/SHR
+./instant package init -n data-pipeline-consolidated-server --env-file .env   # consolidated → FHIR → OpenCR/SHR
 ```
 
 ### Option B: Manual deployment (docker stack)
@@ -215,7 +215,7 @@ docker stack deploy -c packages/shared-health-record-fhir/docker-compose.yml sha
 docker stack deploy -c packages/emr-isanteplus/docker-compose.yml isanteplus
 
 # 8. EMR → SHR: the consolidated → FHIR pipeline package (set CONSOLIDATED_HOST/USER/PASS first)
-./instant package init -n sedish-fhir-pipeline --env-file .env
+./instant package init -n data-pipeline-consolidated-server --env-file .env
 
 # 9. Verify all services are up
 docker service ls --format 'table {{.Name}}\t{{.Replicas}}'
@@ -266,7 +266,7 @@ Each HIE component is deployed as a package. Use the `instant` CLI to manage the
 
 ## EMR → SHR pipeline
 
-The EMR → SHR path is the **consolidated → FHIR pipeline**, the `sedish-fhir-pipeline` package:
+The EMR → SHR path is the **consolidated → FHIR pipeline**, the `data-pipeline-consolidated-server` package:
 SQLMesh maps the **external Consolidé** `consolidated_db` to FHIR and a loader pushes to OpenCR
 (identity, Phase 1) + SHR (clinical, Phase 2). Consolidé is CHARESS-hosted — we only connect to
 it (`CONSOLIDATED_HOST/USER/PASS`). The package runs the GHCR image
@@ -275,8 +275,8 @@ per-instance pipeline that mirrored the EMR FHIR API directly to the SHR.
 
 ```bash
 cp .env.example .env   # set CONSOLIDATED_HOST/USER/PASS (the Consolidé MySQL)
-./instant package init -n sedish-fhir-pipeline --env-file .env
-docker service logs -f sedish-fhir-pipeline_fhir-pipeline
+./instant package init -n data-pipeline-consolidated-server --env-file .env
+docker service logs -f data-pipeline-consolidated-server_fhir-pipeline
 ```
 
 ---
@@ -736,7 +736,7 @@ print(f'passwordHash: {hash_val}')
 | File | Field |
 |------|-------|
 | `packages/interoperability-layer-openhim/importer/volume/openhim-import.json` | Client `passwordHash` / `passwordSalt` |
-| `packages/sedish-fhir-pipeline` env | `CONSOLIDATED_*` (Consolidé MySQL) + `OPENCR_*` / `SHR_*` for the pipeline |
+| `packages/data-pipeline-consolidated-server` env | `CONSOLIDATED_*` (Consolidé MySQL) + `OPENCR_*` / `SHR_*` for the pipeline |
 
 ---
 
@@ -774,12 +774,12 @@ sedish/
 │   ├── database-mysql/           # MySQL
 │   ├── identity-access-manager-keycloak/ # Keycloak
 │   ├── monitoring/               # Grafana + Prometheus + Loki
-│   └── sedish-fhir-pipeline/     # Consolidé → FHIR → OpenCR/SHR (pulls the GHCR image package)
+│   └── data-pipeline-consolidated-server/     # Consolidé → FHIR → OpenCR/SHR (pulls the GHCR image package)
 └── projects/
     └── isanteplus-db/           # MySQL seed data for iSantePlus
 
 # The consolidated_db→FHIR pipeline lives in its own repo (github.com/mherman22/sedish-fhir-pipeline)
-# and ships as a GHCR image package the `sedish-fhir-pipeline` package pulls — not vendored here.
+# and ships as a GHCR image package the `data-pipeline-consolidated-server` package pulls — not vendored here.
 ```
 
 ---
