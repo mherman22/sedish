@@ -105,6 +105,19 @@ curl -su consolidated:consolidated \
   'http://openhim-core:5001/CR/fhir/Patient?identifier=http://sedish-haiti.org/fhir/source-key|<mspp>-<patient_id>'
 ```
 
-## Phase 1 vs Phase 2
-`MPI_ONLY=1` (default) pushes **only Patient → OpenCR**. Set `MPI_ONLY=0` for Phase 2 (also push
-clinical bundles to the SHR). Phase 2 additionally needs the `shared-health-record-fhir` package up.
+## MPI_ONLY — identity first, clinical later (same deployment)
+
+Everything deploys **once** — OpenHIM, `shared-health-record-fhir`, `client-registry-opencr`, and
+this package all come up together from `config.yaml`. The SHR is already running; "Phase 2" does
+**not** add a package.
+
+`MPI_ONLY` just controls what the already-running pipeline pushes:
+- `MPI_ONLY=1` (default) — push **only Patient → OpenCR** (identity / matching).
+- `MPI_ONLY=0` — the same service *also* pushes clinical bundles to the SHR (`/SHR/fhir`).
+
+To turn on clinical, flip the flag and re-run only this package — no redeploy of anything else:
+```bash
+MPI_ONLY=0 ./instant package init -n data-pipeline-consolidated-server --env-file .env
+```
+The phasing is a rollout choice (get identity matching solid before sending clinical data), not a
+separate deployment.
