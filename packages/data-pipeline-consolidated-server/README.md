@@ -54,6 +54,14 @@ local DB, `CONSOLIDATED_*` for the source.
 ./instant package init -n data-pipeline-consolidated-server --env-file .env
 ```
 
+**Sync cost.** The first sync is a full copy (one-time initial load); after that each cycle pulls
+only `date_updated` deltas from the `*_openmrs` tables. Static reference tables (`concept`,
+`concept_name`, dimensions — no `date_updated`) are synced **once** and skipped while populated, so
+steady-state sync ≈ "the patients that changed," not a DB copy. `pipeline-db` does hold a full
+working copy of `consolidated_db` (+ `fhir`), so size its disk accordingly. Set
+`SYNC_REFRESH_STATIC=1` to force a re-copy of the reference tables (e.g. after a CIEL update).
+*(DIRECT mode avoids the copy entirely.)*
+
 ---
 
 ## DIRECT mode (we have write access to Consolidé)
