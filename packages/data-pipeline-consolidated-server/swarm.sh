@@ -19,7 +19,6 @@ function init_vars() {
   UTILS_PATH="${COMPOSE_FILE_PATH}/../utils"
 
   SERVICE_NAMES=(
-    "pipeline-db"
     "fhir-pipeline"
   )
 

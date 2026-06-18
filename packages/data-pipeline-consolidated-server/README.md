@@ -3,107 +3,65 @@
 > Full end-to-end setup (both packages, configs, deploy, verify, troubleshooting):
 > [`docs/consolidated-pipeline-setup.md`](../../docs/consolidated-pipeline-setup.md)
 
-Consolidated-server → FHIR → OpenCR pipeline (SEDISH instant package). SQLMesh maps the CHARESS
-**Consolidé** `consolidated_db` to FHIR R4 and a loader pushes Patient identities to **OpenCR**
-(Phase 1; clinical to the **SHR** in Phase 2). The pipeline code/image is the separate repo
-`github.com/mherman22/sedish-fhir-pipeline`; this package is the deploy wiring.
+Maps the CHARESS **Consolidé** `consolidated_db` to FHIR R4 with SQLMesh and routes it through
+OpenHIM — Patient identities to **OpenCR**, clinical to the **SHR** (via the `fhir-router-mediator`).
+The pipeline code/image is the separate repo `github.com/mherman22/sedish-fhir-pipeline`; this
+package is the deploy wiring.
 
-## Two modes
+## How it runs (DIRECT — the only mode)
 
-SQLMesh runs one SQL statement per model and MySQL can't JOIN across servers, so its **source and
-output must be on the same server**. Which mode you use depends on the access CHARESS gives us:
+SQLMesh runs **on the Consolidé server itself**: it reads `consolidated_db` and writes the FHIR
+output into dedicated schemas on that same server. There is **no local database and no copy** of
+`consolidated_db` — copying a constantly-changing production DB doesn't make sense, so we transform
+in place.
 
-| | **SYNC** (default) | **DIRECT** |
-|---|---|---|
-| When | Consolidé is **read-only** to us | We have **write** access to Consolidé |
-| How | Sync `consolidated_db` into a local `pipeline-db`; SQLMesh runs there | SQLMesh runs on Consolidé itself (writes a `fhir` schema beside `consolidated_db`) |
-| Local MySQL | yes (`pipeline-db` service) | none |
-| Compose | `docker-compose.yml` (default) | `docker-compose.direct.yml` |
-| Consolidé grant | `SELECT` on `consolidated_db` | `SELECT` on `consolidated_db` + write on `fhir`/`fhir_test` |
+## Prerequisite (CHARESS, one-time)
 
-The **same image** does both — the entrypoint syncs only when `SRC_*` is set, otherwise it runs
-directly against `FHIR_DB_*`.
+CHARESS must **pre-create three schemas** on the Consolidé MySQL and grant one user on them. No
+global `CREATE` is needed (the image runs with `ENSURE_DBS=0`); no `fhir_test` (no tests in prod);
+`ref` is folded into `fhir` and the loader's state table lives inside `fhir`.
 
-## Common prerequisites
-- OpenHIM is up with channels `/CR/fhir` (+ `/SHR/fhir` for Phase 2) and the `consolidated`
-  client (role `emr`). The pipeline authenticates as one client for both channels.
-- The deploy server's IP is allowed to reach the Consolidé MySQL.
-- The pipeline image: pulled from GHCR (`PIPELINE_IMAGE=ghcr.io/mherman22/sedish-fhir-pipeline:main`,
-  default) or built locally (`PIPELINE_IMAGE=sedish-fhir-pipeline:local` + `./build-custom-images.sh`).
+```sql
+CREATE DATABASE fhir;  CREATE DATABASE sqlmesh;  CREATE DATABASE sqlmesh__fhir;
 
----
+-- one user reads the source AND writes the output (single connection, cross-schema):
+CREATE USER 'sedish_fhir'@'<deploy-ip>' IDENTIFIED BY '<password>';
+GRANT SELECT         ON consolidated_db.*  TO 'sedish_fhir'@'<deploy-ip>';
+GRANT ALL PRIVILEGES ON fhir.*             TO 'sedish_fhir'@'<deploy-ip>';
+GRANT ALL PRIVILEGES ON sqlmesh.*          TO 'sedish_fhir'@'<deploy-ip>';
+GRANT ALL PRIVILEGES ON `sqlmesh__fhir`.*  TO 'sedish_fhir'@'<deploy-ip>';
+FLUSH PRIVILEGES;
+```
 
-## SYNC mode (default — read-only Consolidé)
+Also required: OpenHIM up with the `/consolidated/fhir` channel (the `fhir-router-mediator` package)
+and the `consolidated` client (role `emr`); and the deploy server's IP allowed to reach the
+Consolidé MySQL.
 
-**`.env`:**
+## `.env`
+
+`CONSOLIDATED_*` is the write-capable user above (it becomes `FHIR_DB_*`):
 ```bash
-# external read-only Consolidé — the source the pipeline syncs FROM (mapped to SRC_*)
-CONSOLIDATED_HOST=<consolidated-host>
+CONSOLIDATED_HOST=<consolidé-host>
 CONSOLIDATED_PORT=3306
-CONSOLIDATED_USER=<read-only-user>
+CONSOLIDATED_USER=sedish_fhir
 CONSOLIDATED_PASS=<password>
-# local pipeline-db root password (optional; default 'pipeline')
-PIPELINE_DB_PW=pipeline
-# optional — sane defaults baked into the image:
-#   FHIR_DB_NAME=fhir   OPENHIM_USER=consolidated   OPENHIM_PASS=consolidated
+FHIR_DB_NAME=fhir
+# OPENHIM_USER=consolidated   OPENHIM_PASS=consolidated   (optional, defaults shown)
 PIPELINE_IMAGE=ghcr.io/mherman22/sedish-fhir-pipeline:main
 ```
-`FHIR_DB_*` and `SRC_*` are wired by the compose (you don't set them) — `pipeline-db` for the
-local DB, `CONSOLIDATED_*` for the source.
+`FHIR_DB_*`, `FHIR_TEST_DB=`, `ENSURE_DBS=0`, `STATE_DB=fhir` are wired by the compose — you don't
+set them. There is no `SRC_*` (its absence is what makes SQLMesh run in place) and no `PIPELINE_DB_PW`
+(no local database).
 
-**Deploy:**
+## Deploy
+
 ```bash
 ./build-image.sh                                                  # after any package change
 ./instant package init -n data-pipeline-consolidated-server --env-file .env
 ```
 
-**Sync cost.** The first sync is a full copy (one-time initial load); after that each cycle pulls
-only `date_updated` deltas from the `*_openmrs` tables. Static reference tables (`concept`,
-`concept_name`, dimensions — no `date_updated`) are synced **once** and skipped while populated, so
-steady-state sync ≈ "the patients that changed," not a DB copy. `pipeline-db` does hold a full
-working copy of `consolidated_db` (+ `fhir`), so size its disk accordingly. Set
-`SYNC_REFRESH_STATIC=1` to force a re-copy of the reference tables (e.g. after a CIEL update).
-*(DIRECT mode avoids the copy entirely.)*
+## Verify
 
----
-
-## DIRECT mode (we have write access to Consolidé)
-
-**`.env`** — `CONSOLIDATED_*` is now the write-capable user (it becomes `FHIR_DB_*`):
-```bash
-CONSOLIDATED_HOST=<consolidé host>
-CONSOLIDATED_PORT=3306
-CONSOLIDATED_USER=<user: SELECT on consolidated_db + write on the 3 fhir schemas>
-CONSOLIDATED_PASS=<password>
-FHIR_DB_NAME=fhir
-# OPENHIM_USER=consolidated   OPENHIM_PASS=consolidated   (optional)
-PIPELINE_IMAGE=ghcr.io/mherman22/sedish-fhir-pipeline:main
-```
-
-**Grant on Consolidé (CHARESS pre-creates the 3 schemas, run as MySQL root there).** No global
-`CREATE` needed (the image runs with `ENSURE_DBS=0`); no `fhir_test`; `ref` is folded into `fhir`
-and the loader's state table lives inside `fhir`:
-```sql
-CREATE DATABASE fhir;  CREATE DATABASE sqlmesh;  CREATE DATABASE sqlmesh__fhir;
-GRANT SELECT ON consolidated_db.*  TO '<user>'@'<deploy-ip>';
-GRANT ALL PRIVILEGES ON fhir.*          TO '<user>'@'<deploy-ip>';
-GRANT ALL PRIVILEGES ON sqlmesh.*       TO '<user>'@'<deploy-ip>';
-GRANT ALL PRIVILEGES ON `sqlmesh__fhir`.* TO '<user>'@'<deploy-ip>';
-FLUSH PRIVILEGES;
-```
-
-**Deploy** — swap in the direct compose (Swarm ignores compose `profiles`, so DIRECT is a
-separate file), then build + init:
-```bash
-cp docker-compose.direct.yml docker-compose.yml      # use the no-pipeline-db, no-sync variant
-./build-image.sh
-./instant package init -n data-pipeline-consolidated-server --env-file .env
-```
-With no `SRC_*`, the entrypoint skips the sync and runs SQLMesh straight on Consolidé.
-
----
-
-## Verify (either mode)
 ```bash
 docker service logs -f data-pipeline-consolidated-server_fhir-pipeline
 # a patient landed in the MPI (by the source-key identifier):
@@ -111,21 +69,13 @@ curl -su consolidated:consolidated \
   'http://openhim-core:5001/CR/fhir/Patient?identifier=http://sedish-haiti.org/fhir/source-key|<mspp>-<patient_id>'
 ```
 
-## Routing — one deployment, no mode flag
+## Routing — one deployment
 
-Everything deploys **once** — OpenHIM, `shared-health-record-fhir`, `client-registry-opencr`, and
-this package all come up together from `config.yaml` — and the pipeline then routes by resource
-type, every cycle:
-- **Patient** → OpenCR (`/CR/fhir`) — identity / matching, upserted on the source key.
-- **clinical** (Encounter, Observation, Condition, Allergy, MedicationRequest) → SHR (`/SHR/fhir`),
-  bundled per patient.
-- **globals** (Location, …) → SHR.
+Everything deploys **once** — OpenHIM, `shared-health-record-fhir`, `client-registry-opencr`,
+`fhir-router-mediator`, and this package all come up from `config.yaml`. The pipeline POSTs per-patient
+FHIR bundles to `/consolidated/fhir`; the mediator routes by resource type, every cycle:
+- **Patient** → OpenCR (`/CR/fhir`) — identity / matching.
+- **clinical** (Encounter, Observation, Condition, Allergy, MedicationRequest) → SHR (`/SHR/fhir`).
 
-Identity and clinical run off their own watermarks, so demographics flow to OpenCR and clinical to
-the SHR at the same time. There is no `MPI_ONLY` switch and no second deployment — the resource
-type *is* the routing decision.
-
-**Identity-only (optional).** If you want to bring up identity first and hold clinical back (e.g. a
-go-live before the SHR is validated), set `CLINICAL_VIEWS=` (empty) in the pipeline's environment —
-clinical is then neither read nor pushed. It's a config value, not a redeploy of logic; clear it
-later and the clinical backfills from where its watermark left off.
+**Identity-only (optional).** Set `CLINICAL_VIEWS=` (empty) to send only Patient→OpenCR (e.g. a
+go-live before the SHR is validated). Clear it later and clinical backfills from its watermark.

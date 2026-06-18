@@ -1,17 +1,17 @@
 {
   "id": "data-pipeline-consolidated-server",
   "name": "Consolidated Server Data Pipeline",
-  "description": "Syncs the external read-only Consolidé consolidated_db into a local MySQL, maps it to FHIR with SQLMesh, and routes by resource type through OpenHIM — Patient identities to OpenCR, clinical to the SHR — in one deployment (no mode flag). Set CONSOLIDATED_HOST/USER/PASS. PIPELINE_IMAGE defaults to the GHCR package; set it to sedish-fhir-pipeline:local to build locally.",
+  "description": "Maps the CHARESS Consolidé consolidated_db to FHIR with SQLMesh and routes it through OpenHIM — Patient identities to OpenCR, clinical to the SHR. DIRECT mode (default): SQLMesh runs on Consolidé and writes the fhir/sqlmesh/sqlmesh__fhir schemas there (no copy) — CONSOLIDATED_* is the write-capable user. Read-only fallback in docker-compose.sync.yml. PIPELINE_IMAGE defaults to the GHCR package; set it to sedish-fhir-pipeline:local to build locally.",
   "type": "infrastructure",
   "version": "0.1.0",
   "dependencies": [],
   "environmentVariables": {
     "PIPELINE_IMAGE": "ghcr.io/mherman22/sedish-fhir-pipeline:main",
-    "PIPELINE_DB_PW": "pipeline",
     "CONSOLIDATED_HOST": "",
     "CONSOLIDATED_PORT": "3306",
     "CONSOLIDATED_USER": "",
     "CONSOLIDATED_PASS": "",
+    "FHIR_DB_NAME": "fhir",
     "OPENHIM_USER": "consolidated",
     "OPENHIM_PASS": "consolidated"
   }
