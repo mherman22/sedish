@@ -1,21 +1,38 @@
 version: "3.8"
 
-# DIRECT mode: SQLMesh runs on Consolidé (no local copy). CONSOLIDATED_* = write-capable user.
+# SYNC mode (default) — Consolidé is read-only to us, so a local pipeline-db holds a synced copy of
+# consolidated_db + the FHIR output, and SQLMesh transforms there. Needs only SELECT on Consolidé.
+# Steady state copies only changed rows; a periodic reconcile catches edits/deletes.
+# Write-access deployments that skip the copy use docker-compose.direct.yml.
 services:
+  pipeline-db:
+    image: mysql:8.0
+    command: ["--sql-mode="]                    # tolerate iSantePlus legacy zero-dates in the copy
+    environment:
+      MYSQL_ROOT_PASSWORD: ${PIPELINE_DB_PW:-pipeline}
+    volumes:
+      - pipeline-db-data:/var/lib/mysql
+    networks: [pipeline]
+    deploy:
+      replicas: 1
+      restart_policy: { condition: any }
+
   fhir-pipeline:
     image: ${PIPELINE_IMAGE}
     environment:
-      FHIR_DB_HOST: ${CONSOLIDATED_HOST}
-      FHIR_DB_PORT: ${CONSOLIDATED_PORT}
-      FHIR_DB_USER: ${CONSOLIDATED_USER}
-      FHIR_DB_PASS: ${CONSOLIDATED_PASS}
+      FHIR_DB_HOST: pipeline-db                 # SQLMesh reads the synced source + writes fhir here
+      FHIR_DB_PORT: "3306"
+      FHIR_DB_USER: root
+      FHIR_DB_PASS: ${PIPELINE_DB_PW:-pipeline}
       FHIR_DB_NAME: ${FHIR_DB_NAME:-fhir}
-      FHIR_TEST_DB: ""        # no test gateway in prod
-      ENSURE_DBS: "0"         # schemas pre-created by CHARESS; don't CREATE
-      STATE_DB: ${FHIR_DB_NAME:-fhir}
+      SRC_HOST: ${CONSOLIDATED_HOST}            # external read-only Consolidé the sync copies from
+      SRC_PORT: ${CONSOLIDATED_PORT:-3306}
+      SRC_USER: ${CONSOLIDATED_USER}
+      SRC_PASS: ${CONSOLIDATED_PASS}
       OPENHIM_USER: ${OPENHIM_USER:-consolidated}
       OPENHIM_PASS: ${OPENHIM_PASS:-consolidated}
-    networks: [openhim]
+    networks: [openhim, pipeline]
+    depends_on: [pipeline-db]
     deploy:
       replicas: 1
       restart_policy: { condition: any }
@@ -24,3 +41,7 @@ networks:
   openhim:
     name: openhim_public
     external: true
+  pipeline:
+
+volumes:
+  pipeline-db-data:

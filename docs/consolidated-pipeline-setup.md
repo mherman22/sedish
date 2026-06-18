@@ -10,33 +10,33 @@ End-to-end guide for the two packages that bring the CHARESS **Consolidé** serv
 ## 1. Architecture / data flow
 
 ```
-  Consolidé MySQL (CHARESS)                                         OpenHIM
-  ├─ consolidated_db        ── SQLMesh reads ──┐
-  └─ fhir / sqlmesh /                          │  maps in place (NO copy)
-     sqlmesh__fhir          ◀─ SQLMesh writes ─┘
-                                          │  loader POSTs per-patient bundles
-                                          ▼
+  consolidated_db ──▶ SQLMesh maps to fhir.* ──▶ loader POSTs per-patient bundles
+                                                  ▼
                               POST /consolidated/fhir ──▶ fhir-router ──PUT /CR/fhir──▶ OpenCR (identity)
                                                           (split+dedupe) ──POST /SHR/fhir─▶ SHR (clinical)
 ```
 
-**DIRECT mode is the only mode.** SQLMesh runs **on the Consolidé server**, reading `consolidated_db`
-and writing the FHIR output into schemas on that same server — there is **no local database and no
-copy** of `consolidated_db`. (Copying a constantly-changing production DB doesn't make sense; the
-pipeline transforms in place.)
+**Two modes** (same image; the mode is the source SQLMesh reads):
+- **SYNC (default)** — Consolidé is read-only to us, so a local `pipeline-db` holds a synced copy of
+  `consolidated_db` and SQLMesh transforms there. Steady state copies only changed rows; a periodic
+  reconcile catches edits/deletes. Needs only `SELECT` on Consolidé — **nothing else from CHARESS**.
+- **DIRECT** — with write access, SQLMesh runs on Consolidé itself and writes the FHIR schemas there;
+  **no copy**. Better at scale, but needs the schemas + write grant (§2b).
+
+The downstream half (loader → mediator → OpenCR/SHR) is identical in both modes.
 
 **Repos (images):**
 - pipeline → `github.com/mherman22/sedish-fhir-pipeline` → `ghcr.io/mherman22/sedish-fhir-pipeline:main`
 - mediator → `github.com/mherman22/fhir-router-mediator` → `ghcr.io/mherman22/fhir-router-mediator:main`
 
-## 2. Prerequisite — CHARESS creates 3 schemas + grants one user (one-time)
+## 2. Prerequisites from CHARESS
 
-This is the hard dependency: without write access to Consolidé and these schemas, the pipeline
-cannot run. Ask CHARESS to run, as MySQL root (replace `<password>` / `<deploy-ip>`):
+**2a. SYNC (default) — read-only access only.** A user with `SELECT` on `consolidated_db`, and the
+deploy IP allowed to reach the Consolidé MySQL port. That's it — nothing is created on their server.
 
+**2b. DIRECT (only if going no-copy) — 3 schemas + one user.** Ask CHARESS to run, as MySQL root:
 ```sql
 CREATE DATABASE fhir;  CREATE DATABASE sqlmesh;  CREATE DATABASE sqlmesh__fhir;
-
 CREATE USER 'sedish_fhir'@'<deploy-ip>' IDENTIFIED BY '<password>';
 GRANT SELECT         ON consolidated_db.*  TO 'sedish_fhir'@'<deploy-ip>';
 GRANT ALL PRIVILEGES ON fhir.*             TO 'sedish_fhir'@'<deploy-ip>';
@@ -44,11 +44,7 @@ GRANT ALL PRIVILEGES ON sqlmesh.*          TO 'sedish_fhir'@'<deploy-ip>';
 GRANT ALL PRIVILEGES ON `sqlmesh__fhir`.*  TO 'sedish_fhir'@'<deploy-ip>';
 FLUSH PRIVILEGES;
 ```
-
-- No global `CREATE`/`SUPER`; read-only on `consolidated_db`, full only on the 3 schemas.
-- **One user**, by design — the transform reads `consolidated_db` and writes `fhir` in the same
-  statement over one connection, so the connecting account needs both.
-- Confirm `<deploy-ip>` can reach the Consolidé MySQL port.
+One user (it reads `consolidated_db` and writes `fhir` over one connection); no global `CREATE`/`SUPER`.
 
 The core SEDISH stack also deploys (already in `config.yaml`, in order):
 `interoperability-layer-openhim`, `shared-health-record-fhir`, `client-registry-opencr`, then
@@ -57,20 +53,20 @@ The core SEDISH stack also deploys (already in `config.yaml`, in order):
 ## 3. `.env`
 
 ```bash
-# pipeline (DIRECT) — CONSOLIDATED_* is the write-capable user above
+# pipeline (SYNC default) — CONSOLIDATED_* is the READ-ONLY Consolidé user
 CONSOLIDATED_HOST=<consolidé-host>
 CONSOLIDATED_PORT=3306
-CONSOLIDATED_USER=sedish_fhir
+CONSOLIDATED_USER=<read-only-user>
 CONSOLIDATED_PASS=<password>
-FHIR_DB_NAME=fhir
+PIPELINE_DB_PW=pipeline                # local pipeline-db root password
 PIPELINE_IMAGE=ghcr.io/mherman22/sedish-fhir-pipeline:main
 
 # mediator
 FHIR_ROUTER_IMAGE=ghcr.io/mherman22/fhir-router-mediator:main
 # OPENHIM_USER=consolidated  OPENHIM_PASS=consolidated   (optional, defaults shown)
 ```
-`FHIR_DB_*`, `FHIR_TEST_DB=`, `ENSURE_DBS=0`, `STATE_DB=fhir` are wired by the compose (don't set
-them). No `SRC_*`, no `PIPELINE_DB_PW` — there's no local database.
+`FHIR_DB_*` and `SRC_*` are wired by the compose. **For DIRECT:** use the write-capable user, drop
+`PIPELINE_DB_PW`, and `cp docker-compose.direct.yml docker-compose.yml` (see the package README).
 
 ## 4. Make the images pullable
 
@@ -98,14 +94,15 @@ git pull fork hie
 ## 6. Verify
 
 ```bash
-docker service ls | grep -E 'fhir-pipeline|fhir-router'
-#   data-pipeline-consolidated-server_fhir-pipeline  1/1   (no pipeline-db — DIRECT)
+docker service ls | grep -E 'fhir-pipeline|pipeline-db|fhir-router'
+#   data-pipeline-consolidated-server_pipeline-db    1/1   (SYNC only; absent in DIRECT)
+#   data-pipeline-consolidated-server_fhir-pipeline  1/1
 #   fhir-router-mediator_fhir-router                 1/1
 
 docker exec $(docker ps -qf name=openhim_mongo) mongo openhim --quiet \
   --eval 'db.channels.count({urlPattern:/consolidated/})'    # expect 1
 
-docker service logs -f data-pipeline-consolidated-server_fhir-pipeline   # expect cycles, no sync/copy
+docker service logs -f data-pipeline-consolidated-server_fhir-pipeline   # expect sync → plan → push cycles
 docker exec $(docker ps -qf name=_opencr.) sh -c 'wget -qO- "http://localhost:3000/fhir/Patient?_summary=count"'
 ```
 

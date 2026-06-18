@@ -18,7 +18,9 @@ function init_vars() {
 
   UTILS_PATH="${COMPOSE_FILE_PATH}/../utils"
 
+  # SYNC mode (default) runs pipeline-db + fhir-pipeline; DIRECT mode runs only fhir-pipeline.
   SERVICE_NAMES=(
+    "pipeline-db"
     "fhir-pipeline"
   )
 
