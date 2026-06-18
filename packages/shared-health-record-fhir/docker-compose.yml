@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   shr:
-    image: itechuw/shared-health-record:main
+    image: ${SHR_IMAGE:-itechuw/shared-health-record:main}
     networks:
       - openhim
       - shr

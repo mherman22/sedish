@@ -1,7 +1,8 @@
 {
   "app": {
     "port": 3000,
-    "hapiPassthrough": true
+    "hapiPassthrough": true,
+    "mpiSystem": "http://sedish-haiti.org/fhir/source-key"
   },
   "mediator": {
     "api": {

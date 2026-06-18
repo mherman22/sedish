@@ -739,6 +739,71 @@
             "rewriteUrlsConfig": [],
             "autoRetryEnabled": false,
             "autoRetryPeriodMinutes": 600000000
+        },
+        {
+            "name": "SHR - Consolidated IPS",
+            "description": "Read-side: GET a unified IPS across all of a person's sites (SHR mediator /ips, MPI-resolved)",
+            "urlPattern": "^/SHR/ips.*$",
+            "isAsynchronousProcess": false,
+            "methods": [
+                "GET"
+            ],
+            "type": "http",
+            "priority": 1,
+            "tcpPort": null,
+            "tcpHost": null,
+            "pollingSchedule": null,
+            "requestBody": false,
+            "responseBody": true,
+            "allow": [
+                "emr"
+            ],
+            "whitelist": [],
+            "authType": "private",
+            "routes": [
+                {
+                    "name": "SHR IPS",
+                    "type": "http",
+                    "status": "enabled",
+                    "secured": false,
+                    "host": "shr",
+                    "port": 3000,
+                    "path": "",
+                    "pathTransform": "s/SHR\\/ips/ips/g",
+                    "primary": true,
+                    "username": "",
+                    "password": "",
+                    "forwardAuthHeader": false
+                }
+            ],
+            "matchContentTypes": [],
+            "matchContentRegex": null,
+            "matchContentXpath": null,
+            "matchContentJson": null,
+            "matchContentValue": null,
+            "properties": [],
+            "txViewAcl": [
+                "admin",
+                "shr",
+                "emr",
+                "pipeline",
+                "xds"
+            ],
+            "txViewFullAcl": [],
+            "txRerunAcl": [
+                "admin",
+                "shr",
+                "emr",
+                "pipeline",
+                "xds"
+            ],
+            "alerts": [],
+            "status": "enabled",
+            "rewriteUrls": false,
+            "addAutoRewriteRules": true,
+            "rewriteUrlsConfig": [],
+            "autoRetryEnabled": false,
+            "autoRetryPeriodMinutes": 600000000
         }
     ]
 }
