@@ -73,19 +73,22 @@ working copy of `consolidated_db` (+ `fhir`), so size its disk accordingly. Set
 ```bash
 CONSOLIDATED_HOST=<consolidé host>
 CONSOLIDATED_PORT=3306
-CONSOLIDATED_USER=<user: SELECT on consolidated_db + write on fhir/fhir_test>
+CONSOLIDATED_USER=<user: SELECT on consolidated_db + write on the 3 fhir schemas>
 CONSOLIDATED_PASS=<password>
 FHIR_DB_NAME=fhir
 # OPENHIM_USER=consolidated   OPENHIM_PASS=consolidated   (optional)
 PIPELINE_IMAGE=ghcr.io/mherman22/sedish-fhir-pipeline:main
 ```
 
-**Grant on Consolidé (run as MySQL root there):**
+**Grant on Consolidé (CHARESS pre-creates the 3 schemas, run as MySQL root there).** No global
+`CREATE` needed (the image runs with `ENSURE_DBS=0`); no `fhir_test`; `ref` is folded into `fhir`
+and the loader's state table lives inside `fhir`:
 ```sql
-CREATE DATABASE IF NOT EXISTS fhir;  CREATE DATABASE IF NOT EXISTS fhir_test;
-GRANT SELECT ON consolidated_db.* TO '<user>'@'<deploy-ip>';
-GRANT ALL PRIVILEGES ON fhir.*      TO '<user>'@'<deploy-ip>';
-GRANT ALL PRIVILEGES ON fhir_test.* TO '<user>'@'<deploy-ip>';
+CREATE DATABASE fhir;  CREATE DATABASE sqlmesh;  CREATE DATABASE sqlmesh__fhir;
+GRANT SELECT ON consolidated_db.*  TO '<user>'@'<deploy-ip>';
+GRANT ALL PRIVILEGES ON fhir.*          TO '<user>'@'<deploy-ip>';
+GRANT ALL PRIVILEGES ON sqlmesh.*       TO '<user>'@'<deploy-ip>';
+GRANT ALL PRIVILEGES ON `sqlmesh__fhir`.* TO '<user>'@'<deploy-ip>';
 FLUSH PRIVILEGES;
 ```
 

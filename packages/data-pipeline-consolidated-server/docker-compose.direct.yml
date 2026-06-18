@@ -2,9 +2,14 @@ version: "3.8"
 
 # DIRECT mode — use this ONLY when we have WRITE access to Consolidé.
 # SQLMesh runs directly on Consolidé: reads consolidated_db and writes a `fhir` schema there,
-# on the one server (no local MySQL, no sync). CONSOLIDATED_USER must have SELECT on
-# consolidated_db AND CREATE/write on fhir + fhir_test. SRC_* is intentionally NOT set, so the
-# image skips the sync step. To use: replace docker-compose.yml with this file, then ./build-image.sh.
+# on the one server (no local MySQL, no sync). SRC_* is intentionally NOT set, so the image
+# skips the sync step. To use: replace docker-compose.yml with this file, then ./build-image.sh.
+#
+# CHARESS pre-creates 3 schemas and grants the user ALL on them (+ SELECT on consolidated_db):
+#   fhir   sqlmesh   sqlmesh__fhir
+# No fhir_test (FHIR_TEST_DB empty → no test gateway), no `ref`/`loader_state` schemas
+# (ref folded into fhir; loader state lives in fhir). ENSURE_DBS=0 → the image does not try to
+# CREATE schemas (no global CREATE privilege needed).
 services:
   fhir-pipeline:
     image: ${PIPELINE_IMAGE}
@@ -15,6 +20,9 @@ services:
       FHIR_DB_USER: ${CONSOLIDATED_USER}
       FHIR_DB_PASS: ${CONSOLIDATED_PASS}
       FHIR_DB_NAME: ${FHIR_DB_NAME:-fhir}
+      FHIR_TEST_DB: ""        # no test gateway in prod → no fhir_test schema needed
+      ENSURE_DBS: "0"         # schemas are pre-created; don't attempt CREATE DATABASE
+      STATE_DB: ${FHIR_DB_NAME:-fhir}   # loader watermark table lives inside fhir (no loader_state schema)
       OPENHIM_USER: ${OPENHIM_USER:-consolidated}
       OPENHIM_PASS: ${OPENHIM_PASS:-consolidated}
     networks: [openhim]
