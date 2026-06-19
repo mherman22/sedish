@@ -31,6 +31,8 @@ services:
       SRC_PASS: ${CONSOLIDATED_PASS}
       OPENHIM_USER: ${OPENHIM_USER:-consolidated}
       OPENHIM_PASS: ${OPENHIM_PASS:-consolidated}
+      # Retract SHR clinical the source no longer produces (void/delete propagation). 0 = off.
+      RECONCILE_RETRACT_EVERY: ${RECONCILE_RETRACT_EVERY:-3600}
     networks: [openhim, pipeline]
     depends_on: [pipeline-db]
     deploy:
