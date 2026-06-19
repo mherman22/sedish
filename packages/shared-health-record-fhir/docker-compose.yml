@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   shr:
-    image: ${SHR_IMAGE:-itechuw/shared-health-record:main}
+    # develop is the active branch (consolidated IPS + link-only #144 merged there); CI publishes
+    # itechuw/shared-health-record:develop. :main lags and lacks that work.
+    image: ${SHR_IMAGE:-itechuw/shared-health-record:develop}
     networks:
       - openhim
       - shr
