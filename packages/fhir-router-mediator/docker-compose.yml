@@ -6,7 +6,8 @@ version: "3.9"
 # The channel itself is defined in the interoperability-layer-openhim importer config.
 services:
   fhir-router:
-    image: ${FHIR_ROUTER_IMAGE:-ghcr.io/mherman22/fhir-router-mediator:main}
+    # source vendored in-repo at projects/fhir-router-mediator; built by ./build-custom-images.sh
+    image: ${FHIR_ROUTER_IMAGE:-fhir-router-mediator:local}
     environment:
       PORT: "3000"
       # downstream channels (through OpenHIM) + the one client (role emr) used for both

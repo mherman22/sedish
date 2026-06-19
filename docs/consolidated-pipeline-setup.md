@@ -25,9 +25,9 @@ End-to-end guide for the two packages that bring the CHARESS **Consolidé** serv
 
 The downstream half (loader → mediator → OpenCR/SHR) is identical in both modes.
 
-**Repos (images):**
+**Images:**
 - pipeline → `github.com/mherman22/sedish-fhir-pipeline` → `ghcr.io/mherman22/sedish-fhir-pipeline:main`
-- mediator → `github.com/mherman22/fhir-router-mediator` → `ghcr.io/mherman22/fhir-router-mediator:main`
+- mediator → vendored in-repo at `projects/fhir-router-mediator` → built locally as `fhir-router-mediator:local` by `./build-custom-images.sh`
 
 ## 2. Prerequisites from CHARESS
 
@@ -61,8 +61,8 @@ CONSOLIDATED_PASS=<password>
 PIPELINE_DB_PW=pipeline                # local pipeline-db root password
 PIPELINE_IMAGE=ghcr.io/mherman22/sedish-fhir-pipeline:main
 
-# mediator
-FHIR_ROUTER_IMAGE=ghcr.io/mherman22/fhir-router-mediator:main
+# mediator — defaults to fhir-router-mediator:local (built by ./build-custom-images.sh); override to pull
+# FHIR_ROUTER_IMAGE=fhir-router-mediator:local
 # OPENHIM_USER=consolidated  OPENHIM_PASS=consolidated   (optional, defaults shown)
 ```
 `FHIR_DB_*` and `SRC_*` are wired by the compose. **For DIRECT:** use the write-capable user, drop
@@ -70,9 +70,10 @@ FHIR_ROUTER_IMAGE=ghcr.io/mherman22/fhir-router-mediator:main
 
 ## 4. Make the images pullable
 
-GHCR (default): make both packages public once (GitHub → package → visibility → Public). Or build
-locally — `./build-custom-images.sh` builds `sedish-fhir-pipeline:local` + `fhir-router-mediator:local`;
-then set `PIPELINE_IMAGE`/`FHIR_ROUTER_IMAGE` to the `:local` tags.
+The **mediator** is built from in-repo source — `./build-custom-images.sh` produces
+`fhir-router-mediator:local` (the package default). The **pipeline** image is pulled from GHCR
+(`ghcr.io/mherman22/sedish-fhir-pipeline:main`); make that package public once, or build it locally
+(`sedish-fhir-pipeline:local`) and set `PIPELINE_IMAGE`.
 
 ## 5. Deploy
 

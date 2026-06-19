@@ -21,6 +21,12 @@ docker build \
     -f projects/lnsp-analytics/Dockerfile \
     projects/lnsp-analytics \
 
+# Build fhir-router-mediator image (OpenHIM mediator: Patient -> OpenCR, clinical -> SHR)
+docker build \
+    -t fhir-router-mediator:local \
+    -f projects/fhir-router-mediator/Dockerfile \
+    projects/fhir-router-mediator
+
 # Load Env vars from json file environmentVariables field
 filepath="./packages/emr-isanteplus/package-metadata.json"
 envs=$(jq -r '.environmentVariables | to_entries | .[] | "\(.key)=\(.value)"' $filepath)
