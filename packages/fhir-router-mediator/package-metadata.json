@@ -4,7 +4,7 @@
   "description": "OpenHIM mediator that routes a FHIR transaction Bundle by resource type: Patient -> OpenCR (identity), clinical -> SHR. Receives bundles on the /consolidated/fhir channel from the data pipeline and de-dupes entries. Source vendored in-repo at projects/fhir-router-mediator; FHIR_ROUTER_IMAGE defaults to the locally-built fhir-router-mediator:local (./build-custom-images.sh).",
   "type": "infrastructure",
   "version": "0.1.0",
-  "dependencies": ["interoperability-layer-openhim"],
+  "dependencies": [],
   "environmentVariables": {
     "FHIR_ROUTER_IMAGE": "fhir-router-mediator:local",
     "OPENHIM_USER": "consolidated",
