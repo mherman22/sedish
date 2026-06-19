@@ -27,7 +27,7 @@ The downstream half (loader → mediator → OpenCR/SHR) is identical in both mo
 
 **Images:**
 - pipeline → `github.com/mherman22/sedish-fhir-pipeline` → `ghcr.io/mherman22/sedish-fhir-pipeline:main`
-- mediator → vendored in-repo at `projects/fhir-router-mediator` → built locally as `fhir-router-mediator:local` by `./build-custom-images.sh`
+- mediator → `github.com/mherman22/fhir-router-mediator` → `ghcr.io/mherman22/fhir-router-mediator:main`
 
 ## 2. Prerequisites from CHARESS
 
@@ -59,10 +59,10 @@ CONSOLIDATED_PORT=3306
 CONSOLIDATED_USER=<read-only-user>
 CONSOLIDATED_PASS=<password>
 PIPELINE_DB_PW=pipeline                # local pipeline-db root password
-PIPELINE_IMAGE=ghcr.io/mherman22/sedish-fhir-pipeline:main
+PIPELINE_IMAGE=ghcr.io/digi-uw/sedish-fhir-pipeline:main
 
-# mediator — defaults to fhir-router-mediator:local (built by ./build-custom-images.sh); override to pull
-# FHIR_ROUTER_IMAGE=fhir-router-mediator:local
+# mediator — defaults to the published ghcr.io/mherman22/fhir-router-mediator:main (override only to pin/local)
+# FHIR_ROUTER_IMAGE=ghcr.io/mherman22/fhir-router-mediator:main
 # OPENHIM_USER=consolidated  OPENHIM_PASS=consolidated   (optional, defaults shown)
 ```
 `FHIR_DB_*` and `SRC_*` are wired by the compose. **For DIRECT:** use the write-capable user, drop
@@ -70,10 +70,11 @@ PIPELINE_IMAGE=ghcr.io/mherman22/sedish-fhir-pipeline:main
 
 ## 4. Make the images pullable
 
-The **mediator** is built from in-repo source — `./build-custom-images.sh` produces
-`fhir-router-mediator:local` (the package default). The **pipeline** image is pulled from GHCR
-(`ghcr.io/mherman22/sedish-fhir-pipeline:main`); make that package public once, or build it locally
-(`sedish-fhir-pipeline:local`) and set `PIPELINE_IMAGE`.
+Both images are pulled from GHCR — the **pipeline** from `ghcr.io/digi-uw/sedish-fhir-pipeline:main`
+and the **mediator** from `ghcr.io/mherman22/fhir-router-mediator:main` (each published by its own
+repo's CI). Make both GHCR packages public once so the swarm can pull them. To build either locally
+instead, `./build-custom-images.sh` clones its repo and builds the `:local` tag; set the matching
+`PIPELINE_IMAGE`/`FHIR_ROUTER_IMAGE`.
 
 ## 5. Deploy
 
