@@ -18,7 +18,8 @@ services:
       restart_policy: { condition: any }
 
   fhir-pipeline:
-    image: ${PIPELINE_IMAGE}
+    # public DIGI-UW GHCR package (CI publishes :main on push to main)
+    image: ${PIPELINE_IMAGE:-ghcr.io/digi-uw/sedish-fhir-pipeline:main}
     environment:
       FHIR_DB_HOST: pipeline-db                 # SQLMesh reads the synced source + writes fhir here
       FHIR_DB_PORT: "3306"
