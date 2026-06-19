@@ -4,6 +4,7 @@
     "hapiPassthrough": true,
     "mpiSystem": "http://sedish-haiti.org/fhir/source-key"
   },
+  "mpiLinkOnly": true,
   "mediator": {
     "api": {
       "username": "root@openhim.org",
