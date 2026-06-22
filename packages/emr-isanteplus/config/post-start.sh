@@ -7,11 +7,12 @@
 #   FACILITY_ID   - unique facility identifier (e.g., hueh, lapaix)
 #   FACILITY_NAME - human-readable facility name (e.g., HUEH, La Paix)
 #
-# Optional env vars:
-#   OPENHIM_DOMAIN - OpenHIM domain (default: openhimcore.sedishtest.live)
+# Leaf mode: the EMR does NOT write to the HIE. Ingestion is via CHARESS binlog CDC ->
+# consolidated_db -> pipeline -> OpenCR + SHR. We empty the write endpoints and keep only the
+# read-only PDQ search. See docs/emr-leaf-mode.md.
 
-DOMAIN="${OPENHIM_DOMAIN:-openhimcore.sedishtest.live}"
 FACILITY="${FACILITY_ID:-isanteplus}"
+CR_ENDPOINT="${CR_ENDPOINT:-http://openhim-core:5001/CR/fhir}"
 OPENMRS_USER="${OPENMRS_ADMIN_USER:-admin}"
 OPENMRS_PASS="${OPENMRS_ADMIN_PASS:-Admin123}"
 OPENMRS_URL="http://localhost:8080/openmrs"
@@ -47,18 +48,14 @@ set_property() {
   echo "[post-start] Set ${prop} = ${value}"
 }
 
-# XDS-Sender endpoints — point to the correct OpenHIM domain
-set_property "xdssender.exportCcdEndpoint" "https://${DOMAIN}/SHR/fhir"
-set_property "xdssender.mpiEndpoint" "https://${DOMAIN}/CR/fhir"
+# Disable all EMR -> HIE writes (empty endpoints override the module config.xml defaults).
+set_property "mpi-client.endpoint.cr.addr"  ""   # santedb-mpiclient PIX feed (patient/encounter save)
+set_property "mpi-client.endpoint.pix.addr" ""   # PIX cross-reference write-back (import path)
+set_property "xdssender.exportCcdEndpoint"  ""   # xds-sender CCD push to SHR (>= 2.6.1 skips cleanly)
 
-# Per-facility OpenHIM credentials — each facility has its own client ID
-# so OpenCR can identify the Point of Service
-set_property "xdssender.oshr.username" "${FACILITY}"
-set_property "xdssender.oshr.password" "${FACILITY}"
-
-# MPI client credentials — uses the same per-facility OpenHIM client
-# FhirMpiClientServiceImpl uses sendingApplication as username, authtoken as password
+# Keep read-only MPI search (PDQ) + its per-facility OpenHIM client credentials.
+set_property "mpi-client.endpoint.pdq.addr"      "${CR_ENDPOINT}"
 set_property "mpi-client.msg.sendingApplication" "${FACILITY}"
-set_property "mpi-client.security.authtoken" "${FACILITY}"
+set_property "mpi-client.security.authtoken"     "${FACILITY}"
 
 echo "[post-start] Configuration complete."
