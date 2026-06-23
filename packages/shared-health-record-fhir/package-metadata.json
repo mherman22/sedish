@@ -6,6 +6,6 @@
   "version": "0.0.1",
   "dependencies": [],
   "environmentVariables": {
-   
+    "SHR_IMAGE": "shared-health-record:local"
   }
 }

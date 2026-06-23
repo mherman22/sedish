@@ -2,9 +2,10 @@ version: '3.8'
 
 services:
   shr:
-    # develop is the active branch (consolidated IPS + link-only #144 merged there); CI publishes
-    # itechuw/shared-health-record:develop. :main lags and lacks that work.
-    image: ${SHR_IMAGE:-itechuw/shared-health-record:develop}
+    # Default: shared-health-record:local, built by build-custom-images.sh from
+    # DIGI-UW/shared-health-record @ develop (our fork; #144 consolidated IPS + link-only). Set
+    # SHR_IMAGE=itechuw/shared-health-record:develop to pull the upstream Docker Hub image instead.
+    image: ${SHR_IMAGE:-shared-health-record:local}
     networks:
       - openhim
       - shr
