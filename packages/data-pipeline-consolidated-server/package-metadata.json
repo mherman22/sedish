@@ -14,6 +14,11 @@
     "CONSOLIDATED_PASS": "",
     "FHIR_DB_NAME": "fhir",
     "OPENHIM_USER": "consolidated",
-    "OPENHIM_PASS": "consolidated"
+    "OPENHIM_PASS": "consolidated",
+    "NATIONAL_ID_SYSTEM": "",
+    "SOURCE_KEY_SYSTEM": "",
+    "MSPP_SITE_SYSTEM": "",
+    "DRUG_SYSTEM": "",
+    "PHONE_ATTRIBUTE_NAME": "Telephone Number"
   }
 }

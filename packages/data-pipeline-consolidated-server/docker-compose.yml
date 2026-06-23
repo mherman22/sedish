@@ -34,6 +34,15 @@ services:
       OPENHIM_PASS: ${OPENHIM_PASS:-consolidated}
       # Retract SHR clinical the source no longer produces (void/delete propagation). 0 = off.
       RECONCILE_RETRACT_EVERY: ${RECONCILE_RETRACT_EVERY:-3600}
+      # FHIR system URIs / attribute for the SQLMesh @VAR() mappings. CHARESS-provided; must match
+      # OpenCR config + the SHR app.mpiSystem. Set per deployment via .env; empty falls back to the
+      # canonical SEDISH value below (so an unset var never blanks the system). SQLMESH__VARIABLES__
+      # is SQLMesh's built-in override for the @VAR variables.
+      SQLMESH__VARIABLES__NATIONAL_ID_SYSTEM: ${NATIONAL_ID_SYSTEM:-http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code}
+      SQLMESH__VARIABLES__SOURCE_KEY_SYSTEM: ${SOURCE_KEY_SYSTEM:-http://sedish-haiti.org/fhir/source-key}
+      SQLMESH__VARIABLES__MSPP_SITE_SYSTEM: ${MSPP_SITE_SYSTEM:-http://sedish-haiti.org/fhir/mspp-site}
+      SQLMESH__VARIABLES__DRUG_SYSTEM: ${DRUG_SYSTEM:-http://isanteplus.org/openmrs/drug}
+      SQLMESH__VARIABLES__PHONE_ATTRIBUTE_NAME: ${PHONE_ATTRIBUTE_NAME:-Telephone Number}
     networks: [openhim, pipeline]
     depends_on: [pipeline-db]
     deploy:

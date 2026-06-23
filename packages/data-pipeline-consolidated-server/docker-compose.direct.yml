@@ -18,6 +18,13 @@ services:
       STATE_DB: ${FHIR_DB_NAME:-fhir}           # loader state lives inside fhir (no extra schema)
       OPENHIM_USER: ${OPENHIM_USER:-consolidated}
       OPENHIM_PASS: ${OPENHIM_PASS:-consolidated}
+      # FHIR system URIs / attribute for the SQLMesh @VAR() mappings (see docker-compose.yml).
+      # Empty falls back to the canonical SEDISH value so an unset var never blanks the system.
+      SQLMESH__VARIABLES__NATIONAL_ID_SYSTEM: ${NATIONAL_ID_SYSTEM:-http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code}
+      SQLMESH__VARIABLES__SOURCE_KEY_SYSTEM: ${SOURCE_KEY_SYSTEM:-http://sedish-haiti.org/fhir/source-key}
+      SQLMESH__VARIABLES__MSPP_SITE_SYSTEM: ${MSPP_SITE_SYSTEM:-http://sedish-haiti.org/fhir/mspp-site}
+      SQLMESH__VARIABLES__DRUG_SYSTEM: ${DRUG_SYSTEM:-http://isanteplus.org/openmrs/drug}
+      SQLMESH__VARIABLES__PHONE_ATTRIBUTE_NAME: ${PHONE_ATTRIBUTE_NAME:-Telephone Number}
     networks: [openhim]
     deploy:
       replicas: 1
