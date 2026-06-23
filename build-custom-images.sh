@@ -93,3 +93,15 @@ else
     || git clone --depth 1 https://github.com/mherman22/fhir-router-mediator.git "$ROUTER_SRC"
 fi
 docker build -t fhir-router-mediator:local "$ROUTER_SRC"
+
+# Build the Shared Health Record (SHR) image locally from its repo (private — clone via gh auth),
+# develop branch. Only needed when SHR_IMAGE=shared-health-record:local; the default pulls
+# itechuw/shared-health-record:develop from Docker Hub.
+SHR_SRC=".build/shared-health-record"
+if [ -d "$SHR_SRC/.git" ]; then
+  git -C "$SHR_SRC" fetch --depth 1 origin develop && git -C "$SHR_SRC" reset --hard origin/develop || true
+else
+  gh repo clone DIGI-UW/shared-health-record "$SHR_SRC" -- --depth 1 --branch develop \
+    || git clone --depth 1 --branch develop https://github.com/DIGI-UW/shared-health-record.git "$SHR_SRC"
+fi
+docker build -t shared-health-record:local "$SHR_SRC"
