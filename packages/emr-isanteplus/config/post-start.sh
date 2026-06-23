@@ -6,16 +6,8 @@
 # Required env vars:
 #   FACILITY_ID   - unique facility identifier (e.g., hueh, lapaix)
 #   FACILITY_NAME - human-readable facility name (e.g., HUEH, La Paix)
-#
-# HIE integration split by data type:
-#   - Demographics/identity -> the EMR feeds the Client Registry (OpenCR) directly in real time
-#     (mpi-client PIX), when it has internet, plus normal patient search (PDQ).
-#   - Clinical -> NOT pushed by the EMR; it flows through the consolidated server
-#     (CDC -> consolidated_db -> pipeline -> SHR), so the xds-sender CCD push stays off.
-# See docs/emr-leaf-mode.md.
 
 FACILITY="${FACILITY_ID:-isanteplus}"
-CR_ENDPOINT="${CR_ENDPOINT:-http://openhim-core:5001/CR/fhir}"
 OPENMRS_USER="${OPENMRS_ADMIN_USER:-admin}"
 OPENMRS_PASS="${OPENMRS_ADMIN_PASS:-Admin123}"
 OPENMRS_URL="http://localhost:8080/openmrs"
@@ -51,15 +43,9 @@ set_property() {
   echo "[post-start] Set ${prop} = ${value}"
 }
 
-# Demographics -> Client Registry: real-time PIX feed (on save) + patient search (PDQ).
-set_property "mpi-client.endpoint.cr.addr"       "${CR_ENDPOINT}"   # PIX feed gate + target
-set_property "mpi-client.endpoint.pix.addr"      "${CR_ENDPOINT}"
-set_property "mpi-client.endpoint.pdq.addr"      "${CR_ENDPOINT}"   # patient search
+# MPI client credentials — per-facility OpenHIM client, used for the demographics feed to OpenCR
+# and patient search. FhirMpiClientServiceImpl uses sendingApplication as username, authtoken as password.
 set_property "mpi-client.msg.sendingApplication" "${FACILITY}"
-set_property "mpi-client.security.authtoken"     "${FACILITY}"
-
-# Clinical goes via the consolidated server, NOT EMR -> SHR: keep the xds-sender CCD push off
-# (xds-sender >= 2.6.1 skips cleanly when this is empty).
-set_property "xdssender.exportCcdEndpoint" ""
+set_property "mpi-client.security.authtoken" "${FACILITY}"
 
 echo "[post-start] Configuration complete."
