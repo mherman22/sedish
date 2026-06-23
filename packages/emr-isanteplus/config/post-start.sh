@@ -7,9 +7,12 @@
 #   FACILITY_ID   - unique facility identifier (e.g., hueh, lapaix)
 #   FACILITY_NAME - human-readable facility name (e.g., HUEH, La Paix)
 #
-# Leaf mode: the EMR does NOT write to the HIE. Ingestion is via CHARESS binlog CDC ->
-# consolidated_db -> pipeline -> OpenCR + SHR. We empty the write endpoints and keep only the
-# read-only PDQ search. See docs/emr-leaf-mode.md.
+# HIE integration split by data type:
+#   - Demographics/identity -> the EMR feeds the Client Registry (OpenCR) directly in real time
+#     (mpi-client PIX), when it has internet, plus normal patient search (PDQ).
+#   - Clinical -> NOT pushed by the EMR; it flows through the consolidated server
+#     (CDC -> consolidated_db -> pipeline -> SHR), so the xds-sender CCD push stays off.
+# See docs/emr-leaf-mode.md.
 
 FACILITY="${FACILITY_ID:-isanteplus}"
 CR_ENDPOINT="${CR_ENDPOINT:-http://openhim-core:5001/CR/fhir}"
@@ -48,14 +51,15 @@ set_property() {
   echo "[post-start] Set ${prop} = ${value}"
 }
 
-# Disable all EMR -> HIE writes (empty endpoints override the module config.xml defaults).
-set_property "mpi-client.endpoint.cr.addr"  ""   # santedb-mpiclient PIX feed (patient/encounter save)
-set_property "mpi-client.endpoint.pix.addr" ""   # PIX cross-reference write-back (import path)
-set_property "xdssender.exportCcdEndpoint"  ""   # xds-sender CCD push to SHR (>= 2.6.1 skips cleanly)
-
-# Keep read-only MPI search (PDQ) + its per-facility OpenHIM client credentials.
-set_property "mpi-client.endpoint.pdq.addr"      "${CR_ENDPOINT}"
+# Demographics -> Client Registry: real-time PIX feed (on save) + patient search (PDQ).
+set_property "mpi-client.endpoint.cr.addr"       "${CR_ENDPOINT}"   # PIX feed gate + target
+set_property "mpi-client.endpoint.pix.addr"      "${CR_ENDPOINT}"
+set_property "mpi-client.endpoint.pdq.addr"      "${CR_ENDPOINT}"   # patient search
 set_property "mpi-client.msg.sendingApplication" "${FACILITY}"
 set_property "mpi-client.security.authtoken"     "${FACILITY}"
+
+# Clinical goes via the consolidated server, NOT EMR -> SHR: keep the xds-sender CCD push off
+# (xds-sender >= 2.6.1 skips cleanly when this is empty).
+set_property "xdssender.exportCcdEndpoint" ""
 
 echo "[post-start] Configuration complete."
