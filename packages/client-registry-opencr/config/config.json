@@ -120,7 +120,8 @@
         "http://isanteplus.hueh.com/openmrs/fhir2/3-isanteplus-id",
         "http://isanteplus.org/openmrs/fhir2/5-code-national",
         "http://isanteplus.org/openmrs/fhir2/6-code-st",
-        "http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code"
+        "http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code",
+        "http://sedish-haiti.org/fhir/source-key"
       ],
       "displayName": "Internal ID"
     },
