@@ -145,6 +145,12 @@
       ],
       "displayName": "ART Number"
     },
+    "codest": {
+      "uri": [
+        "http://isanteplus.org/openmrs/fhir2/4-code-st"
+      ],
+      "displayName": "Code ST"
+    },
     "codepc": {
       "uri": [
         "http://isanteplus.org/openmrs/fhir2/9-code-pc",
