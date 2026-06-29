@@ -3,7 +3,7 @@
     "source": "Aligned to the CHARESS/DIGI SEDISH identity spec (SEDISH-Architecture-Deduplication-Identity-EN.pdf), section 7 + the canonical decision-rules JSON. This is the authoritative 6-rule deterministic cascade.",
     "scoring": "Rule total = 1.0 baseline + sum of matching fields (exact = 1.0, fuzzy = measured similarity between threshold and 1.0). potentialMatchThreshold -> candidate surfaced for human review (CRUX); autoMatchThreshold -> auto-link. A score between the two is NEVER merged silently.",
     "asymmetry": "A false merge is the one intolerable error. Only the biometric rule and rules with FULL field agreement auto-link. The fully-fuzzy rule (rule 4) is deliberately calibrated so it can never reach its auto threshold -> always human review.",
-    "identifier_systems": "fhirpaths use the identifier systems / extensions the SEDISH pipeline ACTUALLY emits today (biometric = isanteplus 6-biometrics-national-reference-code; mother = HL7 patient-mothersMaidenName extension). The spec's proposed urn:sedish:ht:* URIs are a future canonicalization; if adopted, change them here AND in the pipeline + EMR feed together so all three stay consistent.",
+    "identifier_systems": "fhirpaths use only forms OpenCR's FHIRPath engine supports: simple paths and .where() (e.g. identifier.where(system=...).value, telecom.where(system='phone').value, contact.name.text). NOTE: OpenCR does NOT support the extension('url') function — do not reference an extension value from a rule (it raises 'Unsupported function for objects extension' and 500s the match). biometric uses the isanteplus 6-biometrics-national-reference-code system the pipeline emits; mother uses contact.name.text (the pipeline must emit the mother as a Patient.contact name for this rule to correlate). The spec's proposed urn:sedish:ht:* URIs are a future canonicalization; if adopted, change them here AND in the pipeline + EMR feed together.",
     "threshold": {
       "jaro-winkler": "0 = no match, 1 = exact match",
       "DateDamerau": "0 = no match, 1 = exact match (handles date typos)"
@@ -65,7 +65,7 @@
       "autoMatchThreshold": 5
     },
     {
-      "__description": "Rule 3 — Mother's-name correlator (SEDISH-specific): given + family + mother (fuzzy) + birthDate, NO gender, so a patient is still recognized when sex was mis-entered. Mother is read from the HL7 patient-mothersMaidenName extension the pipeline emits; junk mother values are blacklisted upstream so they cannot create false matches. Auto-links on full agreement.",
+      "__description": "Rule 3 — Mother's-name correlator (SEDISH-specific): given + family + mother (fuzzy) + birthDate, NO gender, so a patient is still recognized when sex was mis-entered. Mother is read from contact.name.text (the pipeline must emit the mother as a Patient.contact name — OpenCR's FHIRPath cannot evaluate extension(); a mother-in-extension form would error). Junk mother values are blacklisted upstream. Auto-links on full agreement.",
       "matchingType": "deterministic",
       "rule": "3",
       "fields": {
@@ -86,7 +86,7 @@
         "mother_given": {
           "algorithm": "jaro-winkler-similarity",
           "threshold": 0.8,
-          "fhirpath": "extension('http://hl7.org/fhir/StructureDefinition/patient-mothersMaidenName').value",
+          "fhirpath": "contact.name.text",
           "espath": "mother_given",
           "null_handling": "conservative",
           "null_handling_both": "conservative"
