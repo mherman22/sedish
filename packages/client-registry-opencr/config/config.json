@@ -118,11 +118,10 @@
         "http://isanteplus.hup.com/openmrs/fhir2/3-isanteplus-id",
         "http://isanteplus.npfs.com/openmrs/fhir2/3-isanteplus-id",
         "http://isanteplus.hueh.com/openmrs/fhir2/3-isanteplus-id",
-        "http://isanteplus.org/openmrs/fhir2/5-code-national",
         "http://isanteplus.org/openmrs/fhir2/6-code-st",
-        "http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code",
         "http://sedish-haiti.org/fhir/source-key"
       ],
+      "__comment_displayname": "internalid is the per-record registration handle; for SEDISH that is the source-key (present on 100% of records). 5-code-national and 6-biometrics were removed from this list so CRUX labels them via their own blocks (National ID / National FP ID) instead of all showing as 'Internal ID'. The decision rules match by fhirpath/system, so this display-only split does not affect matching.",
       "displayName": "Internal ID"
     },
     "nationalid": {
@@ -157,7 +156,7 @@
       "uri": [
         "http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code"
       ],
-      "displayName": "Biometrics National Reference Code"
+      "displayName": "National FP ID"
     },
     "brokenMatch": {
       "uri": "http://clientregistry.org/brokenMatch"
