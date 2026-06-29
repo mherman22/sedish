@@ -211,3 +211,16 @@ mpi-client.backgrounThreads        →  true
 ```
 
 **Prerequisite:** `xds-sender ≥ 2.6.1` installed on the instance.
+
+---
+
+## OpenCR decision rules (current — `hie`, aligned to the CHARESS identity spec §7)
+
+The 6-rule deterministic cascade OpenCR runs (`packages/client-registry-opencr/config/decisionRules.json`). Score = 1.0 baseline + 1.0 per matching field; `pot` = surfaced for human review, `auto` = auto-linked.
+
+1. **biometric (fpnid)** — `pot 2 / auto 2` — auto-links on the national biometric id (the strong key).
+2. **given + family + gender + birthDate** — `pot 4 / auto 5` — auto-merges on full demographic agreement.
+3. **given + family + mother + birthDate (no gender)** — `pot 4 / auto 5` — recognises a patient when gender was mis-entered, with the mother's name as the confirmer.
+4. **given + family (fuzzy) + gender + birthDate (fuzzy)** — `pot 5 / auto 6` — never auto-merges (unreachable auto); surfaces typo-level duplicates for review only.
+5. **given + family + gender (exact) + birthDate (fuzzy)** — `pot 4 / auto 5` — catches a DOB typo when the names match exactly.
+6. **phone + given + family + gender** — `pot 4 / auto 5` — for patients without a strong identifier.
