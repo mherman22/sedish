@@ -3,7 +3,7 @@ version: '3.9'
 services:
 
   opencr:
-    image: itechuw/opencr:bac5a14-2
+    image: itechuw/opencr:bac5a14-fixes
     build:
       context: .
       dockerfile: Dockerfile
