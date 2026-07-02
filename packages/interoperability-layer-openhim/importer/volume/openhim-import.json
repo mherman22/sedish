@@ -171,6 +171,26 @@
             "passwordAlgorithm": "sha512",
             "passwordHash": "936acdaeb595ede30d38925ed8ffe97ef6510f8546d39c05be41148ac7a1b11d01e78dc97caf35197b88395538b12840781ba3a4ca95dbd9920ae7916435c28b",
             "passwordSalt": "b22a9c5d7acb3f5268f38e4bc98b8c2d"
+        },
+        {
+            "roles": [
+                "emr"
+            ],
+            "clientID": "isanteplus-remote",
+            "name": "iSantePlus Remote (54.187.112.61)",
+            "passwordAlgorithm": "sha512",
+            "passwordHash": "3326034036d35ef5db5ffacc14d04032de833e0b80319bfe3f69699c74bb64b0bb55e415ca8dc65bcf17f7fb0f8577df0894f43af849b25fd43450ee4a11439b",
+            "passwordSalt": "59438b63f7f65b6a562cb74e0b7b185d"
+        },
+        {
+            "roles": [
+                "emr"
+            ],
+            "clientID": "openmrs",
+            "name": "OpenMRS",
+            "passwordAlgorithm": "sha512",
+            "passwordHash": "158050b31ee25b73267d93940f4d91f0669ff450a03e02946cb37c620a35390ec48e778641e5f977f5daf1e9c440d92589c453ae072f984f988979739478a670",
+            "passwordSalt": "388da9432fd24e60b65308fee249fa40"
         }
     ],
     "Channels": [
