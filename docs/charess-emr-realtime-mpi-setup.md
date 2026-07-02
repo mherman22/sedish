@@ -51,12 +51,18 @@ By default the fhir2 module emits patient identifiers with **no `system`**, and 
 those with *"Patient resource has no identifier for internalid"* (HTTP 500). You must populate
 the `fhir_patient_identifier_system` table so each identifier type carries the correct system URI.
 
-**First, verify the identifier types on the instance:**
-```sql
-SELECT patient_identifier_type_id, uuid, name FROM patient_identifier_type
-WHERE name IN ('iSantePlus ID','Code National','Code ST','Code PC',
-               'Biometrics National Reference Code');
+**First, verify the identifier types exist** — this needs no DB access; use the standard
+OpenMRS REST resource [`patientidentifiertype`](https://rest.openmrs.org/#patientidentifiertype):
+```bash
+curl -u '<OMRS_ADMIN>:<PW>' \
+  "http://<instance>/openmrs/ws/rest/v1/patientidentifiertype?v=custom:(uuid,name,required)"
 ```
+Confirm these five names are present: **iSantePlus ID**, **Biometrics National Reference Code**,
+**Code National**, **Code ST**, **Code PC**. (Verified present on the reference instance.)
+
+> Note: verification is REST; the seed below must still be SQL — the fhir2 module exposes
+> **no** REST/FHIR endpoint for `fhir_patient_identifier_system` (only the `Patient` resource
+> reflects it, via `identifier.system`).
 
 **Then seed the mappings** (idempotent — safe to re-run; matches by name):
 ```sql
