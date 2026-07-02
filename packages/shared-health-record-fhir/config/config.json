@@ -2,7 +2,8 @@
   "app": {
     "port": 3000,
     "hapiPassthrough": true,
-    "mpiSystem": "http://sedish-haiti.org/fhir/source-key"
+    "mpiSystem": "http://sedish-haiti.org/fhir/source-key",
+    "fpnidSystem": "http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code"
   },
   "mpiLinkOnly": true,
   "mediator": {
