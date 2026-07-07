@@ -137,10 +137,30 @@ Key gotchas (each has bitten us):
 - **`cr.addr` is only the on/off gate.** The patient is actually **POSTed to `pix.addr`** and
   searched via `pdq.addr` — all three must point at `/CR/fhir`. A default `pix.addr` of `127.0.0.1`
   is the classic "nothing reaches OpenHIM" cause.
+- **Explicitly set all three endpoints — do not rely on auto-create.** The module only writes a GP
+  row the first time its getter runs, and it does so with a **useless default** (`pdq.addr`/`pix.addr`
+  default to `127.0.0.1`). `pdq.addr` in particular is only created on the first MPI *search*, so on a
+  fresh instance the row is often **absent** — and because it doesn't exist yet, you can't edit it
+  from the Global Properties list; you must **create** it (see below). Set `cr.addr`, `pix.addr`, **and**
+  `pdq.addr` explicitly on every instance.
 - **`sendingApplication` = username, `authtoken` = password**, case-sensitive, must equal the
   OpenHIM client exactly.
 - Leave identity-domain props (`mpi-client.pid.local`, `.enterprise`, `.nhid`, `.correlation`,
   `.autoXref`) at their existing site values.
+
+**Creating a global property that doesn't exist yet** (e.g. `mpi-client.endpoint.pdq.addr` on a
+fresh instance — it won't appear in the list until first use):
+- **UI:** Administration → Advanced Settings (Manage Global Properties) → **Add New Global Property**
+  → Property `mpi-client.endpoint.pdq.addr`, Value `https://openhimcore.sedishtest.live/CR/fhir` → Save.
+- **REST** (note: to *create* a new GP you POST to the collection with `property`+`value`; POSTing to
+  `/systemsetting/<name>` only *updates* one that already exists):
+  ```bash
+  curl -u '<admin>:<pw>' -H 'Content-Type: application/json' -X POST \
+    "http://<instance>/openmrs/ws/rest/v1/systemsetting" \
+    -d '{"property":"mpi-client.endpoint.pdq.addr","value":"https://openhimcore.sedishtest.live/CR/fhir"}'
+  ```
+- **Verify:** `GET /openmrs/ws/rest/v1/systemsetting?q=mpi-client.endpoint&v=custom:(property,value)`
+  should list all three of `cr.addr`, `pix.addr`, `pdq.addr` with the OpenHIM `/CR/fhir` URL.
 
 ---
 
