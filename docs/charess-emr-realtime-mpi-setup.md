@@ -147,6 +147,64 @@ If step 3 shows the `POST /CR/fhir` at `200/201`, the real-time MPI feed is work
 
 ---
 
+## 6. Enable the Golden ID write-back (return path)
+
+The feed above **sends** demographics to OpenCR. This step makes OpenCR's deduplicated identity come
+**back**: after each patient save, the mpi-client resolves the patient's **golden record id** (the
+OpenCR CRUID) and stores it locally as an **`ECID`** identifier. That stored id is what the
+after-save result page and later cross-site retrieval use.
+
+**Requires the golden-id mpi-client build** (`santedb-mpiclient-1.1.9-SNAPSHOT.omod`, which merges
+PRs #67 + #68):
+<https://github.com/mherman22/openmrs-module-mpi-client/releases/download/mpi-client-golden-id-merged/santedb-mpiclient-1.1.9-SNAPSHOT.omod>
+Drop it into `modules/` (or upload via *Administration → Manage Modules*) and restart.
+
+Three things must be in place — all settable via REST (`<OMRS_ADMIN>:<PW>`):
+
+| Item | Required value | Notes |
+|---|---|---|
+| GP `mpi-client.pid.goldenRecordType` | `ECID` | Names the identifier type used to store the golden id. Auto-created (default `ECID`) when the #68 omod starts — verify, or create it. |
+| GP `mpi-client.goldenRecordUuid` | `5c827da5-4858-4f3d-a50c-62ece001efea` | The OpenCR golden-record **tag code**. Golden records are matched by comparing `meta.tag` to this value — **if empty, no golden id is ever resolved.** |
+| `ECID` patient identifier **type** | must exist | The GP above only *names* it; the type itself must exist or the save is silently skipped. |
+
+**Create / set the two global properties:**
+```bash
+# a) goldenRecordType = ECID   (POST to create; skip if it already exists)
+curl -u '<OMRS_ADMIN>:<PW>' -H 'Content-Type: application/json' \
+  -X POST "http://<HOST>:8080/openmrs/ws/rest/v1/systemsetting" \
+  -d '{"property":"mpi-client.pid.goldenRecordType","value":"ECID","description":"Identifier type used to store the OpenCR golden record id"}'
+
+# b) goldenRecordUuid = golden tag   (POST to the existing row's uuid to UPDATE its value)
+curl -u '<OMRS_ADMIN>:<PW>' -H 'Content-Type: application/json' \
+  -X POST "http://<HOST>:8080/openmrs/ws/rest/v1/systemsetting/<GP_UUID>" \
+  -d '{"value":"5c827da5-4858-4f3d-a50c-62ece001efea"}'
+```
+Get `<GP_UUID>` first:
+`curl -u '<OMRS_ADMIN>:<PW>' "http://<HOST>:8080/openmrs/ws/rest/v1/systemsetting?q=mpi-client.goldenRecordUuid&v=full"`
+
+**Create the `ECID` identifier type** (only if it doesn't already exist — most iSantePlus instances
+already have it):
+```bash
+curl -u '<OMRS_ADMIN>:<PW>' -H 'Content-Type: application/json' \
+  -X POST "http://<HOST>:8080/openmrs/ws/rest/v1/patientidentifiertype" \
+  -d '{"name":"ECID","description":"Enterprise/Client Registry golden record id (CRUID)","required":false}'
+```
+A `400 identifierType.duplicate.name` means it already exists — that's fine.
+
+**Verify the write-back:**
+1. Register (or edit + save) a test patient.
+2. Fetch the patient's identifiers and confirm an `ECID` appeared:
+   ```bash
+   curl -u '<OMRS_ADMIN>:<PW>' \
+     "http://<HOST>:8080/openmrs/ws/rest/v1/patient/<PATIENT_UUID>/identifier?v=default"
+   ```
+   An `ECID` identifier whose value is a UUID = the golden id was resolved and stored.
+
+> The write-back uses the CR/PIX path, **not** PDQ — so it works even on an instance with no
+> `pdq.addr` (there only the *search*/matches side is unavailable, not the golden-id write).
+
+---
+
 ## Troubleshooting (symptoms we have actually hit)
 
 | Symptom | Cause | Fix |
@@ -156,6 +214,13 @@ If step 3 shows the `POST /CR/fhir` at `200/201`, the real-time MPI feed is work
 | `POST /CR/fhir` → **401** | Auth mismatch | `sendingApplication`/`authtoken` don't match the OpenHIM client ID/password (case-sensitive). |
 | Request lands on the admin UI, returns HTML `200`, no transaction | Endpoint points at `openhimconsole.*` | Switch all endpoints to `openhimcore.*`. |
 | `UnknownHostException` / connection refused / timeout in the log | Instance can't reach the HIE | Open outbound 443 to `openhimcore.sedishtest.live`; confirm DNS resolves. |
+| Patient saves but **no `ECID`** appears | Golden id never resolved/stored | `mpi-client.goldenRecordUuid` empty (must be the golden tag), or the `ECID` identifier type is missing, or the running mpi-client omod predates PR #68. See §6. |
+| Log: *"Golden-record identifier type 'ECID' not found; cannot store golden id"* | `ECID` identifier type absent | Create it (§6). |
+
+**REST/auth quirks on some iSantePlus instances (observed on 44.247.29.106):**
+- Global properties are readable over **unauthenticated** REST — this exposes `mpi-client.security.authtoken`. Harden with CHARESS.
+- The `?q=...` and `?v=full` params misbehave on the `patientidentifiertype` and `module` endpoints (return empty/`0`). Use the **plain default listing** (`?v=default`, no `q`) and filter client-side.
+- OpenMRS **locks an account for ~5 min after repeated failed logins** — if a known-good password returns `authenticated=False`, stop, wait 5 minutes with **no** attempts, then try once.
 
 ---
 
