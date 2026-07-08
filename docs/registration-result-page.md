@@ -14,8 +14,9 @@ Where that note is the design, this is *what got built and how the page is laid 
 Before: after registering a patient, the registration app redirected straight back to a **blank
 create-patient form** — the clinician never saw the result of the national-registry (OpenCR) dedup.
 
-After: registration lands on a dedicated **result page** that shows the SEDISH **Golden ID** and the
-patient's **cross-facility record**, then offers a button to continue into the clinical dashboard.
+After: registration lands on a dedicated **result page** that shows the SEDISH **Golden ID**, the
+**matches the Client Registry holds for this person across sites**, and the patient's cross-facility
+clinical record, then offers a button to continue into the clinical dashboard.
 
 The lever is one config line — `afterCreatedUrl` in `isanteplus_registration_app.json`:
 
@@ -40,21 +41,28 @@ The lever is one config line — `afterCreatedUrl` in `isanteplus_registration_a
 │  │  <PatientName>  —  <sex> · <birthdate>                   │  │  ← identity line
 │  │  Identifiant SEDISH (Golden ID) : <ECID value>          │  │  ← golden id (or pending)
 │  └─────────────────────────────────────────────────────────┘  │
+│  ┌── info-section ─────────────────────────────────────────┐  │
+│  │  🔍  Correspondances dans le registre national          │  │  ← MPI matches header
+│  │ ─────────────────────────────────────────────────────── │  │
+│  │  Nom | Sexe | Date de naissance | Identifiants | Site   │  │  ← one row per match
+│  │  ...                                                     │  │     (or "aucune"/"indisponible")
+│  └─────────────────────────────────────────────────────────┘  │
 │                                                                │
-│  { registrationapp :: summary/continuityOfCare fragment }      │  ← cross-facility record
+│  { registrationapp :: summary/continuityOfCare fragment }      │  ← cross-facility clinical record
 │                                                                │
 │  [ Continuer vers le dossier du patient ]                      │  ← button → clinician dashboard
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Four parts, top to bottom:
+Five parts, top to bottom:
 
 | # | Part | Source | Notes |
 |---|------|--------|-------|
 | 1 | Header + patient identity | `patient` (page model) | name, sex, birthdate |
 | 2 | **Golden ID** | `ECID` identifier on the patient | written by `santedb-mpiclient` after OpenCR dedup |
-| 3 | Cross-facility record | `registrationapp` `summary/continuityOfCare` fragment | existing CHARESS fragment (CCD/IPS occurrences) |
-| 4 | Continue button | link to `coreapps/clinicianfacing/patient.page` | leaves the result page for the chart |
+| 3 | **Matches across sites** | `MpiClientService.searchPatient(patient, null)` | one row per record OpenCR holds for this person: name, sex, DOB, identifiers, site |
+| 4 | Cross-facility clinical record | `registrationapp` `summary/continuityOfCare` fragment | existing CHARESS fragment (CCD/IPS) |
+| 5 | Continue button | link to `coreapps/clinicianfacing/patient.page` | leaves the result page for the chart |
 
 ---
 
@@ -83,9 +91,39 @@ in flight) the page shows a pending message instead of failing.
 
 ---
 
+## 3b. Where the matches come from
+
+The **matches** section (part 3) asks the Client Registry, at page load, what records it holds for
+this person: `MpiClientService.searchPatient(patient, null)` → `List<MpiPatient>`. Each row is a
+`MpiPatient` (a `Patient` subclass carrying an extra `sourceLocation`) rendered as name, sex, DOB,
+identifiers, and site.
+
+Two implementation choices worth noting:
+
+- **No hard dependency on mpi-client.** The controller resolves the service *reflectively* through
+  OpenMRS' cross-module class loader (`Context.loadClass(...)` → `Context.getService(...)`), so this
+  UI module carries no build/runtime dependency on the mpi-client module. If mpi-client is not
+  installed, the section shows *"Recherche indisponible"* rather than the module failing to start.
+- **`null` second argument is safe** thanks to the mpi-client NPE guard (PR #67): `searchPatient`
+  tolerates a null `otherDataPoints` map.
+
+Three render states:
+
+| State | Trigger | Shown |
+|-------|---------|-------|
+| Rows | MPI returned ≥1 match | the matches table |
+| Empty | MPI reachable, 0 matches | *"Aucune correspondance trouvée dans le registre."* |
+| Unavailable | offline / PDQ not configured / mpi-client absent | *"Recherche indisponible (hors-ligne ou registre non joignable)."* |
+
+> **Score not shown.** OpenCR computes a match score, but the mpi-client `MpiPatient` model does not
+> currently carry it, so the table omits it. Surfacing the score would need a small model extension in
+> the mpi-client module.
+
+---
+
 ## 4. Example — rendered
 
-### 4a. Online, patient deduplicated (Golden ID present)
+### 4a. Online, patient deduplicated (Golden ID + matches present)
 
 ```
 Résultat du registre national (SEDISH)
@@ -93,14 +131,19 @@ Résultat du registre national (SEDISH)
 Jean Baptiste Pierre  —  M · 12 Mar 1988
 Identifiant SEDISH (Golden ID) : 5c8f2a41-9e77-4d3b-b0aa-1c2d3e4f5a6b
 
-Dossier inter-sites
-  • Hôpital St-Nicolas (Saint-Marc)   ID local: 100427   score 9.0
-  • Clinique Bon Sauveur (Cange)      ID local: 55231    score 8.0
+Correspondances dans le registre national
+────────────────────────────────────────
+Nom                   | Sexe | Date de naissance | Identifiants                      | Site
+Jean Baptiste Pierre  | M    | 12 Mar 1988       | iSantePlus ID: 100427             | Hôpital St-Nicolas (Saint-Marc)
+Jean B. Pierre        | M    | 12 Mar 1988       | iSantePlus ID: 55231             | Clinique Bon Sauveur (Cange)
+
+Dossier inter-sites (continuityOfCare)
+  ...
 
 [ Continuer vers le dossier du patient ]
 ```
 
-### 4b. Offline / sync in flight (Golden ID pending)
+### 4b. Offline / sync in flight (Golden ID pending, MPI unreachable)
 
 ```
 Résultat du registre national (SEDISH)
@@ -108,8 +151,9 @@ Résultat du registre national (SEDISH)
 Jean Baptiste Pierre  —  M · 12 Mar 1988
 Identifiant SEDISH en attente (hors-ligne ou synchronisation en cours).
 
-Dossier inter-sites
-  (aucune occurrence disponible)
+Correspondances dans le registre national
+────────────────────────────────────────
+Recherche indisponible (hors-ligne ou registre non joignable).
 
 [ Continuer vers le dossier du patient ]
 ```
