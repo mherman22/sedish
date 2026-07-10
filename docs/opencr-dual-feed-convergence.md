@@ -53,7 +53,7 @@ labeled. De-duplicate at **read time** (e.g. `getGoldenRecordOccurrences` collap
 share the SEDISH source-key or the same local id) so the UI shows one row per real record.
 *Pro:* no new write-path work. *Con:* OpenCR physically stores two source records per person.
 
-**Option B — Single feed per site (cleanest data).**
+**Option B — Single feed per site (REJECTED — see requirement below).**
 A site that is on the real-time feed is **excluded from the ETL push** (and vice-versa). One source
 per registration, no reconciliation needed. This is the cutover posture in
 [`emr-cutover-to-consolidated.md`](emr-cutover-to-consolidated.md).
@@ -68,16 +68,45 @@ single source regardless of which path wrote last.
 know `mspp_code` or the consolidated `patient_id`, so it can't build the source-key today — needs a
 way to derive/carry it (config for `mspp_code` + a rule for the local id). Non-trivial.
 
+## Hard requirement: every site on BOTH feeds
+
+CHARESS requirement: **all sites run both feeds simultaneously.** The real-time feed carries the
+patient when the site has internet/power; the consolidated batch feed is the **catch-up path** for
+when it doesn't (offline registration is delivered later when the consolidated server next syncs).
+Neither path can be dropped per site — so **Option B is rejected**.
+
+Given both feeds always run, the normal (online) case produces the duplicate every time, so
+convergence is mandatory: **Option C is the target.**
+
 ## Recommendation
 
-- **Now:** merge PR #30 (identifier mislabeling) — it is strictly correct regardless of A/B/C and makes
-  the golden clean.
-- **Then pick the posture per site:**
-  - For sites **fully on the real-time feed**, prefer **Option B** (drop them from the ETL push) — one
-    source, simplest.
-  - Where the ETL must remain the reconciler (sites not yet real-time, or backfill), **Option A** is
-    acceptable now that identifiers match; revisit **Option C** only if a single physical source per
-    person becomes a hard requirement.
+- **Now:** merge PR #30 (identifier mislabeling) — strictly correct and a prerequisite for C (both
+  feeds must use the same systems before any key-based merge is meaningful).
+- **Then implement Option C** — the real-time feed must also carry and **upsert on** the SEDISH
+  source-key, so the two feeds resolve to one source record regardless of which arrives first/last.
+
+### What Option C requires
+1. **Real-time feed emits the source-key.** `santedb-mpiclient` must add an identifier
+   `system = http://sedish-haiti.org/fhir/source-key`, `value = <mspp_code>-<patient_id>` — the *same*
+   value the ETL builds. The site must be configured with its **`mspp_code`**, and use the OpenMRS
+   **`patient_id`** as the second part.
+2. **Upsert, not create.** The feed must do a FHIR conditional update
+   (`PUT /Patient?identifier=source-key|<value>`) instead of a blind create, so the second feed updates
+   the first's record. The ETL already does this; `mpi-client` currently does a `create()` (POST) and
+   would need to change.
+
+### Two things to confirm before building C
+- **patient_id parity** — the ETL's source-key uses the consolidated DB's `patient_id`; the real-time
+  feed would use the site's OpenMRS `patient.patient_id`. These must be the **same number** for the
+  keys to match. Confirm the consolidated DB preserves the source EMR's `patient_id` (per the CHARESS
+  spec it is the idempotency key, so it should — but verify against a real record).
+- **OpenCR upsert-on-identifier** — confirm OpenCR honors FHIR conditional update by the source-key
+  (updates the existing source rather than creating a second) **across different `clientid`s**. If it
+  does not, C needs an OpenCR matching/config change (treat source-key as a deterministic identity),
+  not just a client change.
+
+Until C ships, **Option A** is the interim state (two sources → one golden, identifiers now correct
+after PR #30) — acceptable for identity, but the physical duplicate remains.
 
 ## Cross-references
 - Identifier fix: `sedish-fhir-pipeline` PR #30 (map by type name).
