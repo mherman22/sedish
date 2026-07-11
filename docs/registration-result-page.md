@@ -1,31 +1,33 @@
 # After-save registration result page — structure & example
 
-**Module:** `isanteplus-openmrs_15Dec2025` (the custom iSantePlus UI module).
-**PR:** [charess-org/iSantePlus #10](https://github.com/charess-org/iSantePlus/pull/10).
-**Omod:** <https://github.com/mherman22/iSantePlus/releases/download/registration-result-page/isanteplus-1.3.1-golden-result.omod>
+**Module:** `isanteplus-openmrs_15Dec2025` (the result page) + `registration` (the flow).
+**PRs:** [#10](https://github.com/charess-org/iSantePlus/pull/10) (result page),
+[#12](https://github.com/charess-org/iSantePlus/pull/12) (registration flow: guards + redirect),
+[#13](https://github.com/charess-org/iSantePlus/pull/13) (dashboard button).
+**Omods:** `isanteplus-1.3.1.omod`, `registration-1.0.0-SNAPSHOT.omod`
+(<https://github.com/mherman22/iSantePlus/releases/tag/registration-result-page>).
 
 This is the concrete implementation of §4 of [`cr-return-to-emr-design.md`](cr-return-to-emr-design.md).
-Where that note is the design, this is *what got built and how the page is laid out*.
 
 ---
 
-## 1. Why it exists
+## 1. What it is & how it's reached
 
-Before: after registering a patient, the registration app redirected straight back to a **blank
-create-patient form** — the clinician never saw the result of the national-registry (OpenCR) dedup.
+A dedicated **result page** (`isanteplus/registrationResult.page?patientId=…`) that queries OpenCR
+live and shows the SEDISH **Golden ID** and the **cross-facility occurrences the Client Registry holds
+for the patient** (via `MpiClientService.getGoldenRecordOccurrences`).
 
-After: registration lands on a dedicated **result page** that shows the SEDISH **Golden ID**, the
-**matches the Client Registry holds for this person across sites**, and the patient's cross-facility
-clinical record, then offers a button to continue into the clinical dashboard.
+**How it's reached — on demand, from the patient dashboard.** A **"Registre national (SEDISH)"**
+action button on the clinician-facing patient dashboard (`patientDashboard.overallActions` extension in
+`isantepluspatientdashboard_extension.json`) opens the page for the current patient. So a clinician can
+re-query the registry from any chart, anytime.
 
-The lever is one config line — `afterCreatedUrl` in `isanteplus_registration_app.json`:
-
-```json
-"afterCreatedUrl": "/isanteplus/registrationResult.page?patientId={{patientId}}"
-```
-
-> Only fires when registration runs through **registrationapp** (which honors `afterCreatedUrl`),
-> not the legacy registration module. Confirm the active flow at test time.
+**Registration flow (important correction).** Patient registration on these instances runs through the
+custom **`registration`** module (`registration/register.page`), **not** `registrationapp` — so the
+`afterCreatedUrl` config is irrelevant here. After a successful save the `registration` module now
+redirects to the **clinician-facing patient dashboard** (`coreapps/clinicianfacing/patient.page`), not
+to the result page. (Earlier the redirect went straight to the result page; that was moved to the
+on-demand button so registration lands on the chart.)
 
 ---
 
@@ -160,13 +162,17 @@ Recherche indisponible (hors-ligne ou registre non joignable).
 
 ---
 
-## 5. Files (PR #10)
+## 5. Files
 
 ```
-isanteplus-openmrs_15Dec2025/omod/src/main/
-├── java/.../isanteplus/page/controller/RegistrationResultPageController.java   (new)
-├── webapp/pages/registrationResult.gsp                                         (new)
-└── resources/apps/isanteplus_registration_app.json    (afterCreatedUrl → result page)
+isanteplus-openmrs_15Dec2025/omod/src/main/            (result page + dashboard button)
+├── java/.../isanteplus/page/controller/RegistrationResultPageController.java   (new — PR #10)
+├── webapp/pages/registrationResult.gsp                                        (new — PR #10)
+└── resources/apps/isantepluspatientdashboard_extension.json  (dashboard button — PR #13)
+
+registration/omod/src/main/                            (registration flow)
+├── java/.../registration/page/controller/RegisterPageController.java   (redirect → dashboard, guards — PR #12)
+└── webapp/pages/register.gsp                                           (date-step fix, no-dup guard, redirect — PR #12)
 ```
 
 The `.gsp` uses **French string literals** (not `ui.message` keys) so it renders correctly without
