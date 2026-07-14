@@ -45,7 +45,7 @@
           "password": ""
         }
       ],
-      "priority": 1
+      "priority": 2
     },
     {
       "methods": [
@@ -89,51 +89,7 @@
       ],
       "alerts": [],
       "rewriteUrlsConfig": [],
-      "priority": 2
-    },
-    {
-      "methods": [
-        "GET",
-        "POST",
-        "PUT"
-      ],
-      "type": "http",
-      "whitelist": [],
-      "authType": "private",
-      "matchContentTypes": [],
-      "properties": [],
-      "txViewAcl": [],
-      "txViewFullAcl": [],
-      "txRerunAcl": [],
-      "status": "enabled",
-      "rewriteUrls": false,
-      "addAutoRewriteRules": true,
-      "autoRetryEnabled": false,
-      "autoRetryPeriodMinutes": 60,
-      "name": "SHR - Laboratory",
-      "requestBody": true,
-      "responseBody": true,
-      "description": "Get or Update the Laboratory Order Bundle in the SHR",
-      "urlPattern": "^/SHR/fhir/ips.*$",
-      "routes": [
-        {
-          "type": "http",
-          "status": "enabled",
-          "forwardAuthHeader": false,
-          "name": "SHR - Laboratory",
-          "secured": false,
-          "host": "shr",
-          "port": 3000,
-          "path": "",
-          "pathTransform": "s/SHR\\/fhir\\/ips/ips/g",
-          "primary": true,
-          "username": "",
-          "password": ""
-        }
-      ],
-      "alerts": [],
-      "rewriteUrlsConfig": [],
-      "priority": 3
+      "priority": 1
     }
   ],
   "endpoints": [
