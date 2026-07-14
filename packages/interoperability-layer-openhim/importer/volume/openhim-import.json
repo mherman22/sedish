@@ -776,7 +776,8 @@
             "requestBody": false,
             "responseBody": true,
             "allow": [
-                "emr"
+                "emr",
+                "shr"
             ],
             "whitelist": [],
             "authType": "private",
