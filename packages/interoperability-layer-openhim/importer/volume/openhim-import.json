@@ -191,6 +191,16 @@
             "passwordAlgorithm": "sha512",
             "passwordHash": "158050b31ee25b73267d93940f4d91f0669ff450a03e02946cb37c620a35390ec48e778641e5f977f5daf1e9c440d92589c453ae072f984f988979739478a670",
             "passwordSalt": "388da9432fd24e60b65308fee249fa40"
+        },
+        {
+            "roles": [
+                "emr"
+            ],
+            "clientID": "ips",
+            "name": "IPS",
+            "passwordAlgorithm": "sha512",
+            "passwordHash": "05f47838690b663a52b0228b5afc40ac18ddd0d2441153996e8be8ae0c7e45792bc2f5287377741a84d31a02aef7af6d48af2a11010427f16dc874aa04059d05",
+            "passwordSalt": "106a73198482045721baf40c6aa86e18"
         }
     ],
     "Channels": [
