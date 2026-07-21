@@ -1,18 +1,14 @@
 {
   "__comments": {
-    "source": "Aligned to the CHARESS/DIGI SEDISH identity spec (SEDISH-Architecture-Deduplication-Identity-EN.pdf), section 7 + the canonical decision-rules JSON. This is the authoritative 6-rule deterministic cascade.",
-    "scoring": "Rule total = 1.0 baseline + sum of matching fields (exact = 1.0, fuzzy = measured similarity between threshold and 1.0). potentialMatchThreshold -> candidate surfaced for human review (CRUX); autoMatchThreshold -> auto-link. A score between the two is NEVER merged silently.",
-    "asymmetry": "A false merge is the one intolerable error. Only the biometric rule and rules with FULL field agreement auto-link. The fully-fuzzy rule (rule 4) is deliberately calibrated so it can never reach its auto threshold -> always human review.",
-    "identifier_systems": "fhirpaths use only forms OpenCR's FHIRPath engine supports: simple paths and .where() (e.g. identifier.where(system=...).value, telecom.where(system='phone').value, contact.name.text). NOTE: OpenCR does NOT support the extension('url') function — do not reference an extension value from a rule (it raises 'Unsupported function for objects extension' and 500s the match). biometric uses the isanteplus 6-biometrics-national-reference-code system the pipeline emits; mother uses contact.name.text (the pipeline must emit the mother as a Patient.contact name for this rule to correlate). The spec's proposed urn:sedish:ht:* URIs are a future canonicalization; if adopted, change them here AND in the pipeline + EMR feed together.",
-    "threshold": {
-      "jaro-winkler": "0 = no match, 1 = exact match",
-      "DateDamerau": "0 = no match, 1 = exact match (handles date typos)"
-    },
-    "null_handling": "conservative everywhere: an absent field is NOT a match, so missing data can never, on its own, produce a link."
+    "scoring": "Score = 1.0 + sum of matching fields (exact=1.0, fuzzy=measured similarity). >= potentialMatchThreshold -> human review (CRUX); >= autoMatchThreshold -> auto-link. Scores between the two are never merged silently.",
+    "asymmetry": "False merges are the intolerable error. Auto-link only on biometric match or full exact agreement; any fuzziness routes to review.",
+    "opencr_constraints": "fhirpaths must be simple paths or .where() only. Do NOT use extension('url') — it 500s the match. mother uses contact.name.text (pipeline must emit mother as a Patient.contact name). Junk mother/phone values blacklisted upstream.",
+    "null_handling": "conservative everywhere: absent field never counts as a match.",
+    "consolidation": "Reduced from 6 rules. Old Rule 2 (exact-DOB demographics) was subsumed by the fuzzy-DOB demographics rule (same auto-link set, superset review set). Old Rule 4 (fully-fuzzy) only reached its threshold at exact agreement, which demographics already auto-links, so it surfaced nothing distinct. Remaining four signatures are irreducible."
   },
   "rules": [
     {
-      "__description": "Rule 1 — Biometric (fpnid): the strong, deterministic SEDISH identifier, pre-deduplicated by M2SYS. Auto-links on a true national-biometric-id match.",
+      "__description": "Biometric (fpnid): strong SEDISH identifier, pre-deduplicated by M2SYS. Auto-links on ID match.",
       "matchingType": "deterministic",
       "rule": "1",
       "fields": {
@@ -28,7 +24,7 @@
       "autoMatchThreshold": 2
     },
     {
-      "__description": "Rule 2 — Exact demographics: given + family + gender + birthDate. Auto-links on full agreement.",
+      "__description": "Demographics: given + family + gender exact, birthDate fuzzy (DateDamerau, catches DOB typos). Auto-links only on exact date. Subsumes old Rules 2, 4, 5.",
       "matchingType": "deterministic",
       "rule": "2",
       "fields": {
@@ -54,7 +50,8 @@
           "null_handling_both": "conservative"
         },
         "birthDate": {
-          "algorithm": "exact",
+          "algorithm": "DateDamerau",
+          "threshold": 0.8,
           "fhirpath": "birthDate",
           "espath": "birthDate",
           "null_handling": "conservative",
@@ -65,7 +62,7 @@
       "autoMatchThreshold": 5
     },
     {
-      "__description": "Rule 3 — Mother's-name correlator (SEDISH-specific): given + family + mother (fuzzy) + birthDate, NO gender, so a patient is still recognized when sex was mis-entered. Mother is read from contact.name.text (the pipeline must emit the mother as a Patient.contact name — OpenCR's FHIRPath cannot evaluate extension(); a mother-in-extension form would error). Junk mother values are blacklisted upstream. Auto-links on full agreement.",
+      "__description": "Mother correlator: given + family + mother (fuzzy) + birthDate, NO gender (survives mis-entered sex). Auto-links on full agreement.",
       "matchingType": "deterministic",
       "rule": "3",
       "fields": {
@@ -103,87 +100,9 @@
       "autoMatchThreshold": 5
     },
     {
-      "__description": "Rule 4 — Fully fuzzy demographics: jaro-winkler names + exact gender + DateDamerau birthDate (typos). DELIBERATELY can never reach its auto threshold (max attainable score 5.0 < auto 6) -> always routed to human review, never auto-merged.",
+      "__description": "Phone + demographics: phone + given + family + gender, for patients without a strong identifier. Auto-links on full agreement.",
       "matchingType": "deterministic",
       "rule": "4",
-      "fields": {
-        "family": {
-          "algorithm": "jaro-winkler-similarity",
-          "threshold": 0.8,
-          "fhirpath": "name.where(use='official').family",
-          "espath": "family",
-          "null_handling": "conservative",
-          "null_handling_both": "conservative"
-        },
-        "given": {
-          "algorithm": "jaro-winkler-similarity",
-          "threshold": 0.8,
-          "fhirpath": "name.where(use='official').given",
-          "espath": "given",
-          "null_handling": "conservative",
-          "null_handling_both": "conservative"
-        },
-        "gender": {
-          "algorithm": "exact",
-          "fhirpath": "gender",
-          "espath": "gender",
-          "null_handling": "conservative",
-          "null_handling_both": "conservative"
-        },
-        "birthDate": {
-          "algorithm": "DateDamerau",
-          "threshold": 0.8,
-          "fhirpath": "birthDate",
-          "espath": "birthDate",
-          "null_handling": "conservative",
-          "null_handling_both": "conservative"
-        }
-      },
-      "potentialMatchThreshold": 5,
-      "autoMatchThreshold": 6
-    },
-    {
-      "__description": "Rule 5 — Exact names + fuzzy date: given + family + gender exact, birthDate via DateDamerau (catches DOB typos with exact names). Auto-links on agreement.",
-      "matchingType": "deterministic",
-      "rule": "5",
-      "fields": {
-        "given": {
-          "algorithm": "exact",
-          "fhirpath": "name.where(use='official').given",
-          "espath": "given",
-          "null_handling": "conservative",
-          "null_handling_both": "conservative"
-        },
-        "family": {
-          "algorithm": "exact",
-          "fhirpath": "name.where(use='official').family",
-          "espath": "family",
-          "null_handling": "conservative",
-          "null_handling_both": "conservative"
-        },
-        "gender": {
-          "algorithm": "exact",
-          "fhirpath": "gender",
-          "espath": "gender",
-          "null_handling": "conservative",
-          "null_handling_both": "conservative"
-        },
-        "birthDate": {
-          "algorithm": "DateDamerau",
-          "threshold": 0.8,
-          "fhirpath": "birthDate",
-          "espath": "birthDate",
-          "null_handling": "conservative",
-          "null_handling_both": "conservative"
-        }
-      },
-      "potentialMatchThreshold": 4,
-      "autoMatchThreshold": 5
-    },
-    {
-      "__description": "Rule 6 — Phone + demographics: phone + given + family + gender, for patients without a strong identifier. Auto-links on full agreement. Junk phone values are blacklisted upstream.",
-      "matchingType": "deterministic",
-      "rule": "6",
       "fields": {
         "phone": {
           "algorithm": "exact",

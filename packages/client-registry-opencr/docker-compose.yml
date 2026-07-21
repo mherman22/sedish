@@ -11,14 +11,28 @@ services:
     environment:
       - NODE_ENV=docker
       - HAPI_FHIR_URL=http://opencr-fhir:8080/fhir/metadata
+    # itechuw/opencr:main (DIGI-UW/client-registry-fork) writes back to both
+    # resources/Relationships/PatientRelationship.json and config/config_docker.json on startup, so
+    # neither can be a read-only swarm-config mount (EROFS crash). It also loads config from
+    # config_${NODE_ENV}.json = config_docker.json (not config_ro.json). Stage both files read-only
+    # then seed them into their writable image paths in the entrypoint before launching the app.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        mkdir -p /src/resources/Relationships &&
+        cp /run/opencr/PatientRelationship.json /src/resources/Relationships/PatientRelationship.json &&
+        cp /run/opencr/config_docker.json /src/server/config/config_docker.json &&
+        exec dockerize -wait-retry-interval 5s -timeout 60s -wait "$$HAPI_FHIR_URL" node lib/app.js
+    working_dir: /src/server
     configs:
-      - target: /src/server/config/config_ro.json
+      - target: /run/opencr/config_docker.json
         source: config.json
       - target: /src/server/config/mediator.json
         source: mediator.json
       - target: /src/server/config/decisionRules.json
         source: decisionRules.json
-      - target: /src/resources/Relationships/PatientRelationship.json
+      - target: /run/opencr/PatientRelationship.json
         source: PatientRelationship.json
     networks:
       - reverse-proxy
