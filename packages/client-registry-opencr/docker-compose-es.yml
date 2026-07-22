@@ -2,7 +2,14 @@ version: "3.9"
 
 services:
   opencr-es:
-    image: intrahealth/elasticsearch:latest
+    # Self-built (docker/opencr-es/Dockerfile): ES 7.9.1 + string-similarity-scoring v0.0.6, the plugin
+    # that executes the decision-rule algorithms. Built as opencr-es:local by build-custom-images.sh —
+    # replaces the floating, unpinned intrahealth/elasticsearch:latest so the matching stack is
+    # reproducible and can't be swapped out from under the Client Registry.
+    image: opencr-es:local
+    build:
+      context: ./docker/opencr-es
+      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       - node.name=es01

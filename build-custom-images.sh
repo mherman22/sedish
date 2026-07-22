@@ -72,6 +72,12 @@ docker build -t isanteplus-mysql:5.7.44 ./projects/isanteplus-db
 # Build custom Elasticsearch image with phonetic + string-similarity-scoring plugins
 docker build -t docker.elastic.co/elasticsearch/elasticsearch:local ./packages/analytics-datastore-elastic-search
 
+# Build the OpenCR Client Registry Elasticsearch image: ES 7.9.1 + string-similarity-scoring v0.0.6
+# (the plugin that EXECUTES the decision-rule matching algorithms). Vendored plugin zip, so it's
+# reproducible and replaces the floating intrahealth/elasticsearch:latest. Referenced as
+# opencr-es:local by packages/client-registry-opencr/docker-compose-es.yml.
+docker build -t opencr-es:local ./packages/client-registry-opencr/docker/opencr-es
+
 
 # Build the SEDISH FHIR pipeline image locally from its (public) repo.
 # The pipeline lives in its own repo (not vendored here); clone/refresh then build.
