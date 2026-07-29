@@ -2,7 +2,7 @@
   "__comments": {
     "scoring": "Score = 1.0 + sum of matching fields (exact=1.0, fuzzy=measured similarity). >= potentialMatchThreshold -> human review (CRUX); >= autoMatchThreshold -> auto-link. Scores between the two are never merged silently.",
     "asymmetry": "False merges are the intolerable error. Auto-link only on biometric match or full exact agreement; any fuzziness routes to review.",
-    "opencr_constraints": "fhirpaths must be simple paths or .where() only. Do NOT use extension('url') \u2014 it 500s the match. mother uses contact.name.text (pipeline must emit mother as a Patient.contact name). Junk mother/phone values blacklisted upstream.",
+    "opencr_constraints": "fhirpaths must be simple paths or .where() only. Do NOT use extension('url') — it 500s the match. mother uses contact.name.text (pipeline must emit mother as a Patient.contact name). Junk mother/phone values blacklisted upstream.",
     "null_handling": "conservative everywhere: absent field never counts as a match.",
     "consolidation": "Reduced from 6 rules. Old Rule 2 (exact-DOB demographics) was subsumed by the fuzzy-DOB demographics rule (same auto-link set, superset review set). Old Rule 4 (fully-fuzzy) only reached its threshold at exact agreement, which demographics already auto-links, so it surfaced nothing distinct. Remaining four signatures are irreducible."
   },
@@ -16,6 +16,20 @@
           "algorithm": "exact",
           "fhirpath": "identifier.where(system='http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code').value",
           "espath": "biometric",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "given": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').given",
+          "espath": "given",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "family": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').family",
+          "espath": "family",
           "null_handling": "conservative",
           "null_handling_both": "conservative"
         }
