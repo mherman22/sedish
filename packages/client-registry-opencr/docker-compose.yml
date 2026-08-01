@@ -4,7 +4,7 @@ services:
 
   opencr:
     # itechuw/opencr:main — built from https://github.com/DIGI-UW/client-registry-fork
-    image: itechuw/opencr:main
+    image: itechuw/opencr:develop
     build:
       context: .
       dockerfile: Dockerfile

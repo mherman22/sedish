@@ -6,7 +6,7 @@ services:
     # that executes the decision-rule algorithms. Built as opencr-es:local by build-custom-images.sh —
     # replaces the floating, unpinned intrahealth/elasticsearch:latest so the matching stack is
     # reproducible and can't be swapped out from under the Client Registry.
-    image: opencr-es:local
+    image: itechuw/elasticsearch-opencr:develop
     build:
       context: ./docker/opencr-es
       dockerfile: Dockerfile
