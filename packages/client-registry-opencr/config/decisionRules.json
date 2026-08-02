@@ -1,6 +1,6 @@
 {
   "__comments": {
-    "scoring": "Score = 1.0 + sum of matching fields (exact=1.0, fuzzy=measured similarity). >= potentialMatchThreshold -> human review (CRUX); >= autoMatchThreshold -> auto-link. Scores between the two are never merged silently.",
+    "scoring": "boost_mode=replace: score = SUM of per-field similarities only (exact=1.0, fuzzy=measured). autoMatchThreshold = every field of the rule at/above its threshold; potential just below routes to CRUX review. BM25 relevance no longer leaks into the score (it silently bypassed the given-name requirement before).",
     "asymmetry": "False merges are the intolerable error. Auto-link only on biometric match or full exact agreement; any fuzziness routes to review.",
     "opencr_constraints": "fhirpaths must be simple paths or .where() only. Do NOT use extension('url') — it 500s the match. mother uses contact.name.text (pipeline must emit mother as a Patient.contact name). Junk mother/phone values blacklisted upstream.",
     "null_handling": "conservative everywhere: absent field never counts as a match.",
@@ -34,8 +34,8 @@
           "null_handling_both": "conservative"
         }
       },
-      "potentialMatchThreshold": 2,
-      "autoMatchThreshold": 2
+      "potentialMatchThreshold": 2.8,
+      "autoMatchThreshold": 3.0
     },
     {
       "__description": "Demographics: given + family + gender exact, birthDate fuzzy (damerau-levenshtein, catches DOB typos). Auto-links when demographics align; a fuzzy DOB keeps it at review. Subsumes old Rules 2, 4, 5.",
@@ -72,8 +72,8 @@
           "null_handling_both": "conservative"
         }
       },
-      "potentialMatchThreshold": 4,
-      "autoMatchThreshold": 5
+      "potentialMatchThreshold": 3.4,
+      "autoMatchThreshold": 3.8
     },
     {
       "__description": "Mother correlator: given + family + mother (fuzzy) + birthDate, NO gender (survives mis-entered sex). Auto-links on full agreement.",
@@ -110,8 +110,8 @@
           "null_handling_both": "conservative"
         }
       },
-      "potentialMatchThreshold": 4,
-      "autoMatchThreshold": 5
+      "potentialMatchThreshold": 3.4,
+      "autoMatchThreshold": 3.8
     },
     {
       "__description": "Phone + demographics: phone + given + family + gender, for patients without a strong identifier. Auto-links on full agreement.",
@@ -147,8 +147,8 @@
           "null_handling_both": "conservative"
         }
       },
-      "potentialMatchThreshold": 4,
-      "autoMatchThreshold": 5
+      "potentialMatchThreshold": 3.4,
+      "autoMatchThreshold": 4.0
     }
   ]
 }
