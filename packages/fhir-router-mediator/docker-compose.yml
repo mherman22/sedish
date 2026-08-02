@@ -13,6 +13,10 @@ services:
       CR_URL: ${CR_URL:-http://openhim-core:5001/CR/fhir}
       SHR_URL: ${SHR_URL:-http://openhim-core:5001/SHR/fhir}
       UPSTREAM_USERNAME: ${OPENHIM_USER:-consolidated}
+      # This mediator's own OpenHIM client id — OpenCR tags our writes with it. Records tagged by
+      # any OTHER client id are live-feed-owned and only enriched, never replaced. Must match the
+      # client the router authenticates as (OPENHIM_USER).
+      SELF_CLIENT_ID: ${OPENHIM_USER:-consolidated}
       UPSTREAM_PASSWORD: ${OPENHIM_PASS:-consolidated}
     networks: [openhim]
     deploy:
