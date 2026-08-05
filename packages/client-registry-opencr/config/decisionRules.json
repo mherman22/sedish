@@ -4,7 +4,9 @@
     "asymmetry": "False merges are the intolerable error. Auto-link only on biometric match or full exact agreement; any fuzziness routes to review.",
     "opencr_constraints": "fhirpaths must be simple paths or .where() only. Do NOT use extension('url') — it 500s the match. mother uses contact.name.text (pipeline must emit mother as a Patient.contact name). Junk mother/phone values blacklisted upstream.",
     "null_handling": "conservative everywhere: absent field never counts as a match.",
-    "consolidation": "Reduced from 6 rules. Old Rule 2 (exact-DOB demographics) was subsumed by the fuzzy-DOB demographics rule (same auto-link set, superset review set). Old Rule 4 (fully-fuzzy) only reached its threshold at exact agreement, which demographics already auto-links, so it surfaced nothing distinct. Remaining four signatures are irreducible."
+    "consolidation": "Reduced from 6 rules. Old Rule 2 (exact-DOB demographics) was subsumed by the fuzzy-DOB demographics rule (same auto-link set, superset review set). Old Rule 4 (fully-fuzzy) only reached its threshold at exact agreement, which demographics already auto-links, so it surfaced nothing distinct. Remaining four signatures are irreducible.",
+    "name_swap": "Rule 5 handles given/family transposition, which every other rule rejects since they all require both names exact. Not hypothetical: a crossed PersonName constructor in the registration module stored Prenom as family for a period, so real records exist with the names the wrong way round. All four fields exact = 4.0, the same bar rule 4 uses.",
+    "mother_not_indexed": "WARNING: rule 3's mother_given espath does not exist in the ES mapping (indexed fields are given, family, fullname, gender, birthDate, phone, art, biometric, codeNational) and no document carries it, so rule 3 cannot fire at all as written. Fixing it means adding the mother to the fork's FHIR->ES mapping and reindexing; until then treat rule 3 as inert."
   },
   "rules": [
     {
@@ -136,6 +138,43 @@
           "algorithm": "exact",
           "fhirpath": "name.where(use='official').family",
           "espath": "family",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "gender": {
+          "algorithm": "exact",
+          "fhirpath": "gender",
+          "espath": "gender",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        }
+      },
+      "potentialMatchThreshold": 3.4,
+      "autoMatchThreshold": 4.0
+    },
+    {
+      "__description": "Given/family swapped: the SAME person entered as 'Herman Muhereza' at one site and 'Muhereza Herman' at another. fhirpath and espath are crossed on purpose - the incoming given is compared against the indexed family and vice versa - because rules 1-4 all require given AND family exact, so a transposition defeats every one of them. Corroborated by exact birthDate and gender: the same four-field evidence rule 4 auto-links on, just with the names crossed. NOTE: the mother cannot be used here - mother_given is not in the ES mapping (see __comments.mother_not_indexed).",
+      "matchingType": "deterministic",
+      "rule": "5",
+      "fields": {
+        "given_as_family": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').given",
+          "espath": "family",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "family_as_given": {
+          "algorithm": "exact",
+          "fhirpath": "name.where(use='official').family",
+          "espath": "given",
+          "null_handling": "conservative",
+          "null_handling_both": "conservative"
+        },
+        "birthDate": {
+          "algorithm": "exact",
+          "fhirpath": "birthDate",
+          "espath": "birthDate",
           "null_handling": "conservative",
           "null_handling_both": "conservative"
         },
