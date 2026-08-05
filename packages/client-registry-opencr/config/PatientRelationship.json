@@ -136,6 +136,19 @@
               "valueString": "identifier.where(system='http://isanteplus.org/openmrs/fhir2/5-code-national').value"
             }
           ]
+        },
+        {
+          "url": "http://ihris.org/fhir/StructureDefinition/iHRISReportElement",
+          "extension": [
+            {
+              "url": "label",
+              "valueString": "mother_given"
+            },
+            {
+              "url": "name",
+              "valueString": "contact.name.text"
+            }
+          ]
         }
       ]
     }
