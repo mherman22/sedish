@@ -140,9 +140,17 @@
     },
     "codest": {
       "uri": [
-        "http://isanteplus.org/openmrs/fhir2/4-code-st"
+        "http://isanteplus.org/openmrs/fhir2/4-code-st",
+        "http://isanteplus.org/openmrs/fhir2/6-code-st"
       ],
-      "displayName": "Code ST"
+      "displayName": "Code ST",
+      "__comment": "6-code-st is the system our sites actually emit; the pre-existing 4-code-st matches no record. Display-only: adding a per-facility id here (never to internalid, whose uris are upsert handles) cannot fuse patients across sites."
+    },
+    "isanteplusid": {
+      "uri": [
+        "http://isanteplus.org/openmrs/fhir2/3-isanteplus-id"
+      ],
+      "displayName": "iSantePlus ID"
     },
     "codepc": {
       "uri": [
