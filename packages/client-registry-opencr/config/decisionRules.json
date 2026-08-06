@@ -1,11 +1,10 @@
 {
   "__comments": {
-    "scoring": "boost_mode=replace: score is the sum of field similarities only, no BM25.",
     "asymmetry": "False merges are the intolerable error: auto-link on exact agreement, send fuzziness to review.",
     "fhirpaths": "Simple paths or .where() only; extension('url') 500s the match.",
     "espaths": "Must exist in PatientRelationship.json, which defines the ES index; an unindexed espath silently makes a rule dead.",
     "null_handling": "Conservative everywhere: an absent field never counts as a match.",
-    "thresholds": "Scoring is binary per field: the plugin gives a field its weight when similarity reaches its threshold, else 0, so totals are whole numbers. auto = field count (every field agrees); potential = one short, which is the review band. A fractional potential threshold is unreachable and silently drops those candidates."
+    "thresholds": "Calibrated for boostMode 'sum', where Elasticsearch's BM25 relevance is added to the rule score - which is why auto exceeds the field count. These numbers are NOT valid under 'replace', where the maximum possible score is the field count; the two must always be changed together."
   },
   "rules": [
     {
@@ -35,8 +34,8 @@
           "null_handling_both": "conservative"
         }
       },
-      "potentialMatchThreshold": 2.0,
-      "autoMatchThreshold": 3.0
+      "potentialMatchThreshold": 2,
+      "autoMatchThreshold": 2
     },
     {
       "__description": "Demographics: both names and gender exact, birthDate fuzzy.",
@@ -73,8 +72,8 @@
           "null_handling_both": "conservative"
         }
       },
-      "potentialMatchThreshold": 3.0,
-      "autoMatchThreshold": 4.0
+      "potentialMatchThreshold": 4,
+      "autoMatchThreshold": 5
     },
     {
       "__description": "Mother correlator: both names, mother fuzzy, exact birthDate, no gender.",
@@ -111,8 +110,8 @@
           "null_handling_both": "conservative"
         }
       },
-      "potentialMatchThreshold": 3.0,
-      "autoMatchThreshold": 4.0
+      "potentialMatchThreshold": 4,
+      "autoMatchThreshold": 5
     },
     {
       "__description": "Phone plus both names and gender, for patients with no strong id.",
@@ -148,8 +147,8 @@
           "null_handling_both": "conservative"
         }
       },
-      "potentialMatchThreshold": 3.0,
-      "autoMatchThreshold": 4.0
+      "potentialMatchThreshold": 4,
+      "autoMatchThreshold": 5
     },
     {
       "__description": "Names transposed: given is compared against family and vice versa.",
@@ -185,8 +184,8 @@
           "null_handling_both": "conservative"
         }
       },
-      "potentialMatchThreshold": 3.0,
-      "autoMatchThreshold": 4.0
+      "potentialMatchThreshold": 4,
+      "autoMatchThreshold": 5
     }
   ]
 }
