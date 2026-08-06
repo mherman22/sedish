@@ -115,8 +115,8 @@
   ],
   "matching": {
     "tool": "elasticsearch",
-    "boostMode": "sum",
-    "__comment_boostMode": "Upstream default. 'replace' scores on the decision rules alone and needs the thresholds in decisionRules.json recalibrated to the field count - see the thresholds comment there. Open architecture question."
+    "boostMode": "replace",
+    "__comment_boostMode": "Score on the decision rules alone; upstream's default is 'sum', which adds Elasticsearch's unbounded BM25 relevance so a candidate failing a required field can still auto-link. Thresholds in decisionRules.json are calibrated to this setting."
   },
   "systems": {
     "CRBaseURI": "http://openclientregistry.org/fhir",
