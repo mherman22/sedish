@@ -108,6 +108,38 @@ convergence is mandatory: **Option C is the target.**
 Until C ships, **Option A** is the interim state (two sources → one golden, identifiers now correct
 after PR #30) — acceptable for identity, but the physical duplicate remains.
 
+## Resolution (2026-08-06): C shipped, and A was reconsidered on the evidence
+
+**Option C is in production and holding.** Measured on the live registry: **721 source records for 721
+distinct source-keys** — effectively 1:1, with only 2 keys on more than one record. Both "confirm before
+building C" questions above are answered: `patient_id` parity holds, and OpenCR upserts across
+`clientid`s by itself — `matchMixin` looks the incoming patient up by any identifier whose system is in
+`systems.internalid.uri` (which contains the source-key) and updates the match rather than creating.
+Convergence is therefore enforced by OpenCR, not merely by us sending the same resource id.
+
+**A was revisited** — the question being whether each feed should own its own record (a patient at N
+sites giving 2N sources under one golden) rather than converge.
+
+*The case for A is real and was underweighted here:* with separate records nothing merges, so an entire
+class of defect cannot exist. Every one of these was a live bug under C — the batch erasing the EMR's
+mother's name, the EMR's record never gaining a birthplace, the field-level merge needed to fix both,
+and the provenance loss fixed in `fhir-router-mediator` PR #5.
+
+*The case against A is that identity would then rest on matching*, and matching has proven quieter in
+its failures than expected: rule 3 (the mother correlator) had **never fired**, because its `espath` was
+absent from the ES index; `biometric` is populated on 74% of records and `phone` on 8%. Under A, two
+records of a *provably* identical person — same source-key, same site — are reunited only if a rule
+happens to fire. Under C that is structural.
+
+**Decision: stay with C.** What motivated the reconsideration was visibility of who contributed what,
+and that is a property of the tags, not of the record model. PR #5 merges `meta.tag` on enrich and has
+the router state its own `clientid`, so a converged record now names every system that touched it —
+which, with per-site client ids (one OpenHIM client per EMR, 2026-08-06), is strictly more informative
+than A's separate records were going to be.
+
+Revisit C only if convergence itself starts failing — the signal is `distinct source-keys` diverging
+from `source records` in the count above.
+
 ## Cross-references
 - Identifier fix: `sedish-fhir-pipeline` PR #30 (map by type name).
 - Site identifier seeding + real-time setup: [`charess-emr-realtime-mpi-setup.md`](charess-emr-realtime-mpi-setup.md).
