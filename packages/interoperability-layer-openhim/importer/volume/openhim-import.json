@@ -1,840 +1,870 @@
 {
-    "Users": [
+  "Users": [
+    {
+      "provider": "token",
+      "groups": [
+        "admin"
+      ],
+      "firstname": "Super",
+      "surname": "User",
+      "email": "root@openhim.org",
+      "expiry": null,
+      "locked": false,
+      "token": null,
+      "tokenType": null,
+      "password": "$2b$10$p4P.WSJEKJJzIfJoM147ReSIZ0lzmQXN/vndiyyJLY82WawY9FHfS"
+    }
+  ],
+  "Passports": [
+    {
+      "protocol": "local",
+      "email": "root@openhim.org",
+      "password": "$2a$10$qvja1lAaItmcZolkoKCPn.9EXY2b8s9dTlUFx36Q7ey0rieXXnxVC"
+    },
+    {
+      "protocol": "token",
+      "email": "root@openhim.org",
+      "passwordHash": "c5e14f0062bfac45bf20f0fcf0403e758a2233756e40e7b328e1f10dfef3d8ba57c2bf230ee9fd627956fbb4e57fab7e32efe108db76d515f1f61f6b853ffba3",
+      "passwordAlgorithm": "sha512",
+      "passwordSalt": "c5f2a9fd7907e1a1c6658841426e6f5d"
+    }
+  ],
+  "Clients": [
+    {
+      "roles": [
+        "shr",
+        "emr"
+      ],
+      "clientID": "openshr",
+      "name": "OpenSHR",
+      "passwordAlgorithm": "sha512",
+      "passwordSalt": "8bababd96b60931ce2e2401731158c76",
+      "passwordHash": "1073a76be9eb72706b0c3fb1ee1bcb7f1f904723be1342ac9dc1fbea9ee8cb2230c55378bc18453964f523c4e9f9bf6d849218a676cd7755afd94ebc975f1929"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "consolidated",
+      "name": "Consolidated Server",
+      "passwordAlgorithm": "sha512",
+      "passwordSalt": "2398982b18690731d1ea0ca49777d545",
+      "passwordHash": "b6ada88d0c8e3042ec5697da6762b7efeecfa9c6961f78e0a3e88b4f1659c5872223365d068dc629850ce94b950551c2b80f12bf96d548ac45b956caa816ae79"
+    },
+    {
+      "roles": [
+        "xds"
+      ],
+      "clientID": "xds_client",
+      "name": "xds_client",
+      "passwordAlgorithm": "sha512",
+      "passwordSalt": "d2171539db69c06085fc33eedf4a8e41",
+      "passwordHash": "36a496767339fe41c1766213aa8ead610aa07874a6a9b20d84f36df555c48b29d5f84933821d3d3e1675155effe6eb06d9ada0af430990f5bc6ad93c80da9c10"
+    },
+    {
+      "clientID": "lnsp",
+      "name": "lnsp",
+      "roles": [
+        "xds"
+      ],
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "7718884c4274d86c6a2f31e9d567157d88f3f79d86554a98cee105eaf489c2348470de008dda10290007165c17c73a0c86bc0fb43baa7a2f5e0f72a81fe14de9",
+      "passwordSalt": "6e70fc2a836bf68a8956449f8dbe77a8",
+      "customTokenID": "root@openhim.org"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "hueh",
+      "name": "HUEH",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "a3f5f268b23b12d9a429b841cf9c8b177b130df40dbbbfe360edbd66aebe7287f3c540964564c16e10938bc5746bbe89a9b6b0f3f1467c4c258c31fbfc99b2e1",
+      "passwordSalt": "fb2548dd2b7e6450b6db3078d838eba4"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "lapaix",
+      "name": "La Paix",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "5f5d3c79c113daac7f55f5a6e37c75985d40b51889d1e20a1675b6af17a4cb9b5f8794be99dabf7e71e148eafb43cababb1ebbbefcfedb3fbfa5c74cc71344fc",
+      "passwordSalt": "887068790868827cf10aee18cdb5d6ea"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "ofatma",
+      "name": "OFATMA",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "271d2211e83c4b74a71f8f0cf870bb2fd3a12a987c28c6ac351ed9e4876987dc34950647d3c20ce4393c1238ac73e585f04820fff5d839acfc2d16cbf8b0da46",
+      "passwordSalt": "e5413bea88e10a9a5b1d6388af37a91e"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "foyer-saint-camille",
+      "name": "Foyer Saint Camille",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "280cd46ed31807d8abd37c4b429170c1e32b814126c7afece508006e2a733a7c874df346d7f2c42945d395ff75f2970224435ac3711485574164ef1a3cda90c0",
+      "passwordSalt": "50f2e45702ecea750abc9f4db2b5724b"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "klinik-eritaj",
+      "name": "Klinik Eritaj",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "d62fa64c276d7f9341bff72ea2c168f1bf2c39b718a4de7af9e433343173e635fa93e73ee77333783b59778918830ff1a9e3838dabd43cb80fec1ade1b87330d",
+      "passwordSalt": "4c4f2fa70e14d430c4490166c5210dfa"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "ofatma-sonapi",
+      "name": "OFATMA SONAPI",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "2a11c4dcd56e9cfd4b02926dbd69d8e2f8c888b8ec5e7d2b135e90a3c4fcca6f234923d8e36db1994171c6ae0b7520c6d2abe19081d3846d28bc36f3aa39869d",
+      "passwordSalt": "89c592b55ec3193ac3018046b593be23"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "gressierms",
+      "name": "Gressier MS",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "e391eaa14451bb3cb44e8d4990c6be71e016324d94c6d68e7a3b33b8510da11bfaf42cba744974c16e65eeb2cdc21edc38d2776aec55693afef4d2d349bf06de",
+      "passwordSalt": "ad9f7a104e10dae9332bfd3ba21d770f"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "pestel",
+      "name": "Pestel",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "3032cf77f7daf7f9629f4f406662c0e26033219325243753d6214b939acc24ae60617cc034983a09ba975b418cdc3668d76e2b8bb17319730a7eeff5b45add5f",
+      "passwordSalt": "60121791d73ba436150076274eaed567"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "stdemiragoane",
+      "name": "St Demir Agoane",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "80ffcb0f3fce5265b57e05762a13a675b56dd2a9fb1d5335c3c6acefb6ac174517a3c7f96c082197b6170dc1474ea61dd96ef01d5e4802a0f9071039541772c5",
+      "passwordSalt": "8b64e687bf9dd456f8fbf7c51e7c5b7e"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "bethel-fdn",
+      "name": "Bethel FDN",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "936acdaeb595ede30d38925ed8ffe97ef6510f8546d39c05be41148ac7a1b11d01e78dc97caf35197b88395538b12840781ba3a4ca95dbd9920ae7916435c28b",
+      "passwordSalt": "b22a9c5d7acb3f5268f38e4bc98b8c2d"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "isanteplus-remote",
+      "name": "iSantePlus Remote (54.187.112.61)",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "3326034036d35ef5db5ffacc14d04032de833e0b80319bfe3f69699c74bb64b0bb55e415ca8dc65bcf17f7fb0f8577df0894f43af849b25fd43450ee4a11439b",
+      "passwordSalt": "59438b63f7f65b6a562cb74e0b7b185d"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "openmrs",
+      "name": "OpenMRS",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "158050b31ee25b73267d93940f4d91f0669ff450a03e02946cb37c620a35390ec48e778641e5f977f5daf1e9c440d92589c453ae072f984f988979739478a670",
+      "passwordSalt": "388da9432fd24e60b65308fee249fa40"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "ips",
+      "name": "IPS",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "05f47838690b663a52b0228b5afc40ac18ddd0d2441153996e8be8ae0c7e45792bc2f5287377741a84d31a02aef7af6d48af2a11010427f16dc874aa04059d05",
+      "passwordSalt": "106a73198482045721baf40c6aa86e18"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "isanteplus-73106",
+      "name": "Ste Hélène (73106)",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "d8edfef4b0125c9933995ed32c3d137413d4037188dd00ab7d12ecb071d30daa98cffb68c13389c2eec5989fae2bbdb29d5b598e17f7fcec1fd4b761552f0209",
+      "passwordSalt": "9b69d1d6b9c7b5c0c5376d3ac9671c4a"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "isanteplus-54111",
+      "name": "Sainte Claire d'Assise (54111)",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "77e01baf720ba017bc574a256d1f3fac458f6a983308a469bb4d335055a88f55db7c8afb79d9e6e930dca08273630400d9e2daaf90c1fdbd73e71a12be1566a0",
+      "passwordSalt": "df9c0f7dded835f224e60d428d40401d"
+    },
+    {
+      "roles": [
+        "emr"
+      ],
+      "clientID": "isanteplus-75101",
+      "name": "Ste Anne (75101)",
+      "passwordAlgorithm": "sha512",
+      "passwordHash": "acf7f2fb03e2691e10975d6e426c458b9c7fa0f1f2bb7c68a731422b4a268c547743c829af89682b0f606acd11bea429a85672c4f6a959a786d4082456f26b2e",
+      "passwordSalt": "780ddf5a846c2c6f96d788b4b98c4bf7"
+    }
+  ],
+  "Channels": [
+    {
+      "name": "Add or Get Resource Data From/To openCR",
+      "description": "Add or Get Resource Data From/To openCR",
+      "urlPattern": "^/CR/fhir.*$",
+      "isAsynchronousProcess": false,
+      "methods": [
+        "GET",
+        "POST",
+        "PUT"
+      ],
+      "type": "http",
+      "priority": 1,
+      "tcpPort": null,
+      "tcpHost": null,
+      "pollingSchedule": null,
+      "requestBody": true,
+      "responseBody": true,
+      "allow": [
+        "shr",
+        "emr",
+        "test"
+      ],
+      "whitelist": [],
+      "authType": "private",
+      "routes": [
         {
-            "provider": "token",
-            "groups": [
-                "admin"
-            ],
-            "firstname": "Super",
-            "surname": "User",
-            "email": "root@openhim.org",
-            "expiry": null,
-            "locked": false,
-            "token": null,
-            "tokenType": null,
-            "password": "$2b$10$p4P.WSJEKJJzIfJoM147ReSIZ0lzmQXN/vndiyyJLY82WawY9FHfS"
+          "name": "Add/Get Resources",
+          "type": "http",
+          "status": "enabled",
+          "secured": false,
+          "host": "opencr",
+          "port": 3000,
+          "path": "",
+          "pathTransform": "s/CR\\/fhir/fhir/g",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false
         }
-    ],
-    "Passports": [
+      ],
+      "matchContentTypes": [],
+      "matchContentRegex": null,
+      "matchContentXpath": null,
+      "matchContentJson": null,
+      "matchContentValue": null,
+      "properties": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "txViewFullAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "alerts": [],
+      "status": "enabled",
+      "rewriteUrls": false,
+      "addAutoRewriteRules": true,
+      "rewriteUrlsConfig": [],
+      "autoRetryEnabled": false,
+      "autoRetryPeriodMinutes": 600000000,
+      "updatedBy": {
+        "id": "6706830df3872ffda9da40fa",
+        "name": "Super User"
+      }
+    },
+    {
+      "name": "SHR - FHIR Passthrough",
+      "description": "Get or Post a new FHIR Resource to the SHR",
+      "urlPattern": "^/SHR/fhir.*$",
+      "isAsynchronousProcess": false,
+      "methods": [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH"
+      ],
+      "type": "http",
+      "priority": 1,
+      "requestBody": true,
+      "responseBody": true,
+      "allow": [
+        "emr",
+        "test",
+        "pipeline"
+      ],
+      "whitelist": [],
+      "authType": "private",
+      "routes": [
         {
-            "protocol": "local",
-            "email": "root@openhim.org",
-            "password": "$2a$10$qvja1lAaItmcZolkoKCPn.9EXY2b8s9dTlUFx36Q7ey0rieXXnxVC"
-        },
-        {
-            "protocol": "token",
-            "email": "root@openhim.org",
-            "passwordHash": "c5e14f0062bfac45bf20f0fcf0403e758a2233756e40e7b328e1f10dfef3d8ba57c2bf230ee9fd627956fbb4e57fab7e32efe108db76d515f1f61f6b853ffba3",
-            "passwordAlgorithm": "sha512",
-            "passwordSalt": "c5f2a9fd7907e1a1c6658841426e6f5d"
+          "name": "SHR - Get/Create/Update Resource",
+          "type": "http",
+          "status": "enabled",
+          "secured": false,
+          "host": "shr",
+          "port": 3000,
+          "path": "",
+          "pathTransform": "s/SHR\\/fhir/fhir/g",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false
         }
-    ],
-    "Clients": [
+      ],
+      "matchContentTypes": [],
+      "properties": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "txViewFullAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "alerts": [],
+      "status": "enabled",
+      "rewriteUrls": false,
+      "addAutoRewriteRules": true,
+      "rewriteUrlsConfig": [],
+      "autoRetryEnabled": false,
+      "autoRetryPeriodMinutes": 600000000000,
+      "updatedBy": {
+        "id": "6706830df3872ffda9da40fa",
+        "name": "Super User"
+      }
+    },
+    {
+      "name": "XDS.b Mediator",
+      "description": "XDS.b Mediator channel for https://github.com/IsantePlus/openhim-mediator-xds",
+      "urlPattern": "^/xdsrepository$",
+      "isAsynchronousProcess": false,
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE",
+        "PUT"
+      ],
+      "type": "http",
+      "priority": 2,
+      "requestBody": true,
+      "responseBody": true,
+      "allow": [
+        "test",
+        "xds"
+      ],
+      "whitelist": [],
+      "authType": "private",
+      "routes": [
         {
-            "roles": [
-                "shr",
-                "emr"
-            ],
-            "clientID": "openshr",
-            "name": "OpenSHR",
-            "passwordAlgorithm": "sha512",
-            "passwordSalt": "8bababd96b60931ce2e2401731158c76",
-            "passwordHash": "1073a76be9eb72706b0c3fb1ee1bcb7f1f904723be1342ac9dc1fbea9ee8cb2230c55378bc18453964f523c4e9f9bf6d849218a676cd7755afd94ebc975f1929"
-        },
-        {
-            "roles": [
-                "emr"
-            ],
-            "clientID": "consolidated",
-            "name": "Consolidated Server",
-            "passwordAlgorithm": "sha512",
-            "passwordSalt": "2398982b18690731d1ea0ca49777d545",
-            "passwordHash": "b6ada88d0c8e3042ec5697da6762b7efeecfa9c6961f78e0a3e88b4f1659c5872223365d068dc629850ce94b950551c2b80f12bf96d548ac45b956caa816ae79"
-        },
-        {
-            "roles": [
-                "xds"
-            ],
-            "clientID": "xds_client",
-            "name": "xds_client",
-            "passwordAlgorithm": "sha512",
-            "passwordSalt": "d2171539db69c06085fc33eedf4a8e41",
-            "passwordHash": "36a496767339fe41c1766213aa8ead610aa07874a6a9b20d84f36df555c48b29d5f84933821d3d3e1675155effe6eb06d9ada0af430990f5bc6ad93c80da9c10"
-        },
-        {
-            "clientID": "lnsp",
-            "name": "lnsp",
-            "roles": [
-                "xds"
-            ],
-            "passwordAlgorithm": "sha512",
-            "passwordHash": "7718884c4274d86c6a2f31e9d567157d88f3f79d86554a98cee105eaf489c2348470de008dda10290007165c17c73a0c86bc0fb43baa7a2f5e0f72a81fe14de9",
-            "passwordSalt": "6e70fc2a836bf68a8956449f8dbe77a8",
-            "customTokenID": "root@openhim.org"
-        },
-        {
-            "roles": [
-                "emr"
-            ],
-            "clientID": "hueh",
-            "name": "HUEH",
-            "passwordAlgorithm": "sha512",
-            "passwordHash": "a3f5f268b23b12d9a429b841cf9c8b177b130df40dbbbfe360edbd66aebe7287f3c540964564c16e10938bc5746bbe89a9b6b0f3f1467c4c258c31fbfc99b2e1",
-            "passwordSalt": "fb2548dd2b7e6450b6db3078d838eba4"
-        },
-        {
-            "roles": [
-                "emr"
-            ],
-            "clientID": "lapaix",
-            "name": "La Paix",
-            "passwordAlgorithm": "sha512",
-            "passwordHash": "5f5d3c79c113daac7f55f5a6e37c75985d40b51889d1e20a1675b6af17a4cb9b5f8794be99dabf7e71e148eafb43cababb1ebbbefcfedb3fbfa5c74cc71344fc",
-            "passwordSalt": "887068790868827cf10aee18cdb5d6ea"
-        },
-        {
-            "roles": [
-                "emr"
-            ],
-            "clientID": "ofatma",
-            "name": "OFATMA",
-            "passwordAlgorithm": "sha512",
-            "passwordHash": "271d2211e83c4b74a71f8f0cf870bb2fd3a12a987c28c6ac351ed9e4876987dc34950647d3c20ce4393c1238ac73e585f04820fff5d839acfc2d16cbf8b0da46",
-            "passwordSalt": "e5413bea88e10a9a5b1d6388af37a91e"
-        },
-        {
-            "roles": [
-                "emr"
-            ],
-            "clientID": "foyer-saint-camille",
-            "name": "Foyer Saint Camille",
-            "passwordAlgorithm": "sha512",
-            "passwordHash": "280cd46ed31807d8abd37c4b429170c1e32b814126c7afece508006e2a733a7c874df346d7f2c42945d395ff75f2970224435ac3711485574164ef1a3cda90c0",
-            "passwordSalt": "50f2e45702ecea750abc9f4db2b5724b"
-        },
-        {
-            "roles": [
-                "emr"
-            ],
-            "clientID": "klinik-eritaj",
-            "name": "Klinik Eritaj",
-            "passwordAlgorithm": "sha512",
-            "passwordHash": "d62fa64c276d7f9341bff72ea2c168f1bf2c39b718a4de7af9e433343173e635fa93e73ee77333783b59778918830ff1a9e3838dabd43cb80fec1ade1b87330d",
-            "passwordSalt": "4c4f2fa70e14d430c4490166c5210dfa"
-        },
-        {
-            "roles": [
-                "emr"
-            ],
-            "clientID": "ofatma-sonapi",
-            "name": "OFATMA SONAPI",
-            "passwordAlgorithm": "sha512",
-            "passwordHash": "2a11c4dcd56e9cfd4b02926dbd69d8e2f8c888b8ec5e7d2b135e90a3c4fcca6f234923d8e36db1994171c6ae0b7520c6d2abe19081d3846d28bc36f3aa39869d",
-            "passwordSalt": "89c592b55ec3193ac3018046b593be23"
-        },
-        {
-            "roles": [
-                "emr"
-            ],
-            "clientID": "gressierms",
-            "name": "Gressier MS",
-            "passwordAlgorithm": "sha512",
-            "passwordHash": "e391eaa14451bb3cb44e8d4990c6be71e016324d94c6d68e7a3b33b8510da11bfaf42cba744974c16e65eeb2cdc21edc38d2776aec55693afef4d2d349bf06de",
-            "passwordSalt": "ad9f7a104e10dae9332bfd3ba21d770f"
-        },
-        {
-            "roles": [
-                "emr"
-            ],
-            "clientID": "pestel",
-            "name": "Pestel",
-            "passwordAlgorithm": "sha512",
-            "passwordHash": "3032cf77f7daf7f9629f4f406662c0e26033219325243753d6214b939acc24ae60617cc034983a09ba975b418cdc3668d76e2b8bb17319730a7eeff5b45add5f",
-            "passwordSalt": "60121791d73ba436150076274eaed567"
-        },
-        {
-            "roles": [
-                "emr"
-            ],
-            "clientID": "stdemiragoane",
-            "name": "St Demir Agoane",
-            "passwordAlgorithm": "sha512",
-            "passwordHash": "80ffcb0f3fce5265b57e05762a13a675b56dd2a9fb1d5335c3c6acefb6ac174517a3c7f96c082197b6170dc1474ea61dd96ef01d5e4802a0f9071039541772c5",
-            "passwordSalt": "8b64e687bf9dd456f8fbf7c51e7c5b7e"
-        },
-        {
-            "roles": [
-                "emr"
-            ],
-            "clientID": "bethel-fdn",
-            "name": "Bethel FDN",
-            "passwordAlgorithm": "sha512",
-            "passwordHash": "936acdaeb595ede30d38925ed8ffe97ef6510f8546d39c05be41148ac7a1b11d01e78dc97caf35197b88395538b12840781ba3a4ca95dbd9920ae7916435c28b",
-            "passwordSalt": "b22a9c5d7acb3f5268f38e4bc98b8c2d"
-        },
-        {
-            "roles": [
-                "emr"
-            ],
-            "clientID": "isanteplus-remote",
-            "name": "iSantePlus Remote (54.187.112.61)",
-            "passwordAlgorithm": "sha512",
-            "passwordHash": "3326034036d35ef5db5ffacc14d04032de833e0b80319bfe3f69699c74bb64b0bb55e415ca8dc65bcf17f7fb0f8577df0894f43af849b25fd43450ee4a11439b",
-            "passwordSalt": "59438b63f7f65b6a562cb74e0b7b185d"
-        },
-        {
-            "roles": [
-                "emr"
-            ],
-            "clientID": "openmrs",
-            "name": "OpenMRS",
-            "passwordAlgorithm": "sha512",
-            "passwordHash": "158050b31ee25b73267d93940f4d91f0669ff450a03e02946cb37c620a35390ec48e778641e5f977f5daf1e9c440d92589c453ae072f984f988979739478a670",
-            "passwordSalt": "388da9432fd24e60b65308fee249fa40"
-        },
-        {
-            "roles": [
-                "emr"
-            ],
-            "clientID": "ips",
-            "name": "IPS",
-            "passwordAlgorithm": "sha512",
-            "passwordHash": "05f47838690b663a52b0228b5afc40ac18ddd0d2441153996e8be8ae0c7e45792bc2f5287377741a84d31a02aef7af6d48af2a11010427f16dc874aa04059d05",
-            "passwordSalt": "106a73198482045721baf40c6aa86e18"
+          "name": "XDS.b Mediator",
+          "type": "http",
+          "status": "enabled",
+          "secured": false,
+          "host": "lnsp-mediator",
+          "port": 3000,
+          "path": "",
+          "pathTransform": "s/xdsrepository//g",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false
         }
-    ],
-    "Channels": [
+      ],
+      "matchContentTypes": [],
+      "properties": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "txViewFullAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "alerts": [],
+      "status": "enabled",
+      "rewriteUrls": false,
+      "addAutoRewriteRules": true,
+      "rewriteUrlsConfig": [],
+      "autoRetryEnabled": false,
+      "autoRetryPeriodMinutes": 60,
+      "updatedBy": {
+        "id": "6706830df3872ffda9da40fa",
+        "name": "Super User"
+      },
+      "matchContentJson": null,
+      "matchContentRegex": null,
+      "matchContentValue": null,
+      "matchContentXpath": null,
+      "pollingSchedule": null,
+      "tcpHost": null,
+      "tcpPort": null
+    },
+    {
+      "name": "XDS.b Mediator",
+      "description": "XDS.b Mediator channel for https://github.com/IsantePlus/openhim-mediator-xds",
+      "urlPattern": "^/xdsbrepository$",
+      "isAsynchronousProcess": false,
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE",
+        "PUT"
+      ],
+      "type": "http",
+      "priority": 2,
+      "requestBody": true,
+      "responseBody": true,
+      "allow": [
+        "test",
+        "xds"
+      ],
+      "whitelist": [],
+      "authType": "private",
+      "routes": [
         {
-            "name": "Add or Get Resource Data From/To openCR",
-            "description": "Add or Get Resource Data From/To openCR",
-            "urlPattern": "^/CR/fhir.*$",
-            "isAsynchronousProcess": false,
-            "methods": [
-                "GET",
-                "POST",
-                "PUT"
-            ],
-            "type": "http",
-            "priority": 1,
-            "tcpPort": null,
-            "tcpHost": null,
-            "pollingSchedule": null,
-            "requestBody": true,
-            "responseBody": true,
-            "allow": [
-                "shr",
-                "emr",
-                "test"
-            ],
-            "whitelist": [],
-            "authType": "private",
-            "routes": [
-                {
-                    "name": "Add/Get Resources",
-                    "type": "http",
-                    "status": "enabled",
-                    "secured": false,
-                    "host": "opencr",
-                    "port": 3000,
-                    "path": "",
-                    "pathTransform": "s/CR\\/fhir/fhir/g",
-                    "primary": true,
-                    "username": "",
-                    "password": "",
-                    "forwardAuthHeader": false
-                }
-            ],
-            "matchContentTypes": [],
-            "matchContentRegex": null,
-            "matchContentXpath": null,
-            "matchContentJson": null,
-            "matchContentValue": null,
-            "properties": [],
-            "txViewAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "txViewFullAcl": [],
-            "txRerunAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "alerts": [],
-            "status": "enabled",
-            "rewriteUrls": false,
-            "addAutoRewriteRules": true,
-            "rewriteUrlsConfig": [],
-            "autoRetryEnabled": false,
-            "autoRetryPeriodMinutes": 600000000,
-            "updatedBy": {
-                "id": "6706830df3872ffda9da40fa",
-                "name": "Super User"
-            }
-        },
-        {
-            "name": "SHR - FHIR Passthrough",
-            "description": "Get or Post a new FHIR Resource to the SHR",
-            "urlPattern": "^/SHR/fhir.*$",
-            "isAsynchronousProcess": false,
-            "methods": [
-                "GET",
-                "POST",
-                "PUT",
-                "PATCH"
-            ],
-            "type": "http",
-            "priority": 1,
-            "requestBody": true,
-            "responseBody": true,
-            "allow": [
-                "emr",
-                "test",
-                "pipeline"
-            ],
-            "whitelist": [],
-            "authType": "private",
-            "routes": [
-                {
-                    "name": "SHR - Get/Create/Update Resource",
-                    "type": "http",
-                    "status": "enabled",
-                    "secured": false,
-                    "host": "shr",
-                    "port": 3000,
-                    "path": "",
-                    "pathTransform": "s/SHR\\/fhir/fhir/g",
-                    "primary": true,
-                    "username": "",
-                    "password": "",
-                    "forwardAuthHeader": false
-                }
-            ],
-            "matchContentTypes": [],
-            "properties": [],
-            "txViewAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "txViewFullAcl": [],
-            "txRerunAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "alerts": [],
-            "status": "enabled",
-            "rewriteUrls": false,
-            "addAutoRewriteRules": true,
-            "rewriteUrlsConfig": [],
-            "autoRetryEnabled": false,
-            "autoRetryPeriodMinutes": 600000000000,
-            "updatedBy": {
-                "id": "6706830df3872ffda9da40fa",
-                "name": "Super User"
-            }
-        },
-        {
-            "name": "XDS.b Mediator",
-            "description": "XDS.b Mediator channel for https://github.com/IsantePlus/openhim-mediator-xds",
-            "urlPattern": "^/xdsrepository$",
-            "isAsynchronousProcess": false,
-            "methods": [
-                "GET",
-                "POST",
-                "DELETE",
-                "PUT"
-            ],
-            "type": "http",
-            "priority": 2,
-            "requestBody": true,
-            "responseBody": true,
-            "allow": [
-                "test",
-                "xds"
-            ],
-            "whitelist": [],
-            "authType": "private",
-            "routes": [
-                {
-                    "name": "XDS.b Mediator",
-                    "type": "http",
-                    "status": "enabled",
-                    "secured": false,
-                    "host": "lnsp-mediator",
-                    "port": 3000,
-                    "path": "",
-                    "pathTransform": "s/xdsrepository//g",
-                    "primary": true,
-                    "username": "",
-                    "password": "",
-                    "forwardAuthHeader": false
-                }
-            ],
-            "matchContentTypes": [],
-            "properties": [],
-            "txViewAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "txViewFullAcl": [],
-            "txRerunAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "alerts": [],
-            "status": "enabled",
-            "rewriteUrls": false,
-            "addAutoRewriteRules": true,
-            "rewriteUrlsConfig": [],
-            "autoRetryEnabled": false,
-            "autoRetryPeriodMinutes": 60,
-            "updatedBy": {
-                "id": "6706830df3872ffda9da40fa",
-                "name": "Super User"
-            },
-            "matchContentJson": null,
-            "matchContentRegex": null,
-            "matchContentValue": null,
-            "matchContentXpath": null,
-            "pollingSchedule": null,
-            "tcpHost": null,
-            "tcpPort": null
-        },
-        {
-            "name": "XDS.b Mediator",
-            "description": "XDS.b Mediator channel for https://github.com/IsantePlus/openhim-mediator-xds",
-            "urlPattern": "^/xdsbrepository$",
-            "isAsynchronousProcess": false,
-            "methods": [
-                "GET",
-                "POST",
-                "DELETE",
-                "PUT"
-            ],
-            "type": "http",
-            "priority": 2,
-            "requestBody": true,
-            "responseBody": true,
-            "allow": [
-                "test",
-                "xds"
-            ],
-            "whitelist": [],
-            "authType": "private",
-            "routes": [
-                {
-                    "name": "XDS.b Mediator",
-                    "type": "http",
-                    "status": "enabled",
-                    "secured": false,
-                    "host": "lnsp-mediator",
-                    "port": 3000,
-                    "path": "",
-                    "pathTransform": "s/xdsbrepository//g",
-                    "primary": true,
-                    "username": "",
-                    "password": "",
-                    "forwardAuthHeader": false
-                }
-            ],
-            "matchContentTypes": [],
-            "properties": [],
-            "txViewAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "txViewFullAcl": [],
-            "txRerunAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "alerts": [],
-            "status": "enabled",
-            "rewriteUrls": false,
-            "addAutoRewriteRules": true,
-            "rewriteUrlsConfig": [],
-            "autoRetryEnabled": false,
-            "autoRetryPeriodMinutes": 60,
-            "updatedBy": {
-                "id": "6706830df3872ffda9da40fa",
-                "name": "Super User"
-            },
-            "matchContentJson": null,
-            "matchContentRegex": null,
-            "matchContentValue": null,
-            "matchContentXpath": null,
-            "pollingSchedule": null,
-            "tcpHost": null,
-            "tcpPort": null
-        },
-        {
-            "name": "LNSP subscription",
-            "urlPattern": "^/dsub$",
-            "isAsynchronousProcess": false,
-            "methods": [
-                "GET",
-                "POST",
-                "DELETE",
-                "PUT"
-            ],
-            "type": "http",
-            "allow": [
-                "xds",
-                "test"
-            ],
-            "whitelist": [],
-            "authType": "private",
-            "routes": [
-                {
-                    "name": "XDS.b Mediator - DSUB",
-                    "type": "http",
-                    "status": "enabled",
-                    "host": "lnsp-mediator",
-                    "port": 3000,
-                    "pathTransform": "s/dsub/subscription/g",
-                    "primary": true,
-                    "forwardAuthHeader": false
-                }
-            ],
-            "matchContentTypes": [],
-            "properties": [],
-            "txViewAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "txViewFullAcl": [],
-            "txRerunAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "alerts": [],
-            "status": "enabled",
-            "rewriteUrls": false,
-            "addAutoRewriteRules": true,
-            "rewriteUrlsConfig": [],
-            "autoRetryEnabled": false,
-            "autoRetryPeriodMinutes": 60,
-            "updatedBy": {
-                "id": "6706830df3872ffda9da40fa",
-                "name": "Super User"
-            },
-            "matchContentJson": null,
-            "matchContentRegex": null,
-            "matchContentValue": null,
-            "matchContentXpath": null,
-            "pollingSchedule": null,
-            "tcpHost": null,
-            "tcpPort": null
-        },
-        {
-            "name": "XDS Order Notification Passthrough",
-            "urlPattern": "^/xds-order-notification$",
-            "isAsynchronousProcess": false,
-            "methods": [
-                "POST"
-            ],
-            "type": "http",
-            "priority": 3,
-            "tcpPort": null,
-            "tcpHost": null,
-            "pollingSchedule": null,
-            "requestBody": true,
-            "responseBody": true,
-            "allow": [
-                "test"
-            ],
-            "whitelist": [],
-            "authType": "private",
-            "routes": [
-                {
-                    "name": "LNSP passthrough",
-                    "type": "http",
-                    "status": "enabled",
-                    "secured": true,
-                    "host": "lnspmspp.org",
-                    "port": 4434,
-                    "path": "/esb_sta_upg/LNSP_IHE_IN/notify/",
-                    "pathTransform": "",
-                    "primary": true,
-                    "username": "",
-                    "password": "",
-                    "forwardAuthHeader": false
-                }
-            ],
-            "matchContentTypes": [],
-            "matchContentRegex": null,
-            "matchContentXpath": null,
-            "matchContentJson": null,
-            "matchContentValue": null,
-            "properties": [],
-            "txViewAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "txViewFullAcl": [],
-            "txRerunAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "alerts": [],
-            "status": "enabled",
-            "rewriteUrls": false,
-            "addAutoRewriteRules": true,
-            "rewriteUrlsConfig": [],
-            "autoRetryEnabled": false,
-            "autoRetryPeriodMinutes": 60,
-            "updatedBy": {
-                "id": "6706830df3872ffda9da40fa",
-                "name": "Super User"
-            }
-        },
-        {
-            "name": "lnsp-mediator",
-            "description": "Mediates the iSantePlus <--> LNSP lab order and result workflow.",
-            "urlPattern": "^/lnsp.*$",
-            "isAsynchronousProcess": false,
-            "methods": [
-                "GET",
-                "POST",
-                "DELETE",
-                "PUT",
-                "OPTIONS",
-                "HEAD",
-                "TRACE",
-                "CONNECT",
-                "PATCH"
-            ],
-            "type": "http",
-            "tcpPort": null,
-            "tcpHost": null,
-            "pollingSchedule": null,
-            "requestBody": true,
-            "responseBody": true,
-            "allow": [
-                "xds",
-                "test"
-            ],
-            "whitelist": [],
-            "authType": "private",
-            "routes": [
-                {
-                    "name": "lnsp-mediator",
-                    "type": "http",
-                    "status": "enabled",
-                    "secured": false,
-                    "host": "lnsp-mediator",
-                    "port": 3000,
-                    "path": "",
-                    "pathTransform": "s/lnsp\\///g",
-                    "primary": true,
-                    "username": "",
-                    "password": "",
-                    "forwardAuthHeader": false,
-                    "waitPrimaryResponse": false,
-                    "statusCodesCheck": "",
-                    "kafkaClientId": "",
-                    "kafkaTopic": ""
-                }
-            ],
-            "matchContentTypes": [],
-            "matchContentRegex": null,
-            "matchContentXpath": null,
-            "matchContentJson": null,
-            "matchContentValue": null,
-            "properties": [],
-            "txViewAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "txViewFullAcl": [],
-            "txRerunAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "status": "enabled",
-            "rewriteUrls": false,
-            "addAutoRewriteRules": true,
-            "rewriteUrlsConfig": [],
-            "autoRetryEnabled": false,
-            "autoRetryPeriodMinutes": 60,
-            "updatedBy": {
-                "id": "6706830df3872ffda9da40fa",
-                "name": "Super User"
-            },
-            "alerts": [],
-            "priority": 4
-        },
-        {
-            "name": "Consolidated Pipeline -> FHIR Router",
-            "description": "Routes pipeline FHIR bundles: Patient->OpenCR, clinical->SHR (fhir-router mediator)",
-            "urlPattern": "^/consolidated/fhir.*$",
-            "isAsynchronousProcess": false,
-            "methods": [
-                "POST"
-            ],
-            "type": "http",
-            "priority": 1,
-            "tcpPort": null,
-            "tcpHost": null,
-            "pollingSchedule": null,
-            "requestBody": true,
-            "responseBody": true,
-            "allow": [
-                "emr"
-            ],
-            "whitelist": [],
-            "authType": "private",
-            "routes": [
-                {
-                    "name": "FHIR Router",
-                    "type": "http",
-                    "status": "enabled",
-                    "secured": false,
-                    "host": "fhir-router",
-                    "port": 3000,
-                    "path": "/fhir",
-                    "pathTransform": "s/consolidated\\/fhir/fhir/g",
-                    "primary": true,
-                    "username": "",
-                    "password": "",
-                    "forwardAuthHeader": false
-                }
-            ],
-            "matchContentTypes": [],
-            "matchContentRegex": null,
-            "matchContentXpath": null,
-            "matchContentJson": null,
-            "matchContentValue": null,
-            "properties": [],
-            "txViewAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "txViewFullAcl": [],
-            "txRerunAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "alerts": [],
-            "status": "enabled",
-            "rewriteUrls": false,
-            "addAutoRewriteRules": true,
-            "rewriteUrlsConfig": [],
-            "autoRetryEnabled": false,
-            "autoRetryPeriodMinutes": 600000000
-        },
-        {
-            "name": "SHR - Consolidated IPS",
-            "description": "Read-side: GET a unified IPS across all of a person's sites (SHR mediator /ips, MPI-resolved)",
-            "urlPattern": "^/SHR/ips.*$",
-            "isAsynchronousProcess": false,
-            "methods": [
-                "GET"
-            ],
-            "type": "http",
-            "priority": 1,
-            "tcpPort": null,
-            "tcpHost": null,
-            "pollingSchedule": null,
-            "requestBody": false,
-            "responseBody": true,
-            "allow": [
-                "emr",
-                "shr"
-            ],
-            "whitelist": [],
-            "authType": "private",
-            "routes": [
-                {
-                    "name": "SHR IPS",
-                    "type": "http",
-                    "status": "enabled",
-                    "secured": false,
-                    "host": "shr",
-                    "port": 3000,
-                    "path": "",
-                    "pathTransform": "s/SHR\\/ips/ips/g",
-                    "primary": true,
-                    "username": "",
-                    "password": "",
-                    "forwardAuthHeader": false
-                }
-            ],
-            "matchContentTypes": [],
-            "matchContentRegex": null,
-            "matchContentXpath": null,
-            "matchContentJson": null,
-            "matchContentValue": null,
-            "properties": [],
-            "txViewAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "txViewFullAcl": [],
-            "txRerunAcl": [
-                "admin",
-                "shr",
-                "emr",
-                "pipeline",
-                "xds"
-            ],
-            "alerts": [],
-            "status": "enabled",
-            "rewriteUrls": false,
-            "addAutoRewriteRules": true,
-            "rewriteUrlsConfig": [],
-            "autoRetryEnabled": false,
-            "autoRetryPeriodMinutes": 600000000
+          "name": "XDS.b Mediator",
+          "type": "http",
+          "status": "enabled",
+          "secured": false,
+          "host": "lnsp-mediator",
+          "port": 3000,
+          "path": "",
+          "pathTransform": "s/xdsbrepository//g",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false
         }
-    ]
+      ],
+      "matchContentTypes": [],
+      "properties": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "txViewFullAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "alerts": [],
+      "status": "enabled",
+      "rewriteUrls": false,
+      "addAutoRewriteRules": true,
+      "rewriteUrlsConfig": [],
+      "autoRetryEnabled": false,
+      "autoRetryPeriodMinutes": 60,
+      "updatedBy": {
+        "id": "6706830df3872ffda9da40fa",
+        "name": "Super User"
+      },
+      "matchContentJson": null,
+      "matchContentRegex": null,
+      "matchContentValue": null,
+      "matchContentXpath": null,
+      "pollingSchedule": null,
+      "tcpHost": null,
+      "tcpPort": null
+    },
+    {
+      "name": "LNSP subscription",
+      "urlPattern": "^/dsub$",
+      "isAsynchronousProcess": false,
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE",
+        "PUT"
+      ],
+      "type": "http",
+      "allow": [
+        "xds",
+        "test"
+      ],
+      "whitelist": [],
+      "authType": "private",
+      "routes": [
+        {
+          "name": "XDS.b Mediator - DSUB",
+          "type": "http",
+          "status": "enabled",
+          "host": "lnsp-mediator",
+          "port": 3000,
+          "pathTransform": "s/dsub/subscription/g",
+          "primary": true,
+          "forwardAuthHeader": false
+        }
+      ],
+      "matchContentTypes": [],
+      "properties": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "txViewFullAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "alerts": [],
+      "status": "enabled",
+      "rewriteUrls": false,
+      "addAutoRewriteRules": true,
+      "rewriteUrlsConfig": [],
+      "autoRetryEnabled": false,
+      "autoRetryPeriodMinutes": 60,
+      "updatedBy": {
+        "id": "6706830df3872ffda9da40fa",
+        "name": "Super User"
+      },
+      "matchContentJson": null,
+      "matchContentRegex": null,
+      "matchContentValue": null,
+      "matchContentXpath": null,
+      "pollingSchedule": null,
+      "tcpHost": null,
+      "tcpPort": null
+    },
+    {
+      "name": "XDS Order Notification Passthrough",
+      "urlPattern": "^/xds-order-notification$",
+      "isAsynchronousProcess": false,
+      "methods": [
+        "POST"
+      ],
+      "type": "http",
+      "priority": 3,
+      "tcpPort": null,
+      "tcpHost": null,
+      "pollingSchedule": null,
+      "requestBody": true,
+      "responseBody": true,
+      "allow": [
+        "test"
+      ],
+      "whitelist": [],
+      "authType": "private",
+      "routes": [
+        {
+          "name": "LNSP passthrough",
+          "type": "http",
+          "status": "enabled",
+          "secured": true,
+          "host": "lnspmspp.org",
+          "port": 4434,
+          "path": "/esb_sta_upg/LNSP_IHE_IN/notify/",
+          "pathTransform": "",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false
+        }
+      ],
+      "matchContentTypes": [],
+      "matchContentRegex": null,
+      "matchContentXpath": null,
+      "matchContentJson": null,
+      "matchContentValue": null,
+      "properties": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "txViewFullAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "alerts": [],
+      "status": "enabled",
+      "rewriteUrls": false,
+      "addAutoRewriteRules": true,
+      "rewriteUrlsConfig": [],
+      "autoRetryEnabled": false,
+      "autoRetryPeriodMinutes": 60,
+      "updatedBy": {
+        "id": "6706830df3872ffda9da40fa",
+        "name": "Super User"
+      }
+    },
+    {
+      "name": "lnsp-mediator",
+      "description": "Mediates the iSantePlus <--> LNSP lab order and result workflow.",
+      "urlPattern": "^/lnsp.*$",
+      "isAsynchronousProcess": false,
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE",
+        "PUT",
+        "OPTIONS",
+        "HEAD",
+        "TRACE",
+        "CONNECT",
+        "PATCH"
+      ],
+      "type": "http",
+      "tcpPort": null,
+      "tcpHost": null,
+      "pollingSchedule": null,
+      "requestBody": true,
+      "responseBody": true,
+      "allow": [
+        "xds",
+        "test"
+      ],
+      "whitelist": [],
+      "authType": "private",
+      "routes": [
+        {
+          "name": "lnsp-mediator",
+          "type": "http",
+          "status": "enabled",
+          "secured": false,
+          "host": "lnsp-mediator",
+          "port": 3000,
+          "path": "",
+          "pathTransform": "s/lnsp\\///g",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false,
+          "waitPrimaryResponse": false,
+          "statusCodesCheck": "",
+          "kafkaClientId": "",
+          "kafkaTopic": ""
+        }
+      ],
+      "matchContentTypes": [],
+      "matchContentRegex": null,
+      "matchContentXpath": null,
+      "matchContentJson": null,
+      "matchContentValue": null,
+      "properties": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "txViewFullAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "status": "enabled",
+      "rewriteUrls": false,
+      "addAutoRewriteRules": true,
+      "rewriteUrlsConfig": [],
+      "autoRetryEnabled": false,
+      "autoRetryPeriodMinutes": 60,
+      "updatedBy": {
+        "id": "6706830df3872ffda9da40fa",
+        "name": "Super User"
+      },
+      "alerts": [],
+      "priority": 4
+    },
+    {
+      "name": "Consolidated Pipeline -> FHIR Router",
+      "description": "Routes pipeline FHIR bundles: Patient->OpenCR, clinical->SHR (fhir-router mediator)",
+      "urlPattern": "^/consolidated/fhir.*$",
+      "isAsynchronousProcess": false,
+      "methods": [
+        "POST"
+      ],
+      "type": "http",
+      "priority": 1,
+      "tcpPort": null,
+      "tcpHost": null,
+      "pollingSchedule": null,
+      "requestBody": true,
+      "responseBody": true,
+      "allow": [
+        "emr"
+      ],
+      "whitelist": [],
+      "authType": "private",
+      "routes": [
+        {
+          "name": "FHIR Router",
+          "type": "http",
+          "status": "enabled",
+          "secured": false,
+          "host": "fhir-router",
+          "port": 3000,
+          "path": "/fhir",
+          "pathTransform": "s/consolidated\\/fhir/fhir/g",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false
+        }
+      ],
+      "matchContentTypes": [],
+      "matchContentRegex": null,
+      "matchContentXpath": null,
+      "matchContentJson": null,
+      "matchContentValue": null,
+      "properties": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "txViewFullAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "alerts": [],
+      "status": "enabled",
+      "rewriteUrls": false,
+      "addAutoRewriteRules": true,
+      "rewriteUrlsConfig": [],
+      "autoRetryEnabled": false,
+      "autoRetryPeriodMinutes": 600000000
+    },
+    {
+      "name": "SHR - Consolidated IPS",
+      "description": "Read-side: GET a unified IPS across all of a person's sites (SHR mediator /ips, MPI-resolved)",
+      "urlPattern": "^/SHR/ips.*$",
+      "isAsynchronousProcess": false,
+      "methods": [
+        "GET"
+      ],
+      "type": "http",
+      "priority": 1,
+      "tcpPort": null,
+      "tcpHost": null,
+      "pollingSchedule": null,
+      "requestBody": false,
+      "responseBody": true,
+      "allow": [
+        "emr",
+        "shr"
+      ],
+      "whitelist": [],
+      "authType": "private",
+      "routes": [
+        {
+          "name": "SHR IPS",
+          "type": "http",
+          "status": "enabled",
+          "secured": false,
+          "host": "shr",
+          "port": 3000,
+          "path": "",
+          "pathTransform": "s/SHR\\/ips/ips/g",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false
+        }
+      ],
+      "matchContentTypes": [],
+      "matchContentRegex": null,
+      "matchContentXpath": null,
+      "matchContentJson": null,
+      "matchContentValue": null,
+      "properties": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "txViewFullAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "alerts": [],
+      "status": "enabled",
+      "rewriteUrls": false,
+      "addAutoRewriteRules": true,
+      "rewriteUrlsConfig": [],
+      "autoRetryEnabled": false,
+      "autoRetryPeriodMinutes": 600000000
+    }
+  ]
 }

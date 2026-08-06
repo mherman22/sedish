@@ -99,6 +99,18 @@
     {
       "id": "cr",
       "displayName": "Client Registry"
+    },
+    {
+      "id": "isanteplus-73106",
+      "displayName": "Ste Hélène (73106)"
+    },
+    {
+      "id": "isanteplus-54111",
+      "displayName": "Sainte Claire d'Assise (54111)"
+    },
+    {
+      "id": "isanteplus-75101",
+      "displayName": "Ste Anne (75101)"
     }
   ],
   "matching": {
