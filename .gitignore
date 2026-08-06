@@ -142,3 +142,6 @@ dist
 
 backups
 *.bkp.build/
+
+# per-site CR credentials (see .env.site-clients)
+.env.site-clients
