@@ -114,7 +114,9 @@
     }
   ],
   "matching": {
-    "tool": "elasticsearch"
+    "tool": "elasticsearch",
+    "boostMode": "replace",
+    "__comment_boostMode": "Score on the decision-rule similarity alone. Under the default 'sum', Elasticsearch's unbounded BM25 relevance is added, so a candidate failing a required field can still clear autoMatchThreshold, and the same pair scores differently after a reindex."
   },
   "systems": {
     "CRBaseURI": "http://openclientregistry.org/fhir",
