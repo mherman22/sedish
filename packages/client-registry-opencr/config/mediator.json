@@ -17,7 +17,8 @@
             "index": "patients"
         },
         "matching": {
-            "tool": "elasticsearch"
+            "tool": "elasticsearch",
+            "boostMode": "replace"
         }
     },
     "configDefs": [
@@ -102,6 +103,16 @@
                     "description": "Tool to Use for Matching",
                     "displayName": "Tool to Use for Matching",
                     "param": "tool"
+                },
+                {
+                    "type": "option",
+                    "values": [
+                        "sum",
+                        "replace"
+                    ],
+                    "description": "How the Elasticsearch similarity score combines with BM25: replace = similarity only, sum = BM25 added",
+                    "displayName": "Score Boost Mode",
+                    "param": "boostMode"
                 }
             ],
             "values": []
