@@ -207,7 +207,7 @@
         "emr"
       ],
       "clientID": "isanteplus-73106",
-      "name": "Ste Hélène (73106)",
+      "name": "Ste H\u00e9l\u00e8ne (73106)",
       "passwordAlgorithm": "sha512",
       "passwordHash": "c5634deddd0a73512fa498304cc47f0a75f935499a6355899090285ce3387d32711cfe1910dab410ed06e1c18cc5a1ae5b8443c47dc6d6f503cad8f73a9a7896",
       "passwordSalt": "0d1a8f06df5f87a7970bb34c1378fc86"
@@ -234,6 +234,75 @@
     }
   ],
   "Channels": [
+    {
+      "name": "Candidate matches from openCR",
+      "description": "FHIR $match against the client registry. The EMR posts a draft (unsaved) patient at registration and gets back candidates graded certain/potential, so a clerk can see an existing national record before creating a duplicate. Read-only: scores against the registry, writes nothing.",
+      "urlPattern": "^/CR/match.*$",
+      "isAsynchronousProcess": false,
+      "methods": [
+        "POST"
+      ],
+      "type": "http",
+      "priority": 1,
+      "tcpPort": null,
+      "tcpHost": null,
+      "pollingSchedule": null,
+      "requestBody": true,
+      "responseBody": true,
+      "allow": [
+        "emr"
+      ],
+      "whitelist": [],
+      "authType": "private",
+      "routes": [
+        {
+          "name": "Score a draft patient",
+          "type": "http",
+          "status": "enabled",
+          "secured": false,
+          "host": "opencr",
+          "port": 3000,
+          "path": "",
+          "pathTransform": "s/CR\\/match/match\\/matches/g",
+          "primary": true,
+          "username": "",
+          "password": "",
+          "forwardAuthHeader": false
+        }
+      ],
+      "matchContentTypes": [],
+      "matchContentRegex": null,
+      "matchContentXpath": null,
+      "matchContentJson": null,
+      "matchContentValue": null,
+      "properties": [],
+      "txViewAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "txViewFullAcl": [],
+      "txRerunAcl": [
+        "admin",
+        "shr",
+        "emr",
+        "pipeline",
+        "xds"
+      ],
+      "alerts": [],
+      "status": "enabled",
+      "rewriteUrls": false,
+      "addAutoRewriteRules": true,
+      "rewriteUrlsConfig": [],
+      "autoRetryEnabled": false,
+      "autoRetryPeriodMinutes": 600000000,
+      "updatedBy": {
+        "id": "6706830df3872ffda9da40fa",
+        "name": "Super User"
+      }
+    },
     {
       "name": "Add or Get Resource Data From/To openCR",
       "description": "Add or Get Resource Data From/To openCR",
