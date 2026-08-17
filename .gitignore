@@ -148,3 +148,6 @@ backups
 
 # Local build workspace: cloned sources and docker build contexts (build-custom-images.sh)
 .build/
+
+# Working notes and runbooks: kept locally, not carried in the PR
+docs/
