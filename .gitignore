@@ -145,3 +145,6 @@ backups
 
 # per-site CR credentials (see .env.site-clients)
 .env.site-clients
+
+# Local build workspace: cloned sources and docker build contexts (build-custom-images.sh)
+.build/
