@@ -297,11 +297,7 @@
       "addAutoRewriteRules": true,
       "rewriteUrlsConfig": [],
       "autoRetryEnabled": false,
-      "autoRetryPeriodMinutes": 600000000,
-      "updatedBy": {
-        "id": "6706830df3872ffda9da40fa",
-        "name": "Super User"
-      }
+      "autoRetryPeriodMinutes": 600000000
     },
     {
       "name": "Add or Get Resource Data From/To openCR",
@@ -370,11 +366,7 @@
       "addAutoRewriteRules": true,
       "rewriteUrlsConfig": [],
       "autoRetryEnabled": false,
-      "autoRetryPeriodMinutes": 600000000,
-      "updatedBy": {
-        "id": "6706830df3872ffda9da40fa",
-        "name": "Super User"
-      }
+      "autoRetryPeriodMinutes": 600000000
     },
     {
       "name": "SHR - FHIR Passthrough",
@@ -437,11 +429,7 @@
       "addAutoRewriteRules": true,
       "rewriteUrlsConfig": [],
       "autoRetryEnabled": false,
-      "autoRetryPeriodMinutes": 600000000000,
-      "updatedBy": {
-        "id": "6706830df3872ffda9da40fa",
-        "name": "Super User"
-      }
+      "autoRetryPeriodMinutes": 600000000000
     },
     {
       "name": "XDS.b Mediator",
@@ -504,10 +492,6 @@
       "rewriteUrlsConfig": [],
       "autoRetryEnabled": false,
       "autoRetryPeriodMinutes": 60,
-      "updatedBy": {
-        "id": "6706830df3872ffda9da40fa",
-        "name": "Super User"
-      },
       "matchContentJson": null,
       "matchContentRegex": null,
       "matchContentValue": null,
@@ -577,10 +561,6 @@
       "rewriteUrlsConfig": [],
       "autoRetryEnabled": false,
       "autoRetryPeriodMinutes": 60,
-      "updatedBy": {
-        "id": "6706830df3872ffda9da40fa",
-        "name": "Super User"
-      },
       "matchContentJson": null,
       "matchContentRegex": null,
       "matchContentValue": null,
@@ -642,10 +622,6 @@
       "rewriteUrlsConfig": [],
       "autoRetryEnabled": false,
       "autoRetryPeriodMinutes": 60,
-      "updatedBy": {
-        "id": "6706830df3872ffda9da40fa",
-        "name": "Super User"
-      },
       "matchContentJson": null,
       "matchContentRegex": null,
       "matchContentValue": null,
@@ -716,11 +692,7 @@
       "addAutoRewriteRules": true,
       "rewriteUrlsConfig": [],
       "autoRetryEnabled": false,
-      "autoRetryPeriodMinutes": 60,
-      "updatedBy": {
-        "id": "6706830df3872ffda9da40fa",
-        "name": "Super User"
-      }
+      "autoRetryPeriodMinutes": 60
     },
     {
       "name": "lnsp-mediator",
@@ -797,10 +769,6 @@
       "rewriteUrlsConfig": [],
       "autoRetryEnabled": false,
       "autoRetryPeriodMinutes": 60,
-      "updatedBy": {
-        "id": "6706830df3872ffda9da40fa",
-        "name": "Super User"
-      },
       "alerts": [],
       "priority": 4
     },
