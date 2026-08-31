@@ -8,7 +8,7 @@
   },
   "rules": [
     {
-      "__description": "Biometric (fpnid) plus both names exact.",
+      "__description": "Rule 1: Biometric exact match — strongest identifier",
       "matchingType": "deterministic",
       "rule": "1",
       "fields": {
@@ -18,24 +18,10 @@
           "espath": "biometric",
           "null_handling": "conservative",
           "null_handling_both": "conservative"
-        },
-        "given": {
-          "algorithm": "exact",
-          "fhirpath": "name.where(use='official').given",
-          "espath": "given",
-          "null_handling": "conservative",
-          "null_handling_both": "conservative"
-        },
-        "family": {
-          "algorithm": "exact",
-          "fhirpath": "name.where(use='official').family",
-          "espath": "family",
-          "null_handling": "conservative",
-          "null_handling_both": "conservative"
         }
       },
       "potentialMatchThreshold": 2.0,
-      "autoMatchThreshold": 3.0
+      "autoMatchThreshold": 2.0
     },
     {
       "__description": "Demographics: both names and gender exact, birthDate fuzzy.",
