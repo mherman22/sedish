@@ -501,7 +501,7 @@
       "tcpPort": null
     },
     {
-      "name": "XDS.b Mediator",
+      "name": "XDS.b Mediator - Repository",
       "description": "XDS.b Mediator channel for https://github.com/IsantePlus/openhim-mediator-xds",
       "urlPattern": "^/xdsbrepository$",
       "isAsynchronousProcess": false,
@@ -523,7 +523,7 @@
       "authType": "private",
       "routes": [
         {
-          "name": "XDS.b Mediator",
+          "name": "XDS.b Mediator - Repository",
           "type": "http",
           "status": "enabled",
           "secured": false,
