@@ -18,12 +18,12 @@ if [ -z "$MYSQL_ROOT_PASSWORD" ]; then
 fi
 
 # Default endpoint domain — override via OPENHIM_DOMAIN env var
-OPENHIM_DOMAIN="${OPENHIM_DOMAIN:-openhimcore.sedishtest.live}"
+OPENHIM_DOMAIN="${OPENHIM_DOMAIN:-openhimcore.haitihie.uwdigi.org}"
 
 # Map DB index → facility subdomain. Override via FACILITY_NAMES env var
 # (comma-separated, e.g. "hueh,lapaix,ofatma,fsc").
 IFS=',' read -ra FACILITIES <<< "${FACILITY_NAMES:-hueh,lapaix,ofatma,fsc}"
-DOMAIN_NAME="${DOMAIN_NAME:-sedishtest.live}"
+DOMAIN_NAME="${DOMAIN_NAME:-haitihie.uwdigi.org}"
 
 # Each facility gets its own ID range (offset by 100000) to prevent
 # collisions in the MPI. No prefix needed — the Luhn Mod-30 check digit

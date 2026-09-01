@@ -2,7 +2,7 @@
   "version": "1.18.2",
   "minimumCoreVersion": "5.2.0",
   "protocol": "https",
-  "host": "openhimcomms.sedishtest.live",
+  "host": "openhimcomms.haitihie.uwdigi.org",
   "hostPath": "",
   "port": "443",
   "title": "Admin Console",
@@ -13,7 +13,7 @@
   "mediatorLastHeartbeatDangerSeconds": 120,
   "showLoginForm": true,
   "ssoEnabled": false,
-  "keyCloakUrl": "https://keycloak.sedishtest.live",
+  "keyCloakUrl": "https://keycloak.haitihie.uwdigi.org",
   "keyCloakRealm": "platform-realm",
   "keyCloakClientId": "openhim-oauth"
 }

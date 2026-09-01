@@ -102,8 +102,8 @@ Copy `.env.hie` to `.env` and configure at minimum:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `DOMAIN_NAME` | Base domain for all services | `sedishtest.live` |
-| `SUBDOMAINS` | Comma-separated list of all subdomains | `opencr.sedishtest.live,openhimconsole.sedishtest.live,...` |
+| `DOMAIN_NAME` | Base domain for all services | `haitihie.uwdigi.org` |
+| `SUBDOMAINS` | Comma-separated list of all subdomains | `opencr.haitihie.uwdigi.org,openhimconsole.haitihie.uwdigi.org,...` |
 | `RENEWAL_EMAIL` | Email for Let's Encrypt notifications | `admin@example.com` |
 | `STAGING` | Set to `false` for production SSL certs | `false` |
 | `INSECURE` | Set to `false` to enable HTTPS | `false` |
@@ -138,7 +138,7 @@ Each iSantePlus instance has its own MySQL database (`openmrs`, `openmrs2`, `ope
 
 1. **Sequence offsets**: Each database starts its idgen sequence at a different value (instance 1 at 100000, instance 2 at 200000, etc.) so generated IDs never overlap.
 
-2. **Unique FHIR system URIs**: Each instance has a unique `mpi-client.pid.local` value (e.g., `http://hueh.sedishtest.live/ws/fhir2/pid/openmrsid/`) so OpenCR can distinguish patient sources even if IDs were to collide.
+2. **Unique FHIR system URIs**: Each instance has a unique `mpi-client.pid.local` value (e.g., `http://hueh.haitihie.uwdigi.org/ws/fhir2/pid/openmrsid/`) so OpenCR can distinguish patient sources even if IDs were to collide.
 
 Both are configured automatically by `projects/isanteplus-db/initdb/20-configure-per-instance.sh` during fresh database initialization. The `FACILITY_NAMES` env var controls the mapping (default: `hueh,lapaix,ofatma,fsc`).
 
