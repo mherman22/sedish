@@ -8,7 +8,7 @@
   },
   "rules": [
     {
-      "__description": "Rule 1: Biometric exact match — strongest identifier",
+      "__description": "Rule 1: same national biometric code is the same person — auto-match regardless of demographics. Single exact field, so a match scores 1.0; thresholds must equal the field count.",
       "matchingType": "deterministic",
       "rule": "1",
       "fields": {
@@ -20,8 +20,8 @@
           "null_handling_both": "conservative"
         }
       },
-      "potentialMatchThreshold": 2.0,
-      "autoMatchThreshold": 2.0
+      "potentialMatchThreshold": 1.0,
+      "autoMatchThreshold": 1.0
     },
     {
       "__description": "Demographics: both names and gender exact, birthDate fuzzy.",
