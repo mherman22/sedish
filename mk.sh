@@ -83,11 +83,11 @@
 
 ./instant package init -n database-postgres --env-file .env                                                                                                                                         
 ./instant package init -n database-mysql --env-file .env                                                                                                                                           
-./instant package init -n interoperability-layer-openhim -c ./packages/interoperability-layer-openhim --env-file .env
+./instant package init -n interoperability-layer-openhim --env-file .env
 #  ./instant package init -n reverse-proxy-nginx --env-file .env                                                                                                                                        
 ./instant package init -n fhir-datastore-hapi-fhir --env-file .env                                                                                                                                      
 ./packages/fhir-datastore-hapi-fhir/post-deploy.sh
 ./instant package init -n client-registry-opencr --env-file .env                                                                                                                                       
 ./instant package init -n shared-health-record-fhir --env-file .env
-./instant package init -n data-pipeline-consolidated-server --env-file .env
 ./instant package init -n fhir-router-mediator --env-file .env
+./instant package init -n data-pipeline-consolidated-server --env-file .env
