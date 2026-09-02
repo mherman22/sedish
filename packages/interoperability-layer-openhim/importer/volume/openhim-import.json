@@ -1,34 +1,4 @@
 {
-  "Users": [
-    {
-      "provider": "token",
-      "groups": [
-        "admin"
-      ],
-      "firstname": "Super",
-      "surname": "User",
-      "email": "root@openhim.org",
-      "expiry": null,
-      "locked": false,
-      "token": null,
-      "tokenType": null,
-      "password": "$2b$10$p4P.WSJEKJJzIfJoM147ReSIZ0lzmQXN/vndiyyJLY82WawY9FHfS"
-    }
-  ],
-  "Passports": [
-    {
-      "protocol": "local",
-      "email": "root@openhim.org",
-      "password": "$2a$10$qvja1lAaItmcZolkoKCPn.9EXY2b8s9dTlUFx36Q7ey0rieXXnxVC"
-    },
-    {
-      "protocol": "token",
-      "email": "root@openhim.org",
-      "passwordHash": "c5e14f0062bfac45bf20f0fcf0403e758a2233756e40e7b328e1f10dfef3d8ba57c2bf230ee9fd627956fbb4e57fab7e32efe108db76d515f1f61f6b853ffba3",
-      "passwordAlgorithm": "sha512",
-      "passwordSalt": "c5f2a9fd7907e1a1c6658841426e6f5d"
-    }
-  ],
   "Clients": [
     {
       "roles": [
@@ -207,7 +177,7 @@
         "emr"
       ],
       "clientID": "isanteplus-73106",
-      "name": "Ste H\u00e9l\u00e8ne (73106)",
+      "name": "Ste Hélène (73106)",
       "passwordAlgorithm": "sha512",
       "passwordHash": "c5634deddd0a73512fa498304cc47f0a75f935499a6355899090285ce3387d32711cfe1910dab410ed06e1c18cc5a1ae5b8443c47dc6d6f503cad8f73a9a7896",
       "passwordSalt": "0d1a8f06df5f87a7970bb34c1378fc86"

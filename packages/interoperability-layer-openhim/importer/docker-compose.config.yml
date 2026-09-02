@@ -6,7 +6,9 @@ services:
     image: node:erbium-alpine
     environment:
       OPENHIM_API_USERNAME: 'root@openhim.org'
-      OPENHIM_API_PASSWORD: 'openhim-password'
+      # Tracks root's actual password. A fresh core bootstraps 'openhim-password'
+      # (openhim-core src/server.js); set OPENHIM_API_PASSWORD in .env after changing it.
+      OPENHIM_API_PASSWORD: ${OPENHIM_API_PASSWORD:-openhim-password}
       # Reject unauthorised is only needed if the OpenHIM's SSL is not setup
       NODE_TLS_REJECT_UNAUTHORIZED: 0
     command: sh -c "node openhimConfig.js"
