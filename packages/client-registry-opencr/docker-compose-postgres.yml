@@ -7,7 +7,10 @@ services:
       POSTGRES_MULTIPLE_DATABASES: opencr,shr
       POSTGRES_PASSWORD: postgres
     volumes:
-      - /var/lib/postgresql/data/
+      # Named, not anonymous. An anonymous volume is recreated empty every time the service is
+      # created, so `docker stack rm` + redeploy silently destroyed the registry's records while
+      # the Elasticsearch index survived, leaving the two permanently out of step.
+      - opencr-postgres-data:/var/lib/postgresql/data/
   
     configs:
       - target: /docker-entrypoint-initdb.d/multiple-db.sh
@@ -16,6 +19,9 @@ services:
     networks:
       opencr:
       default:
+
+volumes:
+  opencr-postgres-data:
 
 configs:
   multiple-db.sh:
