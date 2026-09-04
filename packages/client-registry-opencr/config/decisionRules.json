@@ -1,7 +1,7 @@
 {
   "__comments": {
     "asymmetry": "False merges are the intolerable error: auto-link on exact agreement, send fuzziness to review.",
-    "fhirpaths": "Simple paths or .where() only; extension('url') 500s the match.",
+    "fhirpaths": "Simple paths or .where() only; extension('url') 500s the match. where(system in (a | b)) works and is how the biometric rule accepts every iSantePlus deployment host - an unlisted host silently matches nothing, so a new site must be added here AND to the matching espath in PatientRelationship.json.",
     "espaths": "Must exist in PatientRelationship.json, which defines the ES index; an unindexed espath silently makes a rule dead.",
     "null_handling": "Conservative everywhere: an absent field never counts as a match.",
     "thresholds": "Calibrated for boostMode 'replace', where the score is the rule's own field score and nothing else. Field scoring is binary - a field contributes its weight when similarity reaches its threshold, else 0 - so totals are whole numbers: auto = every field agrees, potential = one short. Under 'sum' BM25 is added and these are far too low; the two settings must always change together."
@@ -14,7 +14,7 @@
       "fields": {
         "biometric": {
           "algorithm": "exact",
-          "fhirpath": "identifier.where(system='http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code').value",
+          "fhirpath": "identifier.where(system in ('http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code' | 'http://isanteplus.sedish-haiti.org/openmrs/fhir2/6-biometrics-national-reference-code' | 'http://isanteplusdemo.com/openmrs/fhir2/6-biometrics-national-reference-code' | 'http://isanteplus.hup.com/openmrs/fhir2/6-biometrics-national-reference-code' | 'http://isanteplus.npfs.com/openmrs/fhir2/6-biometrics-national-reference-code' | 'http://isanteplus.hueh.com/openmrs/fhir2/6-biometrics-national-reference-code')).value",
           "espath": "biometric",
           "null_handling": "conservative",
           "null_handling_both": "conservative"

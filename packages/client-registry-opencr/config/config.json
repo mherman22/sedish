@@ -175,9 +175,15 @@
     },
     "biometricnational": {
       "uri": [
-        "http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code"
+        "http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code",
+        "http://isanteplus.sedish-haiti.org/openmrs/fhir2/6-biometrics-national-reference-code",
+        "http://isanteplusdemo.com/openmrs/fhir2/6-biometrics-national-reference-code",
+        "http://isanteplus.hup.com/openmrs/fhir2/6-biometrics-national-reference-code",
+        "http://isanteplus.npfs.com/openmrs/fhir2/6-biometrics-national-reference-code",
+        "http://isanteplus.hueh.com/openmrs/fhir2/6-biometrics-national-reference-code"
       ],
-      "displayName": "National FP ID"
+      "displayName": "National FP ID",
+      "__comment": "Every iSantePlus deployment host for the biometric code, mirroring nationalid above. Display only; matching is driven by the fhirpath in decisionRules.json and the espath in PatientRelationship.json, which carry the same list and must be kept in step with it."
     },
     "brokenMatch": {
       "uri": "http://clientregistry.org/brokenMatch"

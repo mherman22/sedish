@@ -120,7 +120,7 @@
             },
             {
               "url": "name",
-              "valueString": "identifier.where(system='http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code').value"
+              "valueString": "identifier.where(system in ('http://isanteplus.org/openmrs/fhir2/6-biometrics-national-reference-code' | 'http://isanteplus.sedish-haiti.org/openmrs/fhir2/6-biometrics-national-reference-code' | 'http://isanteplusdemo.com/openmrs/fhir2/6-biometrics-national-reference-code' | 'http://isanteplus.hup.com/openmrs/fhir2/6-biometrics-national-reference-code' | 'http://isanteplus.npfs.com/openmrs/fhir2/6-biometrics-national-reference-code' | 'http://isanteplus.hueh.com/openmrs/fhir2/6-biometrics-national-reference-code')).value"
             }
           ]
         },
