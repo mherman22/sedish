@@ -116,7 +116,8 @@
   "matching": {
     "tool": "elasticsearch",
     "boostMode": "replace",
-    "__comment_boostMode": "Score on the decision rules alone; upstream's default is 'sum', which adds Elasticsearch's unbounded BM25 relevance so a candidate failing a required field can still auto-link. Thresholds in decisionRules.json are calibrated to this setting."
+    "__comment_boostMode": "Score on the decision rules alone; upstream's default is 'sum', which adds Elasticsearch's unbounded BM25 relevance so a candidate failing a required field can still auto-link. Thresholds in decisionRules.json are calibrated to this setting.",
+    "__comment_autoMatchPatientWithHumanAdjudTag": "Deliberately absent, which OpenCR reads as false: once a record carries the humanAdjudication tag (set by /resolve-match-issue when a flag is cleared, and by /break-match), automatic matching will never move its golden link again - new matches surface as conflicts for a person to look at. Setting it true lets automation overrule that, including a deliberate break-match, which is the false merge this whole ruleset is shaped to avoid. Not exposed in mediator.json's configDefs on purpose: it must not become a one-click toggle in the OpenHIM console. Note that the OpenHIM push replaces this whole matching struct at runtime, so a value set only here would be dropped anyway - false and absent behave identically, so this stays a comment rather than a key."
   },
   "systems": {
     "CRBaseURI": "http://openclientregistry.org/fhir",
